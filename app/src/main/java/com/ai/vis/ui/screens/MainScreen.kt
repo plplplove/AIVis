@@ -39,6 +39,8 @@ enum class NavigationTab(val titleRes: Int, val icon: Int) {
 @Composable
 fun MainScreen(
     onSettingsClick: () -> Unit = {},
+    onGalleryClick: () -> Unit = {},
+    onCameraClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -105,18 +107,18 @@ fun MainScreen(
                     }
                 },
                 onGalleryClick = {
-                    // TODO: Handle gallery selection
                     scope.launch {
                         sheetState.hide()
                         showBottomSheet = false
                     }
+                    onGalleryClick()
                 },
                 onCameraClick = {
-                    // TODO: Handle camera launch
                     scope.launch {
                         sheetState.hide()
                         showBottomSheet = false
                     }
+                    onCameraClick()
                 },
                 sheetState = sheetState
             )

@@ -41,4 +41,47 @@
     <!-- Languages -->
     <string name="english">English</string>
     <string name="polish">Polski</string>
+    
+    <!-- Photo Editor Screen -->
+    <string name="editing">Edycja</string>
+    <string name="save">Zapisz</string>
+    <string name="back">Wstecz</string>
+    <string name="tap_tool_hint">Dotknij narzędzie poniżej, aby rozpocząć edycję</string>
+    
+    <!-- Editor Tools -->
+    <string name="crop_rotate">Przytnij i Obróć</string>
+    <string name="adjust">Dostosuj</string>
+    <string name="ai_tools">Narzędzia AI</string>
+    <string name="ai_effects">Efekty AI</string>
+    <string name="text_tool">Tekst</string>
+    <string name="draw_tool">Rysuj</string>
+    
+    <!-- Crop & Rotate Tools -->
+    <string name="crop">Przytnij</string>
+    <string name="rotate">Obróć</string>
+    <string name="flip">Odbij</string>
+    <string name="stretch">Rozciągnij</string>
+    
+    <!-- Adjust Tools -->
+    <string name="brightness">Jasność</string>
+    <string name="contrast">Kontrast</string>
+    <string name="saturation">Nasycenie</string>
+    <string name="sharpness">Ostrość</string>
+    <string name="temperature">Temperatura</string>
+    <string name="tint">Odcień</string>
+    
+    <!-- AI Tools -->
+    <string name="remove_background">Usuń tło</string>
+    <string name="replace_background">Zamień tło</string>
+    <string name="enhance_resolution">Popraw rozdzielczość</string>
+    <string name="denoise">Redukcja szumów</string>
+    <string name="retouch_face">Retusz twarzy</string>
+    
+    <!-- AI Effects -->
+    <string name="cartoonize">Kreskówka</string>
+    <string name="sketch">Szkic</string>
+    <string name="oil_painting">Obraz olejny</string>
+    <string name="portrait_style">Styl portretowy</string>
+    <string name="color_boost">Wzmocnienie kolorów</string>
 </resources>
+
