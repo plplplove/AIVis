@@ -1,0 +1,44 @@
+<resources>
+    <string name="app_name">AIVis</string>
+    
+    <!-- Settings Screen -->
+    <string name="settings">Settings</string>
+    <string name="theme">Theme</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="light_mode">Light Mode</string>
+    <string name="language">Language</string>
+    <string name="clear_cache">Clear Cache</string>
+    <string name="free_up_storage">Free up storage space</string>
+    <string name="about_app">About App</string>
+    <string name="version">Version 1.0.0</string>
+    
+    <!-- Editor Screen -->
+    <string name="start_editing">Start Editing</string>
+    <string name="edit_photos_hint">Edit photos with AI-powered tools</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="editor">Editor</string>
+    <string name="my_gallery">My Gallery</string>
+    
+    <!-- Image Source Bottom Sheet -->
+    <string name="choose_image_source">Choose Image Source</string>
+    <string name="choose_from_gallery">Choose from Gallery</string>
+    <string name="select_existing_photo">Select an existing photo</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="capture_new_photo">Capture a new photo</string>
+    
+    <!-- Gallery Screen -->
+    <string name="no_photos_yet">No photos yet</string>
+    <string name="start_editing_to_save">Start editing to save your photos here</string>
+    <string name="select_multiple">Select multiple</string>
+    <string name="cancel">Cancel</string>
+    
+    <!-- About -->
+    <string name="about_title">AIVis - AI Vision</string>
+    <string name="about_description">An offline photo editing application with AI-powered tools using local models (TFLite/ONNX Runtime).</string>
+    <string name="diploma_project">Diploma Project 2025</string>
+    
+    <!-- Languages -->
+    <string name="english">English</string>
+    <string name="polish">Polski</string>
+</resources>

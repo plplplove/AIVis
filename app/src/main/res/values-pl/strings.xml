@@ -1,0 +1,44 @@
+<resources>
+    <string name="app_name">AIVis</string>
+    
+    <!-- Settings Screen -->
+    <string name="settings">Ustawienia</string>
+    <string name="theme">Motyw</string>
+    <string name="dark_mode">Tryb ciemny</string>
+    <string name="light_mode">Tryb jasny</string>
+    <string name="language">Język</string>
+    <string name="clear_cache">Wyczyść pamięć podręczną</string>
+    <string name="free_up_storage">Zwolnij miejsce</string>
+    <string name="about_app">O aplikacji</string>
+    <string name="version">Wersja 1.0.0</string>
+    
+    <!-- Editor Screen -->
+    <string name="start_editing">Rozpocznij edycję</string>
+    <string name="edit_photos_hint">Edytuj zdjęcia za pomocą narzędzi AI</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="editor">Edytor</string>
+    <string name="my_gallery">Moja galeria</string>
+    
+    <!-- Image Source Bottom Sheet -->
+    <string name="choose_image_source">Wybierz źródło obrazu</string>
+    <string name="choose_from_gallery">Wybierz z galerii</string>
+    <string name="select_existing_photo">Wybierz istniejące zdjęcie</string>
+    <string name="take_photo">Zrób zdjęcie</string>
+    <string name="capture_new_photo">Zrób nowe zdjęcie</string>
+    
+    <!-- Gallery Screen -->
+    <string name="no_photos_yet">Brak zdjęć</string>
+    <string name="start_editing_to_save">Zacznij edytować, aby zapisać zdjęcia tutaj</string>
+    <string name="select_multiple">Zaznacz wiele</string>
+    <string name="cancel">Anuluj</string>
+    
+    <!-- About -->
+    <string name="about_title">AIVis - AI Vision</string>
+    <string name="about_description">Aplikacja do edycji zdjęć offline z narzędziami AI wykorzystującymi lokalne modele (TFLite/ONNX Runtime).</string>
+    <string name="diploma_project">Projekt dyplomowy 2025</string>
+    
+    <!-- Languages -->
+    <string name="english">English</string>
+    <string name="polish">Polski</string>
+</resources>
