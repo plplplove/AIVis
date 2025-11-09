@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -48,12 +49,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -106,6 +112,17 @@ fun PhotoEditorScreen(
     // Track if user is editing (to show Apply/Cancel buttons)
     var isEditing by remember { mutableStateOf(false) }
     
+    // Crop state - don't select any ratio by default
+    var selectedCropRatio by remember { mutableStateOf<CropRatio?>(null) }
+    var showCropOverlay by remember { mutableStateOf(false) }
+    var cropRect by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+    
+    // Image bounds for crop overlay
+    var imageBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+    
+    // Track bottom panels height
+    var bottomPanelsHeight by remember { mutableFloatStateOf(0f) }
+    
     // Adjustment values state - need to be mutableState for slider sync
     var adjustmentValues by remember { mutableStateOf(mapOf(
         0 to 0f, // brightness
@@ -125,6 +142,34 @@ fun PhotoEditorScreen(
         }
     }
     
+    // Handle system back button
+    BackHandler(enabled = true) {
+        when {
+            isEditing -> {
+                // Cancel editing
+                previewBitmap = null
+                adjustmentValues = mapOf(
+                    0 to 0f, 1 to 0f, 2 to 0f,
+                    3 to 0f, 4 to 0f, 5 to 0f
+                )
+                showCropOverlay = false
+                selectedCropRatio = null
+                isEditing = false
+                selectedTool = null
+            }
+            selectedTool != null -> {
+                // Close tool panel
+                selectedTool = null
+                showCropOverlay = false
+                selectedCropRatio = null
+            }
+            else -> {
+                // Go back to main screen
+                onBackClick()
+            }
+        }
+    }
+    
     // Editor tools list
     val editorTools = listOf(
         EditorTool(R.string.crop_rotate, R.drawable.ic_crop),
@@ -140,12 +185,14 @@ fun PhotoEditorScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = stringResource(id = R.string.editing),
-                        fontSize = 20.sp,
-                        fontFamily = FontFamily(Font(R.font.font_title)),
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (!isEditing) {
+                        Text(
+                            text = stringResource(id = R.string.editing),
+                            fontSize = 20.sp,
+                            fontFamily = FontFamily(Font(R.font.font_title)),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = {
@@ -156,7 +203,10 @@ fun PhotoEditorScreen(
                                 0 to 0f, 1 to 0f, 2 to 0f,
                                 3 to 0f, 4 to 0f, 5 to 0f
                             )
+                            showCropOverlay = false
+                            selectedCropRatio = null
                             isEditing = false
+                            selectedTool = null
                         } else {
                             onBackClick()
                         }
@@ -171,6 +221,19 @@ fun PhotoEditorScreen(
                     IconButton(onClick = {
                         if (isEditing) {
                             // Apply changes
+                            if (showCropOverlay && cropRect != null && imageBounds != null) {
+                                // Apply crop with exact coordinates
+                                coroutineScope.launch(Dispatchers.IO) {
+                                    originalBitmap?.let { bitmap ->
+                                        originalBitmap = ImageProcessor.cropBitmapWithRect(
+                                            bitmap = bitmap,
+                                            cropRect = cropRect!!,
+                                            imageBounds = imageBounds!!
+                                        )
+                                    }
+                                }
+                            }
+                            
                             previewBitmap?.let {
                                 originalBitmap = it
                                 previewBitmap = null
@@ -179,7 +242,10 @@ fun PhotoEditorScreen(
                                 0 to 0f, 1 to 0f, 2 to 0f,
                                 3 to 0f, 4 to 0f, 5 to 0f
                             )
+                            showCropOverlay = false
+                            selectedCropRatio = null
                             isEditing = false
+                            selectedTool = null
                         } else {
                             onSaveClick()
                         }
@@ -204,10 +270,11 @@ fun PhotoEditorScreen(
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Image canvas - fixed size
+            // Image canvas - fixed size, with bottom padding for tool panels
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(bottom = with(LocalDensity.current) { bottomPanelsHeight.toDp() })
                     .clickable(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
@@ -226,6 +293,37 @@ fun PhotoEditorScreen(
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxSize()
+                            .onGloballyPositioned { coordinates ->
+                                val size = coordinates.size.toSize()
+                                val bitmap = displayBitmap ?: return@onGloballyPositioned
+                                
+                                // Calculate image bounds with ContentScale.Fit
+                                val imageAspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+                                val containerAspectRatio = size.width / size.height
+                                
+                                val (imageWidth, imageHeight) = if (imageAspectRatio > containerAspectRatio) {
+                                    // Image is wider - fit to width
+                                    val w = size.width
+                                    val h = w / imageAspectRatio
+                                    w to h
+                                } else {
+                                    // Image is taller - fit to height
+                                    val h = size.height
+                                    val w = h * imageAspectRatio
+                                    w to h
+                                }
+                                
+                                // Center the image
+                                val left = (size.width - imageWidth) / 2f
+                                val top = (size.height - imageHeight) / 2f
+                                
+                                imageBounds = Rect(
+                                    left = left,
+                                    top = top,
+                                    right = left + imageWidth,
+                                    bottom = top + imageHeight
+                                )
+                            }
                             .graphicsLayer(
                                 scaleX = scale,
                                 scaleY = scale,
@@ -274,6 +372,27 @@ fun PhotoEditorScreen(
                         )
                     }
                 }
+                
+                // Show crop overlay when in crop mode
+                if (showCropOverlay && selectedCropRatio != null && displayBitmap != null && imageBounds != null) {
+                    val cropRatioValue = when (selectedCropRatio) {
+                        CropRatio.FREE -> null
+                        CropRatio.RATIO_1_1 -> 1f
+                        CropRatio.RATIO_4_3 -> 4f / 3f
+                        CropRatio.RATIO_16_9 -> 16f / 9f
+                        else -> null
+                    }
+                    
+                    com.ai.vis.ui.components.CropOverlay(
+                        cropRatio = cropRatioValue,
+                        imageBounds = imageBounds,
+                        scale = scale,
+                        offset = offset,
+                        onCropAreaChange = { rect ->
+                            cropRect = rect
+                        }
+                    )
+                }
             }
 
             // Bottom panels with semi-transparent background
@@ -281,6 +400,9 @@ fun PhotoEditorScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
+                    .onGloballyPositioned { coordinates ->
+                        bottomPanelsHeight = coordinates.size.height.toFloat()
+                    }
             ) {
                 // Tool-specific panel (shown when tool is selected with animation)
                 AnimatedVisibility(
@@ -303,18 +425,9 @@ fun PhotoEditorScreen(
                             R.string.crop_rotate -> {
                                 com.ai.vis.ui.components.CropRotatePanel(
                                     onCropRatioSelected = { ratio ->
+                                        selectedCropRatio = ratio
+                                        showCropOverlay = true
                                         isEditing = true
-                                        coroutineScope.launch(Dispatchers.IO) {
-                                            originalBitmap?.let { bitmap ->
-                                                val cropRatio = when (ratio) {
-                                                    CropRatio.FREE -> null
-                                                    CropRatio.RATIO_1_1 -> 1f
-                                                    CropRatio.RATIO_4_3 -> 4f / 3f
-                                                    CropRatio.RATIO_16_9 -> 16f / 9f
-                                                }
-                                                previewBitmap = ImageProcessor.cropBitmap(bitmap, cropRatio)
-                                            }
-                                        }
                                     },
                                     onRotateLeft = {
                                         coroutineScope.launch(Dispatchers.IO) {

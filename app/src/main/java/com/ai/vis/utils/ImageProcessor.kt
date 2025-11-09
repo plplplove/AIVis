@@ -71,6 +71,39 @@ object ImageProcessor {
     }
     
     /**
+     * Crop bitmap with specific screen coordinates
+     * @param cropRect: Screen coordinates of crop area
+     * @param imageBounds: Screen bounds where image is displayed (with ContentScale.Fit)
+     */
+    fun cropBitmapWithRect(
+        bitmap: Bitmap,
+        cropRect: androidx.compose.ui.geometry.Rect,
+        imageBounds: androidx.compose.ui.geometry.Rect
+    ): Bitmap {
+        // Convert screen coordinates to bitmap coordinates
+        val scaleX = bitmap.width / imageBounds.width
+        val scaleY = bitmap.height / imageBounds.height
+        
+        val bitmapCropRect = android.graphics.Rect(
+            ((cropRect.left - imageBounds.left) * scaleX).toInt().coerceIn(0, bitmap.width),
+            ((cropRect.top - imageBounds.top) * scaleY).toInt().coerceIn(0, bitmap.height),
+            ((cropRect.right - imageBounds.left) * scaleX).toInt().coerceIn(0, bitmap.width),
+            ((cropRect.bottom - imageBounds.top) * scaleY).toInt().coerceIn(0, bitmap.height)
+        )
+        
+        val width = (bitmapCropRect.right - bitmapCropRect.left).coerceAtLeast(1)
+        val height = (bitmapCropRect.bottom - bitmapCropRect.top).coerceAtLeast(1)
+        
+        return Bitmap.createBitmap(
+            bitmap,
+            bitmapCropRect.left,
+            bitmapCropRect.top,
+            width,
+            height
+        )
+    }
+    
+    /**
      * Crop bitmap to specific ratio
      * @param ratio: null for free crop, or width/height ratio (e.g., 1.0f for 1:1, 1.333f for 4:3)
      */
