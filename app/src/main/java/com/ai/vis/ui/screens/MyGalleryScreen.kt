@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,19 +56,22 @@ fun MyGalleryScreen(
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(horizontal = 32.dp)
                     ) {
                         Text(
                             text = stringResource(id = R.string.no_photos_yet),
                             fontSize = 20.sp,
                             fontFamily = FontFamily(Font(R.font.font_title)),
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                            textAlign = TextAlign.Center
                         )
                         Text(
                             text = stringResource(id = R.string.start_editing_to_save),
                             fontSize = 16.sp,
                             fontFamily = FontFamily(Font(R.font.font_main_text)),
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
+                            textAlign = TextAlign.Center,
                             modifier = Modifier.padding(top = 8.dp)
                         )
                     }

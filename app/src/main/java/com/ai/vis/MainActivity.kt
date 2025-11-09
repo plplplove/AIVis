@@ -42,6 +42,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        // Check if this is a recreate (e.g., after language change)
+        val isRecreating = savedInstanceState != null
+        
         setContent {
             val settings by settingsViewModel.settings.collectAsState()
             var previousLanguage by remember { mutableStateOf(settings.selectedLanguage) }
@@ -57,7 +61,8 @@ class MainActivity : ComponentActivity() {
             }
             
             AIVisTheme(darkTheme = settings.isDarkTheme) {
-                var showSplash by remember { mutableStateOf(true) }
+                // Don't show splash if this is a recreate (e.g., after language change)
+                var showSplash by remember { mutableStateOf(!isRecreating) }
                 var showSettings by remember { mutableStateOf(false) }
                 
                 when {
@@ -80,6 +85,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+    
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // Mark that we're saving state, so we know on recreate to skip splash
+        outState.putBoolean("hasBeenCreated", true)
     }
 }
 
