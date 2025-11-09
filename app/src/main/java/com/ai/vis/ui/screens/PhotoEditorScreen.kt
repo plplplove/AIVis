@@ -1,10 +1,18 @@
 package com.ai.vis.ui.screens
 
+import android.graphics.Bitmap
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,17 +38,21 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
@@ -52,7 +64,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.ai.vis.R
+import com.ai.vis.ui.components.CropRatio
 import com.ai.vis.ui.theme.AIVisTheme
+import com.ai.vis.utils.ImageProcessor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class EditorTool(
     val nameRes: Int,
@@ -67,6 +84,14 @@ fun PhotoEditorScreen(
     onSaveClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Image states - originalBitmap is the current saved state
+    var originalBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var previewBitmap by remember { mutableStateOf<Bitmap?>(null) } // For preview during editing
+    var displayBitmap = previewBitmap ?: originalBitmap // What to show
+    
     // Transform state for zoom and pan
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -77,6 +102,28 @@ fun PhotoEditorScreen(
     
     // Selected tool state
     var selectedTool by remember { mutableStateOf<EditorTool?>(null) }
+    
+    // Track if user is editing (to show Apply/Cancel buttons)
+    var isEditing by remember { mutableStateOf(false) }
+    
+    // Adjustment values state - need to be mutableState for slider sync
+    var adjustmentValues by remember { mutableStateOf(mapOf(
+        0 to 0f, // brightness
+        1 to 0f, // contrast
+        2 to 0f, // saturation
+        3 to 0f, // sharpness
+        4 to 0f, // temperature
+        5 to 0f  // tint
+    )) }
+    
+    // Load original bitmap from URI
+    LaunchedEffect(imageUri) {
+        if (imageUri != null) {
+            withContext(Dispatchers.IO) {
+                originalBitmap = ImageProcessor.loadBitmap(context, imageUri)
+            }
+        }
+    }
     
     // Editor tools list
     val editorTools = listOf(
@@ -101,18 +148,45 @@ fun PhotoEditorScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = {
+                        if (isEditing) {
+                            // Cancel editing
+                            previewBitmap = null
+                            adjustmentValues = mapOf(
+                                0 to 0f, 1 to 0f, 2 to 0f,
+                                3 to 0f, 4 to 0f, 5 to 0f
+                            )
+                            isEditing = false
+                        } else {
+                            onBackClick()
+                        }
+                    }) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_arrow_back),
-                            contentDescription = stringResource(id = R.string.back)
+                            painter = painterResource(id = if (isEditing) R.drawable.ic_close else R.drawable.ic_arrow_back),
+                            contentDescription = if (isEditing) stringResource(id = R.string.cancel) else stringResource(id = R.string.back)
                         )
                     }
                 },
                 actions = {
-                    IconButton(onClick = onSaveClick) {
+                    IconButton(onClick = {
+                        if (isEditing) {
+                            // Apply changes
+                            previewBitmap?.let {
+                                originalBitmap = it
+                                previewBitmap = null
+                            }
+                            adjustmentValues = mapOf(
+                                0 to 0f, 1 to 0f, 2 to 0f,
+                                3 to 0f, 4 to 0f, 5 to 0f
+                            )
+                            isEditing = false
+                        } else {
+                            onSaveClick()
+                        }
+                    }) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_save),
-                            contentDescription = stringResource(id = R.string.save),
+                            painter = painterResource(id = if (isEditing) R.drawable.ic_done else R.drawable.ic_save),
+                            contentDescription = if (isEditing) stringResource(id = R.string.apply) else stringResource(id = R.string.save),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -122,69 +196,227 @@ fun PhotoEditorScreen(
                 )
             )
         },
-        bottomBar = {
-            // Bottom tool panel
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(vertical = 12.dp, horizontal = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(editorTools) { tool ->
-                    EditorToolItem(
-                        tool = tool,
-                        isSelected = selectedTool == tool,
-                        onClick = { selectedTool = tool }
-                    )
-                }
-            }
-        }
+
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background),
-            contentAlignment = Alignment.Center
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            if (imageUri != null) {
-                // Image with gesture controls
-                Image(
-                    painter = rememberAsyncImagePainter(imageUri),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer(
-                            scaleX = scale,
-                            scaleY = scale,
-                            translationX = offset.x,
-                            translationY = offset.y
-                        )
-                        .transformable(state = state),
-                    contentScale = ContentScale.Fit
-                )
-            } else {
-                // Hint text when no image
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(32.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_edit),
+            // Image canvas - fixed size
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
+                        // Close tool panel when clicking on image
+                        if (selectedTool != null) {
+                            selectedTool = null
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                if (displayBitmap != null) {
+                    // Show current image (preview or saved)
+                    Image(
+                        bitmap = displayBitmap!!.asImageBitmap(),
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
-                        modifier = Modifier.size(64.dp)
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer(
+                                scaleX = scale,
+                                scaleY = scale,
+                                translationX = offset.x,
+                                translationY = offset.y
+                            )
+                            .transformable(state = state),
+                        contentScale = ContentScale.Fit
                     )
-                    Spacer(modifier = Modifier.size(16.dp))
-                    Text(
-                        text = stringResource(id = R.string.tap_tool_hint),
-                        fontSize = 16.sp,
-                        fontFamily = FontFamily(Font(R.font.font_main_text)),
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                        textAlign = TextAlign.Center
+                } else if (imageUri != null) {
+                    // Fallback to original URI while loading
+                    Image(
+                        painter = rememberAsyncImagePainter(imageUri),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer(
+                                scaleX = scale,
+                                scaleY = scale,
+                                translationX = offset.x,
+                                translationY = offset.y
+                            )
+                            .transformable(state = state),
+                        contentScale = ContentScale.Fit
                     )
+                } else {
+                    // Hint text when no image
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(32.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_edit),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
+                            modifier = Modifier.size(64.dp)
+                        )
+                        Spacer(modifier = Modifier.size(16.dp))
+                        Text(
+                            text = stringResource(id = R.string.tap_tool_hint),
+                            fontSize = 16.sp,
+                            fontFamily = FontFamily(Font(R.font.font_main_text)),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+
+            // Bottom panels with semi-transparent background
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+            ) {
+                // Tool-specific panel (shown when tool is selected with animation)
+                AnimatedVisibility(
+                    visible = selectedTool != null,
+                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            .padding(12.dp)
+                    ) {
+                        when (selectedTool?.nameRes) {
+                            R.string.crop_rotate -> {
+                                com.ai.vis.ui.components.CropRotatePanel(
+                                    onCropRatioSelected = { ratio ->
+                                        isEditing = true
+                                        coroutineScope.launch(Dispatchers.IO) {
+                                            originalBitmap?.let { bitmap ->
+                                                val cropRatio = when (ratio) {
+                                                    CropRatio.FREE -> null
+                                                    CropRatio.RATIO_1_1 -> 1f
+                                                    CropRatio.RATIO_4_3 -> 4f / 3f
+                                                    CropRatio.RATIO_16_9 -> 16f / 9f
+                                                }
+                                                previewBitmap = ImageProcessor.cropBitmap(bitmap, cropRatio)
+                                            }
+                                        }
+                                    },
+                                    onRotateLeft = {
+                                        coroutineScope.launch(Dispatchers.IO) {
+                                            originalBitmap?.let { bitmap ->
+                                                originalBitmap = ImageProcessor.rotateBitmap(bitmap, -90f)
+                                                previewBitmap = null
+                                            }
+                                        }
+                                    },
+                                    onRotateRight = {
+                                        coroutineScope.launch(Dispatchers.IO) {
+                                            originalBitmap?.let { bitmap ->
+                                                originalBitmap = ImageProcessor.rotateBitmap(bitmap, 90f)
+                                                previewBitmap = null
+                                            }
+                                        }
+                                    },
+                                    onFlipHorizontal = {
+                                        coroutineScope.launch(Dispatchers.IO) {
+                                            originalBitmap?.let { bitmap ->
+                                                originalBitmap = ImageProcessor.flipBitmapHorizontal(bitmap)
+                                                previewBitmap = null
+                                            }
+                                        }
+                                    },
+                                    onFlipVertical = {
+                                        coroutineScope.launch(Dispatchers.IO) {
+                                            originalBitmap?.let { bitmap ->
+                                                originalBitmap = ImageProcessor.flipBitmapVertical(bitmap)
+                                                previewBitmap = null
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                            R.string.adjust -> {
+                                com.ai.vis.ui.components.AdjustPanel(
+                                    adjustmentValues = adjustmentValues,
+                                    onValueChange = { index, value ->
+                                        isEditing = true
+                                        adjustmentValues = adjustmentValues.toMutableMap().apply {
+                                            this[index] = value
+                                        }
+                                        
+                                        coroutineScope.launch(Dispatchers.IO) {
+                                            originalBitmap?.let { original ->
+                                                var result = original
+                                                
+                                                // Apply all adjustments in order
+                                                adjustmentValues[0]?.let { brightness ->
+                                                    if (brightness != 0f) result = ImageProcessor.adjustBrightness(result, brightness)
+                                                }
+                                                adjustmentValues[1]?.let { contrast ->
+                                                    if (contrast != 0f) result = ImageProcessor.adjustContrast(result, contrast)
+                                                }
+                                                adjustmentValues[2]?.let { saturation ->
+                                                    if (saturation != 0f) result = ImageProcessor.adjustSaturation(result, saturation)
+                                                }
+                                                adjustmentValues[3]?.let { sharpness ->
+                                                    if (sharpness != 0f) result = ImageProcessor.adjustSharpness(result, sharpness)
+                                                }
+                                                adjustmentValues[4]?.let { temperature ->
+                                                    if (temperature != 0f) result = ImageProcessor.adjustTemperature(result, temperature)
+                                                }
+                                                adjustmentValues[5]?.let { tint ->
+                                                    if (tint != 0f) result = ImageProcessor.adjustTint(result, tint)
+                                                }
+                                                
+                                                previewBitmap = result
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                // Bottom tool panel (always visible)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                        )
+                ) {
+                    LazyRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp, horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(editorTools) { tool ->
+                            EditorToolItem(
+                                tool = tool,
+                                isSelected = selectedTool == tool,
+                                onClick = { 
+                                    selectedTool = if (selectedTool == tool) null else tool
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }

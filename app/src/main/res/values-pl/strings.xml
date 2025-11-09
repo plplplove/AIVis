@@ -83,5 +83,22 @@
     <string name="oil_painting">Obraz olejny</string>
     <string name="portrait_style">Styl portretowy</string>
     <string name="color_boost">Wzmocnienie kolorów</string>
+    
+    <!-- Crop Ratios -->
+    <string name="free_crop">Dowolny</string>
+    <string name="ratio_1_1">1:1</string>
+    <string name="ratio_4_3">4:3</string>
+    <string name="ratio_16_9">16:9</string>
+    
+    <!-- Rotate & Flip -->
+    <string name="rotate_left">Obróć w lewo</string>
+    <string name="rotate_right">Obróć w prawo</string>
+    <string name="flip_horizontal">Odbij poziomo</string>
+    <string name="flip_vertical">Odbij pionowo</string>
+    
+    <!-- Common Actions -->
+    <string name="reset">Resetuj</string>
+    <string name="apply">Zastosuj</string>
+    <string name="done">Gotowe</string>
 </resources>
 

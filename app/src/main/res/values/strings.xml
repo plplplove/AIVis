@@ -83,4 +83,21 @@
     <string name="oil_painting">Oil Painting</string>
     <string name="portrait_style">Portrait Style</string>
     <string name="color_boost">Color Boost</string>
+    
+    <!-- Crop Ratios -->
+    <string name="free_crop">Free</string>
+    <string name="ratio_1_1">1:1</string>
+    <string name="ratio_4_3">4:3</string>
+    <string name="ratio_16_9">16:9</string>
+    
+    <!-- Rotate & Flip -->
+    <string name="rotate_left">Rotate Left</string>
+    <string name="rotate_right">Rotate Right</string>
+    <string name="flip_horizontal">Flip H</string>
+    <string name="flip_vertical">Flip V</string>
+    
+    <!-- Common Actions -->
+    <string name="reset">Reset</string>
+    <string name="apply">Apply</string>
+    <string name="done">Done</string>
 </resources>
