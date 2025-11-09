@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -46,7 +47,7 @@ fun ImageSourceBottomSheet(
                 .padding(24.dp)
         ) {
             Text(
-                text = "Choose Image Source",
+                text = stringResource(id = R.string.choose_image_source),
                 fontSize = 20.sp,
                 fontFamily = FontFamily(Font(R.font.font_title)),
                 color = MaterialTheme.colorScheme.onBackground,
@@ -71,13 +72,13 @@ fun ImageSourceBottomSheet(
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
-                        text = "Choose from Gallery",
+                        text = stringResource(id = R.string.choose_from_gallery),
                         fontSize = 18.sp,
                         fontFamily = FontFamily(Font(R.font.font_main_text)),
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
-                        text = "Select an existing photo",
+                        text = stringResource(id = R.string.select_existing_photo),
                         fontSize = 14.sp,
                         fontFamily = FontFamily(Font(R.font.font_main_text)),
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
@@ -103,13 +104,13 @@ fun ImageSourceBottomSheet(
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
-                        text = "Take Photo",
+                        text = stringResource(id = R.string.take_photo),
                         fontSize = 18.sp,
                         fontFamily = FontFamily(Font(R.font.font_main_text)),
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
-                        text = "Capture a new photo",
+                        text = stringResource(id = R.string.capture_new_photo),
                         fontSize = 14.sp,
                         fontFamily = FontFamily(Font(R.font.font_main_text)),
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)

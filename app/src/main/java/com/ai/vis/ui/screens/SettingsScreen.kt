@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -69,7 +70,7 @@ fun SettingsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Settings",
+                        text = stringResource(id = R.string.settings),
                         fontSize = 24.sp,
                         fontFamily = FontFamily(Font(R.font.font_title)),
                         fontWeight = FontWeight.Bold
@@ -120,14 +121,14 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = "Theme",
+                                text = stringResource(id = R.string.theme),
                                 fontSize = 18.sp,
                                 fontFamily = FontFamily(Font(R.font.font_main_text)),
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
-                                text = if (settings.isDarkTheme) "Dark Mode" else "Light Mode",
+                                text = if (settings.isDarkTheme) stringResource(id = R.string.dark_mode) else stringResource(id = R.string.light_mode),
                                 fontSize = 14.sp,
                                 fontFamily = FontFamily(Font(R.font.font_main_text)),
                                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
@@ -167,7 +168,7 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = "Language",
+                                text = stringResource(id = R.string.language),
                                 fontSize = 18.sp,
                                 fontFamily = FontFamily(Font(R.font.font_main_text)),
                                 fontWeight = FontWeight.Bold,
@@ -192,7 +193,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "English",
+                            text = stringResource(id = R.string.english),
                             fontSize = 16.sp,
                             fontFamily = FontFamily(Font(R.font.font_main_text)),
                             color = MaterialTheme.colorScheme.onBackground
@@ -217,7 +218,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Polski",
+                            text = stringResource(id = R.string.polish),
                             fontSize = 16.sp,
                             fontFamily = FontFamily(Font(R.font.font_main_text)),
                             color = MaterialTheme.colorScheme.onBackground
@@ -255,14 +256,14 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text(
-                            text = "Clear Cache",
+                            text = stringResource(id = R.string.clear_cache),
                             fontSize = 18.sp,
                             fontFamily = FontFamily(Font(R.font.font_main_text)),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
-                            text = "Free up storage space",
+                            text = stringResource(id = R.string.free_up_storage),
                             fontSize = 14.sp,
                             fontFamily = FontFamily(Font(R.font.font_main_text)),
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
@@ -292,14 +293,14 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text(
-                            text = "About App",
+                            text = stringResource(id = R.string.about_app),
                             fontSize = 18.sp,
                             fontFamily = FontFamily(Font(R.font.font_main_text)),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
-                            text = "Version 1.0.0",
+                            text = stringResource(id = R.string.version),
                             fontSize = 14.sp,
                             fontFamily = FontFamily(Font(R.font.font_main_text)),
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
@@ -322,7 +323,7 @@ fun SettingsScreen(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "AIVis - AI Vision",
+                            text = stringResource(id = R.string.about_title),
                             fontSize = 20.sp,
                             fontFamily = FontFamily(Font(R.font.font_title)),
                             fontWeight = FontWeight.Bold,
@@ -330,14 +331,14 @@ fun SettingsScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "An offline photo editing application with AI-powered tools using local models (TFLite/ONNX Runtime).",
+                            text = stringResource(id = R.string.about_description),
                             fontSize = 14.sp,
                             fontFamily = FontFamily(Font(R.font.font_main_text)),
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Diploma Project 2025",
+                            text = stringResource(id = R.string.diploma_project),
                             fontSize = 14.sp,
                             fontFamily = FontFamily(Font(R.font.font_main_text)),
                             fontWeight = FontWeight.Bold,

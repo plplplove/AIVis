@@ -34,6 +34,8 @@ class MainActivity : ComponentActivity() {
     }
     
     override fun attachBaseContext(newBase: Context) {
+        // Get saved language from DataStore synchronously is not possible here
+        // So we'll apply locale in onCreate after collecting the flow
         super.attachBaseContext(newBase)
     }
     
@@ -42,36 +44,38 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val settings by settingsViewModel.settings.collectAsState()
+            var previousLanguage by remember { mutableStateOf(settings.selectedLanguage) }
             
-            // Apply locale whenever language changes
+            // Apply locale whenever language changes and recreate activity
             LaunchedEffect(settings.selectedLanguage) {
                 LocaleHelper.applyLocale(this@MainActivity, settings.selectedLanguage)
+                // Only recreate if language actually changed (not initial load)
+                if (previousLanguage != settings.selectedLanguage && previousLanguage.isNotEmpty()) {
+                    this@MainActivity.recreate()
+                }
+                previousLanguage = settings.selectedLanguage
             }
             
             AIVisTheme(darkTheme = settings.isDarkTheme) {
                 var showSplash by remember { mutableStateOf(true) }
                 var showSettings by remember { mutableStateOf(false) }
                 
-                // Key forces recomposition when language changes
-                androidx.compose.runtime.key(settings.selectedLanguage) {
-                
-                    when {
-                        showSplash -> {
-                            SplashScreen(
-                                onTimeout = { showSplash = false }
-                            )
-                        }
-                        showSettings -> {
-                            SettingsScreen(
-                                viewModel = settingsViewModel,
-                                onBackClick = { showSettings = false }
-                            )
-                        }
-                        else -> {
-                            MainScreen(
-                                onSettingsClick = { showSettings = true }
-                            )
-                        }
+                when {
+                    showSplash -> {
+                        SplashScreen(
+                            onTimeout = { showSplash = false }
+                        )
+                    }
+                    showSettings -> {
+                        SettingsScreen(
+                            viewModel = settingsViewModel,
+                            onBackClick = { showSettings = false }
+                        )
+                    }
+                    else -> {
+                        MainScreen(
+                            onSettingsClick = { showSettings = true }
+                        )
                     }
                 }
             }

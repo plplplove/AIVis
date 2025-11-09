@@ -20,6 +20,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,9 +30,9 @@ import com.ai.vis.ui.components.ImageSourceBottomSheet
 import com.ai.vis.ui.theme.AIVisTheme
 import kotlinx.coroutines.launch
 
-enum class NavigationTab(val title: String, val icon: Int) {
-    EDITOR("Editor", R.drawable.ic_home),
-    GALLERY("My Gallery", R.drawable.ic_photo_collection)
+enum class NavigationTab(val titleRes: Int, val icon: Int) {
+    EDITOR(R.string.editor, R.drawable.ic_home),
+    GALLERY(R.string.my_gallery, R.drawable.ic_photo_collection)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,12 +62,12 @@ fun MainScreen(
                         icon = {
                             Icon(
                                 painter = painterResource(id = tab.icon),
-                                contentDescription = tab.title
+                                contentDescription = stringResource(id = tab.titleRes)
                             )
                         },
                         label = {
                             Text(
-                                text = tab.title,
+                                text = stringResource(id = tab.titleRes),
                                 fontFamily = FontFamily(Font(R.font.font_main_text))
                             )
                         },

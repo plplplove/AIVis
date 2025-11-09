@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
@@ -81,7 +82,7 @@ fun EditorScreen(
                         )
                         Spacer(modifier = Modifier.padding(horizontal = 8.dp))
                         Text(
-                            text = "Start Editing",
+                            text = stringResource(id = R.string.start_editing),
                             fontSize = 20.sp,
                             fontFamily = FontFamily(Font(R.font.font_buttons)),
                             color = MaterialTheme.colorScheme.onPrimary
@@ -94,7 +95,7 @@ fun EditorScreen(
 
             // Hint text
             Text(
-                text = "Edit photos with AI-powered tools",
+                text = stringResource(id = R.string.edit_photos_hint),
                 fontSize = 16.sp,
                 fontFamily = FontFamily(Font(R.font.font_main_text)),
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
