@@ -117,10 +117,10 @@ fun PhotoEditorScreen(
     var showCropOverlay by remember { mutableStateOf(false) }
     var cropRect by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     
-    // Image bounds for crop overlay
-    var imageBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+    // Image bounds for crop overlay - recalculate only when bitmap changes
+    var imageBounds by remember(originalBitmap) { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     
-    // Track bottom panels height
+    // Track bottom panels height for padding
     var bottomPanelsHeight by remember { mutableFloatStateOf(0f) }
     
     // Adjustment values state - need to be mutableState for slider sync
@@ -270,7 +270,7 @@ fun PhotoEditorScreen(
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Image canvas - fixed size, with bottom padding for tool panels
+            // Image canvas - with bottom padding for tool panels
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -294,6 +294,9 @@ fun PhotoEditorScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .onGloballyPositioned { coordinates ->
+                                // Calculate bounds only once to avoid recalculation when menu opens/closes
+                                if (imageBounds != null) return@onGloballyPositioned
+                                
                                 val size = coordinates.size.toSize()
                                 val bitmap = displayBitmap ?: return@onGloballyPositioned
                                 
@@ -400,9 +403,6 @@ fun PhotoEditorScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .onGloballyPositioned { coordinates ->
-                        bottomPanelsHeight = coordinates.size.height.toFloat()
-                    }
             ) {
                 // Tool-specific panel (shown when tool is selected with animation)
                 AnimatedVisibility(
@@ -510,6 +510,10 @@ fun PhotoEditorScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .onGloballyPositioned { coordinates ->
+                            // Measure only the main menu height, not the tool panel
+                            bottomPanelsHeight = coordinates.size.height.toFloat()
+                        }
                         .background(
                             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
                         )
