@@ -333,7 +333,11 @@ fun PhotoEditorScreen(
                                 translationX = offset.x,
                                 translationY = offset.y
                             )
-                            .transformable(state = state),
+                            .then(
+                                // Disable zoom/pan in crop mode to keep coordinates consistent
+                                if (!showCropOverlay) Modifier.transformable(state = state)
+                                else Modifier
+                            ),
                         contentScale = ContentScale.Fit
                     )
                 } else if (imageUri != null) {
@@ -349,7 +353,11 @@ fun PhotoEditorScreen(
                                 translationX = offset.x,
                                 translationY = offset.y
                             )
-                            .transformable(state = state),
+                            .then(
+                                // Disable zoom/pan in crop mode to keep coordinates consistent
+                                if (!showCropOverlay) Modifier.transformable(state = state)
+                                else Modifier
+                            ),
                         contentScale = ContentScale.Fit
                     )
                 } else {
@@ -428,6 +436,9 @@ fun PhotoEditorScreen(
                                         selectedCropRatio = ratio
                                         showCropOverlay = true
                                         isEditing = true
+                                        // Reset zoom/pan to original position for consistent crop coordinates
+                                        scale = 1f
+                                        offset = Offset.Zero
                                     },
                                     onRotateLeft = {
                                         coroutineScope.launch(Dispatchers.IO) {
