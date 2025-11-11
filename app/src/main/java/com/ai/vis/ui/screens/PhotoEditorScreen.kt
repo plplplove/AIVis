@@ -10,9 +10,11 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,6 +56,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -132,6 +135,11 @@ fun PhotoEditorScreen(
         4 to 0f, // temperature
         5 to 0f  // tint
     )) }
+    
+    // Text tool state
+    var textStyle by remember { mutableStateOf(com.ai.vis.ui.components.TextStyle()) }
+    var showTextOverlay by remember { mutableStateOf(false) }
+    var textPosition by remember { mutableStateOf(Offset(0f, 0f)) }
     
     // Load original bitmap from URI
     LaunchedEffect(imageUri) {
@@ -404,6 +412,80 @@ fun PhotoEditorScreen(
                         }
                     )
                 }
+                
+                // Show text overlay when in text mode
+                if (showTextOverlay && selectedTool?.nameRes == R.string.text_tool && imageBounds != null) {
+                    // Initialize position to center of image if not set
+                    if (textPosition == Offset.Zero) {
+                        textPosition = Offset(
+                            x = imageBounds!!.center.x - 125f, // Half of TextField width (250dp / 2)
+                            y = imageBounds!!.center.y
+                        )
+                    }
+                    
+                    Box(
+                        modifier = Modifier
+                            .offset {
+                                androidx.compose.ui.unit.IntOffset(
+                                    textPosition.x.toInt(),
+                                    textPosition.y.toInt()
+                                )
+                            }
+                            .pointerInput(imageBounds) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    val bounds = imageBounds ?: return@detectDragGestures
+                                    textPosition = Offset(
+                                        x = (textPosition.x + dragAmount.x).coerceIn(bounds.left, bounds.right - 250f),
+                                        y = (textPosition.y + dragAmount.y).coerceIn(bounds.top, bounds.bottom)
+                                    )
+                                }
+                            }
+                    ) {
+                        androidx.compose.material3.TextField(
+                            value = textStyle.text,
+                            onValueChange = { text ->
+                                textStyle = textStyle.copy(text = text)
+                                isEditing = text.isNotEmpty()
+                            },
+                            placeholder = { Text(stringResource(id = R.string.text_input)) },
+                            colors = androidx.compose.material3.TextFieldDefaults.colors(
+                                focusedContainerColor = if (textStyle.hasBackground) 
+                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.8f) 
+                                else 
+                                    Color.Transparent,
+                                unfocusedContainerColor = if (textStyle.hasBackground) 
+                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.8f) 
+                                else 
+                                    Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            textStyle = androidx.compose.ui.text.TextStyle(
+                                fontSize = textStyle.size.sp,
+                                color = textStyle.color,
+                                fontWeight = when (textStyle.weight) {
+                                    com.ai.vis.ui.components.TextWeight.LIGHT -> FontWeight.Light
+                                    com.ai.vis.ui.components.TextWeight.NORMAL -> FontWeight.Normal
+                                    com.ai.vis.ui.components.TextWeight.BOLD -> FontWeight.Bold
+                                },
+                                textAlign = when (textStyle.alignment) {
+                                    com.ai.vis.ui.components.TextAlignment.LEFT -> TextAlign.Left
+                                    com.ai.vis.ui.components.TextAlignment.CENTER -> TextAlign.Center
+                                    com.ai.vis.ui.components.TextAlignment.RIGHT -> TextAlign.Right
+                                },
+                                shadow = if (textStyle.hasStroke) {
+                                    androidx.compose.ui.graphics.Shadow(
+                                        color = Color.Black,
+                                        offset = Offset(2f, 2f),
+                                        blurRadius = 4f
+                                    )
+                                } else null
+                            ),
+                            modifier = Modifier.width(250.dp)
+                        )
+                    }
+                }
             }
 
             // Bottom panels with semi-transparent background
@@ -513,6 +595,39 @@ fun PhotoEditorScreen(
                                     }
                                 )
                             }
+                            R.string.text_tool -> {
+                                com.ai.vis.ui.components.TextPanel(
+                                    textStyle = textStyle,
+                                    onTextChange = { text ->
+                                        textStyle = textStyle.copy(text = text)
+                                        isEditing = text.isNotEmpty()
+                                    },
+                                    onSizeChange = { size ->
+                                        textStyle = textStyle.copy(size = size)
+                                        if (textStyle.text.isNotEmpty()) isEditing = true
+                                    },
+                                    onColorChange = { color ->
+                                        textStyle = textStyle.copy(color = color)
+                                        if (textStyle.text.isNotEmpty()) isEditing = true
+                                    },
+                                    onAlignmentChange = { alignment ->
+                                        textStyle = textStyle.copy(alignment = alignment)
+                                        if (textStyle.text.isNotEmpty()) isEditing = true
+                                    },
+                                    onWeightChange = { weight ->
+                                        textStyle = textStyle.copy(weight = weight)
+                                        if (textStyle.text.isNotEmpty()) isEditing = true
+                                    },
+                                    onStrokeToggle = { hasStroke ->
+                                        textStyle = textStyle.copy(hasStroke = hasStroke)
+                                        if (textStyle.text.isNotEmpty()) isEditing = true
+                                    },
+                                    onBackgroundToggle = { hasBackground ->
+                                        textStyle = textStyle.copy(hasBackground = hasBackground)
+                                        if (textStyle.text.isNotEmpty()) isEditing = true
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -541,6 +656,11 @@ fun PhotoEditorScreen(
                                 isSelected = selectedTool == tool,
                                 onClick = { 
                                     selectedTool = if (selectedTool == tool) null else tool
+                                    // Show text overlay when Text tool is selected
+                                    if (tool.nameRes == R.string.text_tool) {
+                                        showTextOverlay = selectedTool == tool
+                                        if (showTextOverlay) isEditing = true
+                                    }
                                 }
                             )
                         }

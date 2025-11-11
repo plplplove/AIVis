@@ -96,6 +96,15 @@
     <string name="flip_horizontal">Flip H</string>
     <string name="flip_vertical">Flip V</string>
     
+    <!-- Text Tool -->
+    <string name="text_input">Enter text</string>
+    <string name="text_size">Text Size</string>
+    <string name="text_color">Color</string>
+    <string name="alignment">Alignment</string>
+    <string name="font_weight">Weight</string>
+    <string name="stroke">Stroke</string>
+    <string name="background">Background</string>
+    
     <!-- Common Actions -->
     <string name="reset">Reset</string>
     <string name="apply">Apply</string>
