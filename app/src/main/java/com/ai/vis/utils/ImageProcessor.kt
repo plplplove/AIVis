@@ -2,6 +2,7 @@ package com.ai.vis.utils
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
@@ -9,6 +10,7 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.net.Uri
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.asImageBitmap
 import coil.ImageLoader
 import coil.request.ImageRequest
@@ -399,31 +401,35 @@ object ImageProcessor {
                 strokeCap = Paint.Cap.ROUND
                 strokeJoin = Paint.Join.ROUND
                 isAntiAlias = true
+                
+                // Apply blur/softness if needed
+                if (drawPath.softness > 0f) {
+                    // Softness from 0 to 1, convert to blur radius
+                    // Max blur radius = strokeWidth / 2 for smooth edges
+                    val blurRadius = drawPath.softness * (drawPath.strokeWidth * scaleY / 2)
+                    if (blurRadius > 0f) {
+                        maskFilter = BlurMaskFilter(blurRadius, BlurMaskFilter.Blur.NORMAL)
+                    }
+                }
             }
             
             // Convert Compose Path to Android Path with coordinate scaling
-            val androidPath = android.graphics.Path()
             val composePath = drawPath.path
+            val androidPath = android.graphics.Path()
             
-            // Use asAndroidPath() if available, or manually convert
+            // Apply transformation matrix to scale and translate the path
+            val matrix = android.graphics.Matrix()
+            matrix.postTranslate(-imageBounds.left, -imageBounds.top)
+            matrix.postScale(scaleX, scaleY)
+            
+            // Get the underlying Android path and transform it
             try {
-                // Try to use reflection to access the underlying Android path
-                val composePathClass = composePath.javaClass
-                val asAndroidPathMethod = composePathClass.getDeclaredMethod("asAndroidPath")
-                asAndroidPathMethod.isAccessible = true
-                val originalAndroidPath = asAndroidPathMethod.invoke(composePath) as android.graphics.Path
-                
-                // Scale the path
-                val matrix = android.graphics.Matrix()
-                matrix.postTranslate(-imageBounds.left, -imageBounds.top)
-                matrix.postScale(scaleX, scaleY)
-                originalAndroidPath.transform(matrix, androidPath)
+                val srcPath = composePath.asAndroidPath()
+                srcPath.transform(matrix, androidPath)
+                canvas.drawPath(androidPath, paint)
             } catch (e: Exception) {
-                // Fallback: just draw the path as-is (won't scale properly but better than nothing)
-                android.util.Log.e("ImageProcessor", "Failed to convert path: ${e.message}")
+                android.util.Log.e("ImageProcessor", "Failed to draw path: ${e.message}")
             }
-            
-            canvas.drawPath(androidPath, paint)
         }
         
         canvas.restore()

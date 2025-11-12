@@ -23,7 +23,8 @@ data class DrawPath(
     val path: Path,
     val color: Color,
     val strokeWidth: Float,
-    val opacity: Float
+    val opacity: Float,
+    val softness: Float = 0f // 0 = sharp, higher = blurry edges
 )
 
 @Composable
@@ -33,6 +34,7 @@ fun DrawingCanvas(
     currentColor: Color,
     currentStrokeWidth: Float,
     currentOpacity: Float,
+    currentSoftness: Float,
     onPathAdded: (DrawPath) -> Unit,
     onDrawingStarted: () -> Unit,
     modifier: Modifier = Modifier
@@ -42,7 +44,7 @@ fun DrawingCanvas(
     Canvas(
         modifier = modifier
             .fillMaxSize()
-            .pointerInput(currentColor, currentStrokeWidth, currentOpacity) {
+            .pointerInput(currentColor, currentStrokeWidth, currentOpacity, currentSoftness) {
                 detectDragGestures(
                     onDragStart = { offset ->
                         // Only allow drawing within image bounds
@@ -70,7 +72,8 @@ fun DrawingCanvas(
                                     path = Path().apply { addPath(path) }, // Create a copy
                                     color = currentColor,
                                     strokeWidth = currentStrokeWidth,
-                                    opacity = currentOpacity
+                                    opacity = currentOpacity,
+                                    softness = currentSoftness
                                 )
                             )
                             currentPath = null

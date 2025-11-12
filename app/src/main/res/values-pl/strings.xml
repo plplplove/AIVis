@@ -112,6 +112,7 @@
     <string name="draw_color">Kolor</string>
     <string name="draw_size">Rozmiar pędzla</string>
     <string name="draw_opacity">Przezroczystość</string>
+    <string name="softness">Miękkość</string>
     <string name="erase">Wymaż</string>
     
     <!-- Common Actions -->

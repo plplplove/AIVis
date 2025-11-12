@@ -115,6 +115,7 @@
     <string name="draw_color">Color</string>
     <string name="draw_size">Brush Size</string>
     <string name="draw_opacity">Opacity</string>
+    <string name="softness">Softness</string>
     <string name="erase">Erase</string>
     
     <!-- Common Actions -->

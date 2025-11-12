@@ -190,6 +190,7 @@ fun PhotoEditorScreen(
     var drawColor by remember { mutableStateOf(Color.Black) }
     var drawStrokeWidth by remember { mutableFloatStateOf(10f) }
     var drawOpacity by remember { mutableFloatStateOf(1f) }
+    var drawSoftness by remember { mutableFloatStateOf(0f) }
     
     // Розмір і позиція Image в Box (для збереження тексту на bitmap)
     var imageRectInBox by remember { mutableStateOf<Rect?>(null) }
@@ -857,6 +858,7 @@ fun PhotoEditorScreen(
                         currentColor = drawColor,
                         currentStrokeWidth = drawStrokeWidth,
                         currentOpacity = drawOpacity,
+                        currentSoftness = drawSoftness,
                         onPathAdded = { newPath ->
                             drawPaths = drawPaths + newPath
                         },
@@ -1278,6 +1280,7 @@ fun PhotoEditorScreen(
                                     currentColor = drawColor,
                                     currentSize = drawStrokeWidth,
                                     currentOpacity = drawOpacity,
+                                    currentSoftness = drawSoftness,
                                     onColorChange = { color ->
                                         drawColor = color
                                     },
@@ -1286,6 +1289,9 @@ fun PhotoEditorScreen(
                                     },
                                     onOpacityChange = { opacity ->
                                         drawOpacity = opacity
+                                    },
+                                    onSoftnessChange = { softness ->
+                                        drawSoftness = softness
                                     },
                                     onErase = {
                                         // Remove last drawn path (Undo last stroke)
