@@ -264,7 +264,13 @@ object ImageProcessor {
         textAlign: android.graphics.Paint.Align = android.graphics.Paint.Align.LEFT,
         isBold: Boolean = false,
         hasStroke: Boolean = false,
-        hasBackground: Boolean = false
+        hasBackground: Boolean = false,
+        textOpacity: Float = 1f,
+        backgroundOpacity: Float = 0.7f,
+        shadowRadius: Float = 0f,
+        shadowOffsetX: Float = 0f,
+        shadowOffsetY: Float = 0f,
+        rotation: Float = 0f
     ): Bitmap {
         if (textContent.isEmpty()) return bitmap
         
@@ -280,12 +286,23 @@ object ImageProcessor {
         val bitmapTextSize = textSize * scaleY
         
         val paint = Paint().apply {
-            color = textColor
+            // Apply text opacity to the color
+            val alpha = (textOpacity * 255).toInt().coerceIn(0, 255)
+            color = (textColor and 0x00FFFFFF) or (alpha shl 24)
             this.textSize = bitmapTextSize
             this.textAlign = textAlign
             isAntiAlias = true
             if (isBold) {
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }
+            // Apply shadow if configured
+            if (shadowRadius > 0f) {
+                setShadowLayer(
+                    shadowRadius * scaleY,
+                    shadowOffsetX * scaleX,
+                    shadowOffsetY * scaleY,
+                    android.graphics.Color.argb(128, 0, 0, 0)
+                )
             }
         }
         
@@ -301,17 +318,27 @@ object ImageProcessor {
         canvas.save()
         canvas.clipRect(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
         
+        // Apply rotation if needed
+        if (rotation != 0f) {
+            canvas.rotate(rotation, bitmapX, bitmapY)
+        }
+        
         // Draw background if needed
         if (hasBackground) {
+            // Calculate padding: 4.dp horizontal, 2.dp vertical
+            val horizontalPaddingPx = 4f * scaleX
+            val verticalPaddingPx = 2f * scaleY
+            
+            val bgAlpha = (backgroundOpacity * 255).toInt().coerceIn(0, 255)
             val bgPaint = Paint().apply {
-                color = android.graphics.Color.argb(200, 255, 255, 255)
+                color = android.graphics.Color.argb(bgAlpha, 255, 255, 255)
                 style = Paint.Style.FILL
             }
             
-            val bgLeft = (bitmapX - 10f).coerceAtLeast(0f)
-            val bgTop = (bitmapY + textBounds.top - 10f).coerceAtLeast(0f)
-            val bgRight = (bitmapX + textBounds.width() + 10f).coerceAtMost(bitmap.width.toFloat())
-            val bgBottom = (bitmapY + textBounds.bottom + 10f).coerceAtMost(bitmap.height.toFloat())
+            val bgLeft = bitmapX - horizontalPaddingPx
+            val bgTop = bitmapY + textBounds.top - verticalPaddingPx
+            val bgRight = bitmapX + textBounds.width() + horizontalPaddingPx
+            val bgBottom = bitmapY + textBounds.bottom + verticalPaddingPx
             
             canvas.drawRect(bgLeft, bgTop, bgRight, bgBottom, bgPaint)
         }

@@ -60,10 +60,15 @@ data class TextStyle(
     var text: String = "",
     var size: Float = 24f, // 16-72
     var color: Color = Color.White,
+    var opacity: Float = 1f, // 0-1 прозорість тексту
     var alignment: TextAlignment = TextAlignment.CENTER,
     var weight: TextWeight = TextWeight.NORMAL,
     var hasStroke: Boolean = false,
-    var hasBackground: Boolean = false
+    var hasBackground: Boolean = false,
+    var backgroundOpacity: Float = 0.7f, // 0-1 прозорість фону
+    var shadowRadius: Float = 0f, // 0-10 радіус тіні
+    var shadowOffsetX: Float = 0f, // -10 до 10
+    var shadowOffsetY: Float = 0f // -10 до 10
 )
 
 data class TextOption(
@@ -73,7 +78,7 @@ data class TextOption(
 )
 
 enum class TextOptionType {
-    SIZE, COLOR, ALIGNMENT, WEIGHT, STROKE, BACKGROUND
+    SIZE, COLOR, OPACITY, ALIGNMENT, WEIGHT, BACKGROUND, SHADOW
 }
 
 @Composable
@@ -82,18 +87,24 @@ fun TextPanel(
     onTextChange: (String) -> Unit = {},
     onSizeChange: (Float) -> Unit = {},
     onColorChange: (Color) -> Unit = {},
+    onOpacityChange: (Float) -> Unit = {},
     onAlignmentChange: (TextAlignment) -> Unit = {},
     onWeightChange: (TextWeight) -> Unit = {},
     onStrokeToggle: (Boolean) -> Unit = {},
     onBackgroundToggle: (Boolean) -> Unit = {},
+    onBackgroundOpacityChange: (Float) -> Unit = {},
+    onShadowChange: (Float, Float, Float) -> Unit = { _, _, _ -> }, // radius, offsetX, offsetY
     modifier: Modifier = Modifier
 ) {
+    // Правильний порядок: Size, Color, Opacity, Weight, Background, Shadow, Alignment
     val textOptions = listOf(
         TextOption(R.string.text_size, R.drawable.ic_text, TextOptionType.SIZE),
         TextOption(R.string.text_color, R.drawable.ic_palette, TextOptionType.COLOR),
-        TextOption(R.string.alignment, R.drawable.ic_align_center, TextOptionType.ALIGNMENT),
+        TextOption(R.string.text_opacity, R.drawable.ic_opacity, TextOptionType.OPACITY),
+        TextOption(R.string.font_weight, R.drawable.ic_text, TextOptionType.WEIGHT),
         TextOption(R.string.background, R.drawable.ic_background, TextOptionType.BACKGROUND),
-        TextOption(R.string.font_weight, R.drawable.ic_text, TextOptionType.WEIGHT)
+        TextOption(R.string.shadow, R.drawable.ic_shadow, TextOptionType.SHADOW),
+        TextOption(R.string.alignment, R.drawable.ic_align_center, TextOptionType.ALIGNMENT)
     )
     
     var selectedOption by remember { mutableStateOf<TextOptionType?>(null) }
@@ -217,8 +228,200 @@ fun TextPanel(
                         )
                     }
                 }
+                TextOptionType.OPACITY -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.text_opacity),
+                                fontSize = 14.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "${(textStyle.opacity * 100).toInt()}%",
+                                fontSize = 14.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Slider(
+                            value = textStyle.opacity,
+                            onValueChange = onOpacityChange,
+                            valueRange = 0f..1f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
+                            )
+                        )
+                    }
+                }
                 TextOptionType.BACKGROUND -> {
-                    // НІЧОГО НЕ ВІДОБРАЖАЄМО - чекбокс працює без розгортання
+                    // Only show opacity slider if background is enabled
+                    if (textStyle.hasBackground) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.background),
+                                    fontSize = 14.sp,
+                                    fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "${(textStyle.backgroundOpacity * 100).toInt()}%",
+                                    fontSize = 14.sp,
+                                    fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Slider(
+                                value = textStyle.backgroundOpacity,
+                                onValueChange = onBackgroundOpacityChange,
+                                valueRange = 0f..1f,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = MaterialTheme.colorScheme.primary,
+                                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                                    inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
+                                )
+                            )
+                        }
+                    }
+                }
+                TextOptionType.SHADOW -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        // Shadow Radius
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.shadow_radius),
+                                fontSize = 14.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "${textStyle.shadowRadius.toInt()}",
+                                fontSize = 14.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        
+                        Slider(
+                            value = textStyle.shadowRadius,
+                            onValueChange = { onShadowChange(it, textStyle.shadowOffsetX, textStyle.shadowOffsetY) },
+                            valueRange = 0f..10f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
+                            )
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        // Shadow Offset X
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.shadow_offset_x),
+                                fontSize = 14.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "${textStyle.shadowOffsetX.toInt()}",
+                                fontSize = 14.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        
+                        Slider(
+                            value = textStyle.shadowOffsetX,
+                            onValueChange = { onShadowChange(textStyle.shadowRadius, it, textStyle.shadowOffsetY) },
+                            valueRange = -10f..10f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
+                            )
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        // Shadow Offset Y
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.shadow_offset_y),
+                                fontSize = 14.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "${textStyle.shadowOffsetY.toInt()}",
+                                fontSize = 14.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        
+                        Slider(
+                            value = textStyle.shadowOffsetY,
+                            onValueChange = { onShadowChange(textStyle.shadowRadius, textStyle.shadowOffsetX, it) },
+                            valueRange = -10f..10f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
+                            )
+                        )
+                    }
                 }
                 TextOptionType.WEIGHT -> {
                     // НІЧОГО НЕ ВІДОБРАЖАЄМО - циклічна кнопка працює без розгортання
@@ -236,14 +439,178 @@ fun TextPanel(
         ) {
             items(textOptions.size) { index ->
                 val option = textOptions[index]
-                TextOptionItem(
-                    option = option,
-                    isSelected = selectedOption == option.type,
-                    onClick = {
-                        selectedOption = if (selectedOption == option.type) null else option.type
+                // Для Weight та Background показуємо поточний стан
+                when (option.type) {
+                    TextOptionType.WEIGHT -> {
+                        WeightCard(
+                            textStyle = textStyle,
+                            onClick = { onWeightChange(textStyle.weight) }
+                        )
                     }
-                )
+                    TextOptionType.BACKGROUND -> {
+                        BackgroundCard(
+                            textStyle = textStyle,
+                            isSelected = selectedOption == TextOptionType.BACKGROUND,
+                            onClick = {
+                                // Toggle background on/off
+                                val newBackgroundState = !textStyle.hasBackground
+                                onBackgroundToggle(newBackgroundState)
+                                
+                                // If enabling, show the opacity slider
+                                if (newBackgroundState) {
+                                    selectedOption = TextOptionType.BACKGROUND
+                                } else {
+                                    // If disabling, hide the slider
+                                    selectedOption = null
+                                }
+                            }
+                        )
+                    }
+                    else -> {
+                        TextOptionItem(
+                            option = option,
+                            isSelected = selectedOption == option.type,
+                            onClick = {
+                                selectedOption = if (selectedOption == option.type) null else option.type
+                            }
+                        )
+                    }
+                }
             }
+        }
+    }
+}
+
+@Composable
+fun WeightCard(
+    textStyle: TextStyle,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .width(80.dp)
+            .height(80.dp),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Велика "A" з поточною жирністю
+            Text(
+                text = "A",
+                fontSize = 28.sp,
+                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = when (textStyle.weight) {
+                    TextWeight.LIGHT -> FontWeight.Light
+                    TextWeight.NORMAL -> FontWeight.Normal
+                    TextWeight.BOLD -> FontWeight.Bold
+                }
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = when (textStyle.weight) {
+                    TextWeight.LIGHT -> "Light"
+                    TextWeight.NORMAL -> "Normal"
+                    TextWeight.BOLD -> "Bold"
+                },
+                fontSize = 10.sp,
+                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+@Composable
+fun BackgroundCard(
+    textStyle: TextStyle,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .width(80.dp)
+            .height(80.dp),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected)
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+            else
+                MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 4.dp else 2.dp
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Checkbox icon - filled if enabled, empty if disabled
+            Box(
+                modifier = Modifier.size(28.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (textStyle.hasBackground) {
+                    // Filled checkbox
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_background),
+                        contentDescription = null,
+                        tint = if (isSelected)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(28.dp)
+                            .background(
+                                MaterialTheme.colorScheme.primary,
+                                RoundedCornerShape(6.dp)
+                            )
+                            .padding(4.dp)
+                    )
+                } else {
+                    // Empty checkbox (just border)
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .border(
+                                width = 2.dp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = stringResource(id = R.string.background),
+                fontSize = 10.sp,
+                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                color = if (textStyle.hasBackground)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
         }
     }
 }
@@ -255,22 +622,19 @@ fun TextOptionItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Особлива логіка для Weight та Background (циклічні/тогглові кнопки)
-    val isToggleType = option.type == TextOptionType.WEIGHT || option.type == TextOptionType.BACKGROUND
-    
     Card(
         modifier = modifier
             .width(80.dp)
             .height(80.dp),
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected && !isToggleType)
+            containerColor = if (isSelected && option.type != TextOptionType.WEIGHT && option.type != TextOptionType.BACKGROUND)
                 MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
             else
                 MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected && !isToggleType) 4.dp else 2.dp
+            defaultElevation = if (isSelected && option.type != TextOptionType.WEIGHT && option.type != TextOptionType.BACKGROUND) 4.dp else 2.dp
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -284,7 +648,7 @@ fun TextOptionItem(
             Icon(
                 painter = painterResource(id = option.iconRes),
                 contentDescription = null,
-                tint = if (isSelected && !isToggleType)
+                tint = if (isSelected && option.type != TextOptionType.WEIGHT && option.type != TextOptionType.BACKGROUND)
                     MaterialTheme.colorScheme.primary
                 else
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
@@ -295,7 +659,7 @@ fun TextOptionItem(
                 text = stringResource(id = option.nameRes),
                 fontSize = 10.sp,
                 fontFamily = FontFamily(Font(R.font.font_main_text)),
-                color = if (isSelected && !isToggleType)
+                color = if (isSelected && option.type != TextOptionType.WEIGHT && option.type != TextOptionType.BACKGROUND)
                     MaterialTheme.colorScheme.primary
                 else
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),

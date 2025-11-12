@@ -100,10 +100,16 @@
     <string name="text_input">Enter text</string>
     <string name="text_size">Text Size</string>
     <string name="text_color">Color</string>
+    <string name="text_opacity">Opacity</string>
     <string name="alignment">Alignment</string>
     <string name="font_weight">Weight</string>
     <string name="stroke">Stroke</string>
     <string name="background">Background</string>
+    <string name="shadow">Shadow</string>
+    <string name="shadow_radius">Shadow Radius</string>
+    <string name="shadow_offset_x">Shadow Offset X</string>
+    <string name="shadow_offset_y">Shadow Offset Y</string>
+    <string name="edit_text">Edit Text</string>
     
     <!-- Common Actions -->
     <string name="reset">Reset</string>
