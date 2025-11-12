@@ -9,6 +9,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -144,11 +145,20 @@ fun PhotoEditorScreen(
         5 to 0f  // tint
     )) }
     
-    // Text tool state - НОВИЙ ПРОСТИЙ ПІДХІД
+    // НОВИЙ ПІДХІД: Множинні текстові елементи 📝
+    data class TextItem(
+        val id: Int,
+        var position: Offset,
+        var style: com.ai.vis.ui.components.TextStyle
+    )
+    
+    var textItems by remember { mutableStateOf<List<TextItem>>(emptyList()) }
+    var selectedTextId by remember { mutableStateOf<Int?>(null) }
+    var nextTextId by remember { mutableStateOf(0) }
+    var showTextInput by remember { mutableStateOf(false) }
+    var currentInputText by remember { mutableStateOf("") }
     var textStyle by remember { mutableStateOf(com.ai.vis.ui.components.TextStyle()) }
-    var showTextOverlay by remember { mutableStateOf(false) }
-    // Де показати TextField (координати в Box-local space)
-    var textFieldPosition by remember { mutableStateOf<Offset?>(null) }
+    
     // Розмір і позиція Image в Box (для збереження тексту на bitmap)
     var imageRectInBox by remember { mutableStateOf<Rect?>(null) }
     
@@ -173,9 +183,9 @@ fun PhotoEditorScreen(
                 )
                 showCropOverlay = false
                 selectedCropRatio = null
-                showTextOverlay = false
-                textStyle = com.ai.vis.ui.components.TextStyle()
-                textFieldPosition = null
+                showTextInput = false
+                selectedTextId = null
+                textItems = emptyList()
                 isEditing = false
                 selectedTool = null
             }
@@ -184,7 +194,7 @@ fun PhotoEditorScreen(
                 selectedTool = null
                 showCropOverlay = false
                 selectedCropRatio = null
-                showTextOverlay = false
+                showTextInput = false
             }
             else -> {
                 // Go back to main screen
@@ -228,9 +238,9 @@ fun PhotoEditorScreen(
                             )
                             showCropOverlay = false
                             selectedCropRatio = null
-                            showTextOverlay = false
-                            textStyle = com.ai.vis.ui.components.TextStyle()
-                            textFieldPosition = null
+                            showTextInput = false
+                            selectedTextId = null
+                            textItems = emptyList()
                             isEditing = false
                             selectedTool = null
                         } else {
@@ -260,56 +270,45 @@ fun PhotoEditorScreen(
                                 }
                             }
                             
-                            // Apply text if in text mode - НОВИЙ ПРОСТИЙ ПІДХІД
-                            if (showTextOverlay && selectedTool?.nameRes == R.string.text_tool && 
-                                textStyle.text.isNotEmpty() && textFieldPosition != null && imageRectInBox != null && imageBounds != null) {
-                                val textSizePxForSave = density.run { textStyle.size.sp.toPx() }
+                            // Зберігаємо ВСІ текстові елементи на bitmap 📝
+                            if (textItems.isNotEmpty() && selectedTool?.nameRes == R.string.text_tool && imageRectInBox != null && imageBounds != null) {
                                 coroutineScope.launch(Dispatchers.IO) {
-                                    originalBitmap?.let { bitmap ->
-                                        val textAlign = when (textStyle.alignment) {
-                                            com.ai.vis.ui.components.TextAlignment.LEFT -> android.graphics.Paint.Align.LEFT
-                                            com.ai.vis.ui.components.TextAlignment.CENTER -> android.graphics.Paint.Align.CENTER
-                                            com.ai.vis.ui.components.TextAlignment.RIGHT -> android.graphics.Paint.Align.RIGHT
+                                    var resultBitmap = originalBitmap
+                                    textItems.forEach { textItem ->
+                                        if (textItem.style.text.isNotEmpty()) {
+                                            val textSizePx = density.run { textItem.style.size.sp.toPx() }
+                                            val androidColor = android.graphics.Color.argb(
+                                                (textItem.style.color.alpha * 255).toInt(),
+                                                (textItem.style.color.red * 255).toInt(),
+                                                (textItem.style.color.green * 255).toInt(),
+                                                (textItem.style.color.blue * 255).toInt()
+                                            )
+                                            
+                                            val drawAbs = Offset(
+                                                imageBounds!!.left + (textItem.position.x - imageRectInBox!!.left),
+                                                imageBounds!!.top + (textItem.position.y - imageRectInBox!!.top)
+                                            )
+                                            
+                                            resultBitmap = resultBitmap?.let { bitmap ->
+                                                ImageProcessor.drawTextOnBitmap(
+                                                    bitmap = bitmap,
+                                                    textContent = textItem.style.text,
+                                                    textSize = textSizePx,
+                                                    textColor = androidColor,
+                                                    textPosition = drawAbs,
+                                                    imageBounds = imageBounds!!,
+                                                    textAlign = android.graphics.Paint.Align.LEFT,
+                                                    isBold = textItem.style.weight == com.ai.vis.ui.components.TextWeight.BOLD,
+                                                    hasStroke = textItem.style.hasStroke,
+                                                    hasBackground = textItem.style.hasBackground
+                                                )
+                                            }
                                         }
-                                        
-                                        val isBold = textStyle.weight == com.ai.vis.ui.components.TextWeight.BOLD
-                                        
-                                        val androidColor = android.graphics.Color.argb(
-                                            (textStyle.color.alpha * 255).toInt(),
-                                            (textStyle.color.red * 255).toInt(),
-                                            (textStyle.color.green * 255).toInt(),
-                                            (textStyle.color.blue * 255).toInt()
-                                        )
-                                        
-                                        // НОВИЙ ПРОСТИЙ ПІДХІД: textFieldPosition = де Text малюється
-                                        val textPosInBox = textFieldPosition!!
-                                        val imgRect = imageRectInBox!!
-                                        
-                                        // Конвертуємо Box-local → absolute координати
-                                        val drawAbs = Offset(
-                                            imageBounds!!.left + (textPosInBox.x - imgRect.left),
-                                            imageBounds!!.top + (textPosInBox.y - imgRect.top)
-                                        )
-                                        
-                                        android.util.Log.d("PhotoEditor", "💾 Зберігаємо: textPos=$textPosInBox, imgRect=$imgRect, drawAbs=$drawAbs")
-                                        
-                                        originalBitmap = ImageProcessor.drawTextOnBitmap(
-                                            bitmap = bitmap,
-                                            textContent = textStyle.text,
-                                            textSize = textSizePxForSave,
-                                            textColor = androidColor,
-                                            textPosition = drawAbs,
-                                            imageBounds = imageBounds!!,
-                                            textAlign = android.graphics.Paint.Align.LEFT,  // ✅ Завжди LEFT як TextField!
-                                            isBold = isBold,
-                                            hasStroke = textStyle.hasStroke,
-                                            hasBackground = textStyle.hasBackground
-                                        )
-
-                                        // Reset text state
-                                        textStyle = com.ai.vis.ui.components.TextStyle()
-                                        textFieldPosition = null
                                     }
+                                    originalBitmap = resultBitmap
+                                    textItems = emptyList()
+                                    showTextInput = false
+                                    selectedTextId = null
                                 }
                             }
                             
@@ -323,7 +322,7 @@ fun PhotoEditorScreen(
                             )
                             showCropOverlay = false
                             selectedCropRatio = null
-                            showTextOverlay = false
+                            showTextInput = false
                             isEditing = false
                             selectedTool = null
                         } else {
@@ -350,66 +349,45 @@ fun PhotoEditorScreen(
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // НОВИЙ ПРОСТИЙ КОД - без перетворень координат
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(selectedTool, imageRectInBox, showTextOverlay) {
+                    .pointerInput(selectedTool, imageRectInBox) {
                         detectTapGestures { tapOffset ->
                             if (selectedTool?.nameRes == R.string.text_tool && imageRectInBox != null) {
                                 val imgRect = imageRectInBox!!
-                                android.util.Log.d("PhotoEditor", "✅ Тап: $tapOffset, Image rect: $imgRect")
                                 
-                                // Якщо вже редагуємо текст, зберегти попередній
-                                if (showTextOverlay && textStyle.text.isNotEmpty() && textFieldPosition != null && imageBounds != null) {
-                                    val textSizePx = density.run { textStyle.size.sp.toPx() }
-                                    coroutineScope.launch(Dispatchers.IO) {
-                                        originalBitmap?.let { bitmap ->
-                                            val textAlign = when (textStyle.alignment) {
-                                                com.ai.vis.ui.components.TextAlignment.LEFT -> android.graphics.Paint.Align.LEFT
-                                                com.ai.vis.ui.components.TextAlignment.CENTER -> android.graphics.Paint.Align.CENTER
-                                                com.ai.vis.ui.components.TextAlignment.RIGHT -> android.graphics.Paint.Align.RIGHT
-                                            }
-                                            val isBold = textStyle.weight == com.ai.vis.ui.components.TextWeight.BOLD
-                                            val androidColor = android.graphics.Color.argb(
-                                                (textStyle.color.alpha * 255).toInt(),
-                                                (textStyle.color.red * 255).toInt(),
-                                                (textStyle.color.green * 255).toInt(),
-                                                (textStyle.color.blue * 255).toInt()
-                                            )
-                                            
-                                            // НОВИЙ ПРОСТИЙ ПІДХІД
-                                            val drawAbs = Offset(
-                                                imageBounds!!.left + (textFieldPosition!!.x - imgRect.left),
-                                                imageBounds!!.top + (textFieldPosition!!.y - imgRect.top)
-                                            )
-                                            
-                                            originalBitmap = ImageProcessor.drawTextOnBitmap(
-                                                bitmap = bitmap,
-                                                textContent = textStyle.text,
-                                                textSize = textSizePx,
-                                                textColor = androidColor,
-                                                textPosition = drawAbs,
-                                                imageBounds = imageBounds!!,
-                                                textAlign = android.graphics.Paint.Align.LEFT,  // ✅ Завжди LEFT як TextField!
-                                                isBold = isBold,
-                                                hasStroke = textStyle.hasStroke,
-                                                hasBackground = textStyle.hasBackground
-                                            )
-                                        }
-                                    }
-                                    textStyle = com.ai.vis.ui.components.TextStyle()
+                                // Перевірка чи тапнули на існуючий текст
+                                val tappedText = textItems.find { item ->
+                                    val bounds = Rect(
+                                        item.position.x - 50f,
+                                        item.position.y - 50f,
+                                        item.position.x + 200f,
+                                        item.position.y + 50f
+                                    )
+                                    bounds.contains(tapOffset)
                                 }
                                 
-                                // Перевірка чи тап всередині зображення
-                                if (imgRect.contains(tapOffset)) {
-                                    // ПРОСТО зберігаємо tapOffset як є - він вже в Box-local координатах!
-                                    textFieldPosition = tapOffset
-                                    showTextOverlay = true
+                                if (tappedText != null) {
+                                    // Редагуємо існуючий текст
+                                    selectedTextId = tappedText.id
+                                    currentInputText = tappedText.style.text
+                                    showTextInput = true
                                     isEditing = true
-                                    android.util.Log.d("PhotoEditor", "✅ Встановлено textFieldPosition: $tapOffset")
-                                } else {
-                                    android.util.Log.d("PhotoEditor", "❌ Тап поза зображенням")
+                                } else if (imgRect.contains(tapOffset)) {
+                                    // Створюємо новий текст
+                                    val newId = nextTextId
+                                    nextTextId++
+                                    val newItem = TextItem(
+                                        id = newId,
+                                        position = tapOffset,
+                                        style = com.ai.vis.ui.components.TextStyle(text = "")
+                                    )
+                                    textItems = textItems + newItem
+                                    selectedTextId = newId
+                                    currentInputText = ""
+                                    showTextInput = true
+                                    isEditing = true
                                 }
                             } else if (selectedTool != null) {
                                 selectedTool = null
@@ -546,71 +524,96 @@ fun PhotoEditorScreen(
                     )
                 }
                 
-                // НОВИЙ ПІДХІД: Показуємо Text так, як він буде збережено! 🎯
-                if (showTextOverlay && selectedTool?.nameRes == R.string.text_tool && textFieldPosition != null) {
+                // Відображення ВСіХ текстових елементів 📝
+                textItems.forEach { textItem ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(textItem.id) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    val imgRect = imageRectInBox ?: return@detectDragGestures
+                                    val newPos = Offset(
+                                        x = (textItem.position.x + dragAmount.x).coerceIn(imgRect.left, imgRect.right),
+                                        y = (textItem.position.y + dragAmount.y).coerceIn(imgRect.top, imgRect.bottom)
+                                    )
+                                    textItems = textItems.map {
+                                        if (it.id == textItem.id) it.copy(position = newPos) else it
+                                    }
+                                }
+                            }
+                    ) {
+                        Text(
+                            text = textItem.style.text.ifEmpty { "Tap to type" },
+                            fontSize = textItem.style.size.sp,
+                            color = textItem.style.color,
+                            fontWeight = when (textItem.style.weight) {
+                                com.ai.vis.ui.components.TextWeight.LIGHT -> FontWeight.Light
+                                com.ai.vis.ui.components.TextWeight.NORMAL -> FontWeight.Normal
+                                com.ai.vis.ui.components.TextWeight.BOLD -> FontWeight.Bold
+                            },
+                            modifier = Modifier
+                                .offset {
+                                    androidx.compose.ui.unit.IntOffset(
+                                        textItem.position.x.toInt(),
+                                        textItem.position.y.toInt()
+                                    )
+                                }
+                                .background(
+                                    color = if (textItem.style.hasBackground)
+                                        MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
+                                    else Color.Transparent,
+                                    shape = RoundedCornerShape(4.dp)
+                                )
+                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                                .border(
+                                    width = if (selectedTextId == textItem.id) 2.dp else 0.dp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = RoundedCornerShape(4.dp)
+                                )
+                        )
+                    }
+                }
+                
+                // TextField для введення внизу екрану
+                if (showTextInput && selectedTextId != null) {
                     val focusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+                    val selectedItem = textItems.find { it.id == selectedTextId }
                     
-                    LaunchedEffect(showTextOverlay) {
-                        if (showTextOverlay) {
+                    LaunchedEffect(showTextInput) {
+                        if (showTextInput) {
                             focusRequester.requestFocus()
                         }
                     }
                     
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .pointerInput(imageRectInBox) {
-                                detectDragGestures { change, dragAmount ->
-                                    change.consume()
-                                    val imgRect = imageRectInBox ?: return@detectDragGestures
-                                    val currentPos = textFieldPosition ?: return@detectDragGestures
-                                    
-                                    val newPos = Offset(
-                                        x = (currentPos.x + dragAmount.x).coerceIn(imgRect.left, imgRect.right),
-                                        y = (currentPos.y + dragAmount.y).coerceIn(imgRect.top, imgRect.bottom)
-                                    )
-                                    textFieldPosition = newPos
-                                }
-                            }
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(16.dp)
                     ) {
-                        // PREVIEW: Текст так, як він буде збережено
-                        Text(
-                            text = if (textStyle.text.isEmpty()) "Tap to type" else textStyle.text,
-                            fontSize = textStyle.size.sp,
-                            color = textStyle.color,
-                            fontWeight = when (textStyle.weight) {
-                                com.ai.vis.ui.components.TextWeight.LIGHT -> FontWeight.Light
-                                com.ai.vis.ui.components.TextWeight.NORMAL -> FontWeight.Normal
-                                com.ai.vis.ui.components.TextWeight.BOLD -> FontWeight.Bold
-                            },
-                            modifier = Modifier.offset {
-                                androidx.compose.ui.unit.IntOffset(
-                                    textFieldPosition!!.x.toInt(),
-                                    textFieldPosition!!.y.toInt()
-                                )
-                            }
-                        )
-                        
-                        // Прихований TextField для введення (розташовуємо внизу екрану)
                         androidx.compose.foundation.text.BasicTextField(
-                            value = textStyle.text,
+                            value = currentInputText,
                             onValueChange = { text ->
-                                textStyle = textStyle.copy(text = text)
+                                currentInputText = text
+                                textItems = textItems.map {
+                                    if (it.id == selectedTextId) {
+                                        it.copy(style = it.style.copy(text = text))
+                                    } else it
+                                }
                                 isEditing = text.isNotEmpty()
                             },
                             textStyle = androidx.compose.ui.text.TextStyle(
-                                fontSize = textStyle.size.sp,
-                                color = textStyle.color
+                                fontSize = selectedItem?.style?.size?.sp ?: 24.sp,
+                                color = selectedItem?.style?.color ?: Color.White
                             ),
                             modifier = Modifier
-                                .align(Alignment.BottomCenter)
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surface)
-                                .padding(16.dp)
                                 .focusRequester(focusRequester),
                             decorationBox = { innerTextField ->
                                 Box(modifier = Modifier.padding(8.dp)) {
-                                    if (textStyle.text.isEmpty()) {
+                                    if (currentInputText.isEmpty()) {
                                         Text(
                                             text = stringResource(id = R.string.text_input),
                                             fontSize = 16.sp,
@@ -620,19 +623,6 @@ fun PhotoEditorScreen(
                                     innerTextField()
                                 }
                             }
-                        )
-                    }
-                }
-                
-
-                
-                // 🔴 DEBUG: Червона точка для перевірки координат
-                textFieldPosition?.let { pos ->
-                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                        drawCircle(
-                            color = Color.Red,
-                            radius = 20f,
-                            center = androidx.compose.ui.geometry.Offset(pos.x, pos.y)
                         )
                     }
                 }
@@ -754,27 +744,62 @@ fun PhotoEditorScreen(
                                     },
                                     onSizeChange = { size ->
                                         textStyle = textStyle.copy(size = size)
-                                        if (textStyle.text.isNotEmpty()) isEditing = true
+                                        // Оновлюємо всі текстові елементи з новим розміром
+                                        if (selectedTextId != null) {
+                                            textItems = textItems.map {
+                                                if (it.id == selectedTextId) it.copy(style = it.style.copy(size = size)) else it
+                                            }
+                                        }
+                                        if (currentInputText.isNotEmpty()) isEditing = true
                                     },
                                     onColorChange = { color ->
                                         textStyle = textStyle.copy(color = color)
-                                        if (textStyle.text.isNotEmpty()) isEditing = true
+                                        // Оновлюємо всі текстові елементи з новим кольором
+                                        if (selectedTextId != null) {
+                                            textItems = textItems.map {
+                                                if (it.id == selectedTextId) it.copy(style = it.style.copy(color = color)) else it
+                                            }
+                                        }
+                                        if (currentInputText.isNotEmpty()) isEditing = true
                                     },
                                     onAlignmentChange = { alignment ->
                                         textStyle = textStyle.copy(alignment = alignment)
-                                        if (textStyle.text.isNotEmpty()) isEditing = true
+                                        if (selectedTextId != null) {
+                                            textItems = textItems.map {
+                                                if (it.id == selectedTextId) it.copy(style = it.style.copy(alignment = alignment)) else it
+                                            }
+                                        }
+                                        if (currentInputText.isNotEmpty()) isEditing = true
                                     },
                                     onWeightChange = { weight ->
-                                        textStyle = textStyle.copy(weight = weight)
-                                        if (textStyle.text.isNotEmpty()) isEditing = true
+                                        // Циклічна зміна: Normal → Bold → Light → Normal
+                                        val nextWeight = when (textStyle.weight) {
+                                            com.ai.vis.ui.components.TextWeight.NORMAL -> com.ai.vis.ui.components.TextWeight.BOLD
+                                            com.ai.vis.ui.components.TextWeight.BOLD -> com.ai.vis.ui.components.TextWeight.LIGHT
+                                            com.ai.vis.ui.components.TextWeight.LIGHT -> com.ai.vis.ui.components.TextWeight.NORMAL
+                                        }
+                                        textStyle = textStyle.copy(weight = nextWeight)
+                                        if (selectedTextId != null) {
+                                            textItems = textItems.map {
+                                                if (it.id == selectedTextId) it.copy(style = it.style.copy(weight = nextWeight)) else it
+                                            }
+                                        }
+                                        if (currentInputText.isNotEmpty()) isEditing = true
                                     },
                                     onStrokeToggle = { hasStroke ->
                                         textStyle = textStyle.copy(hasStroke = hasStroke)
-                                        if (textStyle.text.isNotEmpty()) isEditing = true
+                                        if (currentInputText.isNotEmpty()) isEditing = true
                                     },
                                     onBackgroundToggle = { hasBackground ->
-                                        textStyle = textStyle.copy(hasBackground = hasBackground)
-                                        if (textStyle.text.isNotEmpty()) isEditing = true
+                                        // Тоглова зміна фону
+                                        val newBackground = !textStyle.hasBackground
+                                        textStyle = textStyle.copy(hasBackground = newBackground)
+                                        if (selectedTextId != null) {
+                                            textItems = textItems.map {
+                                                if (it.id == selectedTextId) it.copy(style = it.style.copy(hasBackground = newBackground)) else it
+                                            }
+                                        }
+                                        if (currentInputText.isNotEmpty()) isEditing = true
                                     }
                                 )
                             }
@@ -806,10 +831,10 @@ fun PhotoEditorScreen(
                                 isSelected = selectedTool == tool,
                                 onClick = { 
                                     selectedTool = if (selectedTool == tool) null else tool
-                                    // Reset text overlay state when deselecting text tool
+                                    // Reset text input when deselecting text tool
                                     if (tool.nameRes == R.string.text_tool && selectedTool != tool) {
-                                        showTextOverlay = false
-                                        textFieldPosition = null
+                                        showTextInput = false
+                                        selectedTextId = null
                                     }
                                 }
                             )

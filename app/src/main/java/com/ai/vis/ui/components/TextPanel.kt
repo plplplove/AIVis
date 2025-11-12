@@ -92,9 +92,8 @@ fun TextPanel(
         TextOption(R.string.text_size, R.drawable.ic_text, TextOptionType.SIZE),
         TextOption(R.string.text_color, R.drawable.ic_palette, TextOptionType.COLOR),
         TextOption(R.string.alignment, R.drawable.ic_align_center, TextOptionType.ALIGNMENT),
-        TextOption(R.string.font_weight, R.drawable.ic_text, TextOptionType.WEIGHT),
-        TextOption(R.string.stroke, R.drawable.ic_text_stroke, TextOptionType.STROKE),
-        TextOption(R.string.background, R.drawable.ic_background, TextOptionType.BACKGROUND)
+        TextOption(R.string.background, R.drawable.ic_background, TextOptionType.BACKGROUND),
+        TextOption(R.string.font_weight, R.drawable.ic_text, TextOptionType.WEIGHT)
     )
     
     var selectedOption by remember { mutableStateOf<TextOptionType?>(null) }
@@ -218,64 +217,11 @@ fun TextPanel(
                         )
                     }
                 }
-                TextOptionType.WEIGHT -> {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        WeightButton(
-                            text = "Light",
-                            isSelected = textStyle.weight == TextWeight.LIGHT,
-                            onClick = { onWeightChange(TextWeight.LIGHT) },
-                            modifier = Modifier.weight(1f)
-                        )
-                        WeightButton(
-                            text = "Normal",
-                            isSelected = textStyle.weight == TextWeight.NORMAL,
-                            onClick = { onWeightChange(TextWeight.NORMAL) },
-                            modifier = Modifier.weight(1f)
-                        )
-                        WeightButton(
-                            text = "Bold",
-                            isSelected = textStyle.weight == TextWeight.BOLD,
-                            onClick = { onWeightChange(TextWeight.BOLD) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-                TextOptionType.STROKE -> {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        ToggleOption(
-                            iconRes = R.drawable.ic_text_stroke,
-                            label = stringResource(id = R.string.stroke),
-                            isEnabled = textStyle.hasStroke,
-                            onClick = { onStrokeToggle(!textStyle.hasStroke) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
                 TextOptionType.BACKGROUND -> {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        ToggleOption(
-                            iconRes = R.drawable.ic_background,
-                            label = stringResource(id = R.string.background),
-                            isEnabled = textStyle.hasBackground,
-                            onClick = { onBackgroundToggle(!textStyle.hasBackground) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+                    // НІЧОГО НЕ ВІДОБРАЖАЄМО - чекбокс працює без розгортання
+                }
+                TextOptionType.WEIGHT -> {
+                    // НІЧОГО НЕ ВІДОБРАЖАЄМО - циклічна кнопка працює без розгортання
                 }
                 else -> {}
             }
@@ -309,19 +255,22 @@ fun TextOptionItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Особлива логіка для Weight та Background (циклічні/тогглові кнопки)
+    val isToggleType = option.type == TextOptionType.WEIGHT || option.type == TextOptionType.BACKGROUND
+    
     Card(
         modifier = modifier
-            .width(75.dp)
-            .height(75.dp),
+            .width(80.dp)
+            .height(80.dp),
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected)
+            containerColor = if (isSelected && !isToggleType)
                 MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
             else
                 MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 4.dp else 2.dp
+            defaultElevation = if (isSelected && !isToggleType) 4.dp else 2.dp
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -335,24 +284,24 @@ fun TextOptionItem(
             Icon(
                 painter = painterResource(id = option.iconRes),
                 contentDescription = null,
-                tint = if (isSelected)
+                tint = if (isSelected && !isToggleType)
                     MaterialTheme.colorScheme.primary
                 else
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(28.dp)
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = stringResource(id = option.nameRes),
-                fontSize = 9.sp,
+                fontSize = 10.sp,
                 fontFamily = FontFamily(Font(R.font.font_main_text)),
-                color = if (isSelected)
+                color = if (isSelected && !isToggleType)
                     MaterialTheme.colorScheme.primary
                 else
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,
                 maxLines = 2,
-                lineHeight = 10.sp
+                lineHeight = 11.sp
             )
         }
     }
