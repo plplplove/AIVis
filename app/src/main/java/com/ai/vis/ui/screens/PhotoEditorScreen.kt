@@ -173,9 +173,6 @@ fun PhotoEditorScreen(
         5 to 0f  // tint
     )) }
     
-    // Track which adjustment is being modified to save state only once
-    var currentlyAdjustingIndex by remember { mutableStateOf<Int?>(null) }
-    
     // Текстові елементи з масштабуванням 📝
     var textItems by remember { mutableStateOf<List<TextItem>>(emptyList()) }
     var selectedTextId by remember { mutableStateOf<Int?>(null) }
@@ -222,7 +219,39 @@ fun PhotoEditorScreen(
             originalBitmap = previousState.bitmap
             textItems = previousState.textItems
             adjustmentValues = previousState.adjustmentValues
-            previewBitmap = null
+            
+            // If we're in adjustment mode, re-apply the restored adjustment values to preview
+            if (selectedTool?.nameRes == R.string.adjust) {
+                coroutineScope.launch(Dispatchers.IO) {
+                    originalBitmap?.let { original ->
+                        var result = original
+                        
+                        // Apply all adjustments in order
+                        adjustmentValues[0]?.let { brightness ->
+                            if (brightness != 0f) result = ImageProcessor.adjustBrightness(result, brightness)
+                        }
+                        adjustmentValues[1]?.let { contrast ->
+                            if (contrast != 0f) result = ImageProcessor.adjustContrast(result, contrast)
+                        }
+                        adjustmentValues[2]?.let { saturation ->
+                            if (saturation != 0f) result = ImageProcessor.adjustSaturation(result, saturation)
+                        }
+                        adjustmentValues[3]?.let { sharpness ->
+                            if (sharpness != 0f) result = ImageProcessor.adjustSharpness(result, sharpness)
+                        }
+                        adjustmentValues[4]?.let { temperature ->
+                            if (temperature != 0f) result = ImageProcessor.adjustTemperature(result, temperature)
+                        }
+                        adjustmentValues[5]?.let { tint ->
+                            if (tint != 0f) result = ImageProcessor.adjustTint(result, tint)
+                        }
+                        
+                        previewBitmap = result
+                    }
+                }
+            } else {
+                previewBitmap = null
+            }
         }
     }
     
@@ -245,7 +274,39 @@ fun PhotoEditorScreen(
             originalBitmap = nextState.bitmap
             textItems = nextState.textItems
             adjustmentValues = nextState.adjustmentValues
-            previewBitmap = null
+            
+            // If we're in adjustment mode, re-apply the restored adjustment values to preview
+            if (selectedTool?.nameRes == R.string.adjust) {
+                coroutineScope.launch(Dispatchers.IO) {
+                    originalBitmap?.let { original ->
+                        var result = original
+                        
+                        // Apply all adjustments in order
+                        adjustmentValues[0]?.let { brightness ->
+                            if (brightness != 0f) result = ImageProcessor.adjustBrightness(result, brightness)
+                        }
+                        adjustmentValues[1]?.let { contrast ->
+                            if (contrast != 0f) result = ImageProcessor.adjustContrast(result, contrast)
+                        }
+                        adjustmentValues[2]?.let { saturation ->
+                            if (saturation != 0f) result = ImageProcessor.adjustSaturation(result, saturation)
+                        }
+                        adjustmentValues[3]?.let { sharpness ->
+                            if (sharpness != 0f) result = ImageProcessor.adjustSharpness(result, sharpness)
+                        }
+                        adjustmentValues[4]?.let { temperature ->
+                            if (temperature != 0f) result = ImageProcessor.adjustTemperature(result, temperature)
+                        }
+                        adjustmentValues[5]?.let { tint ->
+                            if (tint != 0f) result = ImageProcessor.adjustTint(result, tint)
+                        }
+                        
+                        previewBitmap = result
+                    }
+                }
+            } else {
+                previewBitmap = null
+            }
         }
     }
     
@@ -640,8 +701,6 @@ fun PhotoEditorScreen(
                             .fillMaxSize()
                             .padding(bottom = density.run { bottomPanelsHeight.toDp() })
                             .onGloballyPositioned { coordinates ->
-                                // НОВИЙ КОД - простіше обчислення
-                                val posInWindow = coordinates.positionInWindow()
                                 val size = coordinates.size.toSize()
                                 val bitmap = displayBitmap ?: return@onGloballyPositioned
                                 
@@ -659,28 +718,23 @@ fun PhotoEditorScreen(
                                     w to h
                                 }
                                 
-                                // Центруємо image в Box
-                                val leftInBox = (size.width - imageWidth) / 2f
-                                val topInBox = (size.height - imageHeight) / 2f
+                                // Центруємо image в контейнері
+                                val leftInContainer = (size.width - imageWidth) / 2f
+                                val topInContainer = (size.height - imageHeight) / 2f
                                 
-                                // Зберігаємо Box-local rect (відносно Box з detectTapGestures)
+                                // Зберігаємо локальні координати відносно контейнера (Box з padding)
+                                // Ці координати використовуються для crop overlay і text positioning
                                 imageRectInBox = Rect(
-                                    left = leftInBox,
-                                    top = topInBox,
-                                    right = leftInBox + imageWidth,
-                                    bottom = topInBox + imageHeight
+                                    left = leftInContainer,
+                                    top = topInContainer,
+                                    right = leftInContainer + imageWidth,
+                                    bottom = topInContainer + imageHeight
                                 )
                                 
-                                // Зберігаємо absolute rect для crop та збереження
-                                imageBounds = Rect(
-                                    left = posInWindow.x + leftInBox,
-                                    top = posInWindow.y + topInBox,
-                                    right = posInWindow.x + leftInBox + imageWidth,
-                                    bottom = posInWindow.y + topInBox + imageHeight
-                                )
+                                // Для crop та text збереження - використовуємо ті ж локальні координати
+                                imageBounds = imageRectInBox
                                 
-                                android.util.Log.d("PhotoEditor", "🎨 Image rect (Box-local): $imageRectInBox")
-                                android.util.Log.d("PhotoEditor", "🌍 Image bounds (absolute): $imageBounds")
+                                android.util.Log.d("PhotoEditor", "🎨 Image bounds (local): $imageBounds")
                             }
                             .graphicsLayer(
                                 scaleX = scale,
@@ -945,6 +999,7 @@ fun PhotoEditorScreen(
                                     },
                                     onRotateLeft = {
                                         saveStateToUndo()
+                                        isEditing = true
                                         coroutineScope.launch(Dispatchers.IO) {
                                             originalBitmap?.let { bitmap ->
                                                 originalBitmap = ImageProcessor.rotateBitmap(bitmap, -90f)
@@ -954,6 +1009,7 @@ fun PhotoEditorScreen(
                                     },
                                     onRotateRight = {
                                         saveStateToUndo()
+                                        isEditing = true
                                         coroutineScope.launch(Dispatchers.IO) {
                                             originalBitmap?.let { bitmap ->
                                                 originalBitmap = ImageProcessor.rotateBitmap(bitmap, 90f)
@@ -963,6 +1019,7 @@ fun PhotoEditorScreen(
                                     },
                                     onFlipHorizontal = {
                                         saveStateToUndo()
+                                        isEditing = true
                                         coroutineScope.launch(Dispatchers.IO) {
                                             originalBitmap?.let { bitmap ->
                                                 originalBitmap = ImageProcessor.flipBitmapHorizontal(bitmap)
@@ -972,6 +1029,7 @@ fun PhotoEditorScreen(
                                     },
                                     onFlipVertical = {
                                         saveStateToUndo()
+                                        isEditing = true
                                         coroutineScope.launch(Dispatchers.IO) {
                                             originalBitmap?.let { bitmap ->
                                                 originalBitmap = ImageProcessor.flipBitmapVertical(bitmap)
@@ -984,13 +1042,11 @@ fun PhotoEditorScreen(
                             R.string.adjust -> {
                                 com.ai.vis.ui.components.AdjustPanel(
                                     adjustmentValues = adjustmentValues,
+                                    onValueChangeStarted = { index ->
+                                        // Save state before starting to adjust
+                                        saveStateToUndo()
+                                    },
                                     onValueChange = { index, value ->
-                                        // Save state only when starting to adjust a new parameter
-                                        if (currentlyAdjustingIndex != index) {
-                                            saveStateToUndo()
-                                            currentlyAdjustingIndex = index
-                                        }
-                                        
                                         isEditing = true
                                         adjustmentValues = adjustmentValues.toMutableMap().apply {
                                             this[index] = value
@@ -1023,11 +1079,10 @@ fun PhotoEditorScreen(
                                                 previewBitmap = result
                                             }
                                         }
-                                        
-                                        // Reset adjusting index when value returns to 0
-                                        if (value == 0f) {
-                                            currentlyAdjustingIndex = null
-                                        }
+                                    },
+                                    onValueChangeFinished = { index ->
+                                        // Save state after finishing adjustment for proper undo/redo
+                                        // This ensures each slider change is a separate undo step
                                     }
                                 )
                             }
@@ -1163,60 +1218,65 @@ fun PhotoEditorScreen(
                             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
                         )
                 ) {
-                    if (selectedTool?.nameRes == R.string.text_tool) {
-                        // Режим редагування тексту - показуємо кнопку "Назад"
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp, horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            IconButton(
-                                onClick = { 
-                                    selectedTool = null
-                                    selectedTextId = null
-                                }
+                    when (selectedTool?.nameRes) {
+                        R.string.text_tool, R.string.adjust -> {
+                            // Режим редагування з прихованим меню - показуємо кнопку "Назад" та назву
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 12.dp, horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_back),
-                                    contentDescription = stringResource(id = R.string.back),
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                            
-                            Text(
-                                text = stringResource(id = R.string.text_tool),
-                                fontSize = 18.sp,
-                                fontFamily = FontFamily(Font(R.font.font_main_text)),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold
-                            )
-                            
-                            // Порожній Box для симетрії
-                            Box(modifier = Modifier.size(48.dp))
-                        }
-                    } else {
-                        // Звичайне головне меню з інструментами
-                        LazyRow(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp, horizontal = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(editorTools) { tool ->
-                                EditorToolItem(
-                                    tool = tool,
-                                    isSelected = selectedTool == tool,
+                                IconButton(
                                     onClick = { 
-                                        selectedTool = if (selectedTool == tool) null else tool
-                                        // Reset text dialog when deselecting text tool
-                                        if (tool.nameRes == R.string.text_tool && selectedTool != tool) {
-                                            showTextDialog = false
-                                            selectedTextId = null
-                                        }
+                                        selectedTool = null
+                                        selectedTextId = null
+                                        showCropOverlay = false
+                                        selectedCropRatio = null
                                     }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_back),
+                                        contentDescription = stringResource(id = R.string.back),
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                
+                                Text(
+                                    text = stringResource(id = selectedTool?.nameRes ?: R.string.editing),
+                                    fontSize = 18.sp,
+                                    fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = FontWeight.Bold
                                 )
+                                
+                                // Порожній Box для симетрії
+                                Box(modifier = Modifier.size(48.dp))
+                            }
+                        }
+                        else -> {
+                            // Звичайне головне меню з інструментами
+                            LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 12.dp, horizontal = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(editorTools) { tool ->
+                                    EditorToolItem(
+                                        tool = tool,
+                                        isSelected = selectedTool == tool,
+                                        onClick = { 
+                                            selectedTool = if (selectedTool == tool) null else tool
+                                            // Reset text dialog when deselecting text tool
+                                            if (tool.nameRes == R.string.text_tool && selectedTool != tool) {
+                                                showTextDialog = false
+                                                selectedTextId = null
+                                            }
+                                        }
+                                    )
+                                }
                             }
                         }
                     }

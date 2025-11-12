@@ -52,6 +52,8 @@ data class AdjustParameter(
 fun AdjustPanel(
     adjustmentValues: Map<Int, Float> = mapOf(),
     onValueChange: (Int, Float) -> Unit = { _, _ -> },
+    onValueChangeStarted: (Int) -> Unit = { _ -> },
+    onValueChangeFinished: (Int) -> Unit = { _ -> },
     modifier: Modifier = Modifier
 ) {
     val adjustParameters = listOf(
@@ -65,6 +67,7 @@ fun AdjustPanel(
     
     var selectedParameterIndex by remember { mutableStateOf<Int?>(null) }
     val selectedParameter = selectedParameterIndex?.let { adjustParameters[it] }
+    var isAdjusting by remember { mutableStateOf(false) }
     
     Column(
         modifier = modifier.fillMaxWidth()
@@ -110,7 +113,15 @@ fun AdjustPanel(
                     Slider(
                         value = currentValue,
                         onValueChange = { newValue ->
+                            if (!isAdjusting) {
+                                isAdjusting = true
+                                onValueChangeStarted(index)
+                            }
                             onValueChange(index, newValue)
+                        },
+                        onValueChangeFinished = {
+                            isAdjusting = false
+                            onValueChangeFinished(index)
                         },
                         valueRange = -1f..1f,
                         colors = SliderDefaults.colors(

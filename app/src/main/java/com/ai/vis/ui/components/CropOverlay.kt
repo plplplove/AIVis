@@ -29,8 +29,8 @@ enum class DragHandle {
 fun CropOverlay(
     cropRatio: Float?, // null for free, 1f for 1:1, etc.
     imageBounds: Rect?, // Bounds of the actual image on screen
-    scale: Float = 1f, // Current zoom scale
-    offset: Offset = Offset.Zero, // Current pan offset
+    scale: Float = 1f, // Current zoom scale (not used since we reset zoom in crop mode)
+    offset: Offset = Offset.Zero, // Current pan offset (not used since we reset pan in crop mode)
     onCropAreaChange: (Rect) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -39,35 +39,9 @@ fun CropOverlay(
     val handleVisualSize = with(density) { 24.dp.toPx() } // Visual size
     
     var activeHandle by remember { mutableStateOf(DragHandle.NONE) }
-    var canvasSize by remember { mutableStateOf(Size.Zero) }
-    
-    // Calculate transformed bounds
-    val transformedBounds = remember(imageBounds, scale, offset, canvasSize) {
-        if (imageBounds != null && canvasSize != Size.Zero) {
-            val centerX = canvasSize.width / 2f
-            val centerY = canvasSize.height / 2f
-            
-            // Calculate scaled dimensions
-            val scaledWidth = imageBounds.width * scale
-            val scaledHeight = imageBounds.height * scale
-            
-            // Calculate new position with scale and offset
-            val scaledLeft = centerX - (centerX - imageBounds.left) * scale + offset.x
-            val scaledTop = centerY - (centerY - imageBounds.top) * scale + offset.y
-            
-            Rect(
-                left = scaledLeft,
-                top = scaledTop,
-                right = scaledLeft + scaledWidth,
-                bottom = scaledTop + scaledHeight
-            )
-        } else {
-            null
-        }
-    }
     
     // Initialize crop rect based on ratio
-    var cropRect by remember(cropRatio, transformedBounds) {
+    var cropRect by remember(cropRatio, imageBounds) {
         mutableStateOf<Rect?>(null)
     }
     
@@ -92,6 +66,7 @@ fun CropOverlay(
                     onDrag = { change, dragAmount ->
                         change.consume()
                         val rect = cropRect ?: return@detectDragGestures
+                        val bounds = imageBounds ?: return@detectDragGestures
                         
                         cropRect = when (activeHandle) {
                             DragHandle.TOP_LEFT -> {
@@ -107,8 +82,8 @@ fun CropOverlay(
                                     )
                                 } else {
                                     rect.copy(
-                                        left = (rect.left + dragAmount.x).coerceAtMost(rect.right - 100f),
-                                        top = (rect.top + dragAmount.y).coerceAtMost(rect.bottom - 100f)
+                                        left = (rect.left + dragAmount.x).coerceIn(bounds.left, rect.right - 100f),
+                                        top = (rect.top + dragAmount.y).coerceIn(bounds.top, rect.bottom - 100f)
                                     )
                                 }
                             }
@@ -124,8 +99,8 @@ fun CropOverlay(
                                     )
                                 } else {
                                     rect.copy(
-                                        right = (rect.right + dragAmount.x).coerceAtLeast(rect.left + 100f),
-                                        top = (rect.top + dragAmount.y).coerceAtMost(rect.bottom - 100f)
+                                        right = (rect.right + dragAmount.x).coerceIn(rect.left + 100f, bounds.right),
+                                        top = (rect.top + dragAmount.y).coerceIn(bounds.top, rect.bottom - 100f)
                                     )
                                 }
                             }
@@ -141,8 +116,8 @@ fun CropOverlay(
                                     )
                                 } else {
                                     rect.copy(
-                                        left = (rect.left + dragAmount.x).coerceAtMost(rect.right - 100f),
-                                        bottom = (rect.bottom + dragAmount.y).coerceAtLeast(rect.top + 100f)
+                                        left = (rect.left + dragAmount.x).coerceIn(bounds.left, rect.right - 100f),
+                                        bottom = (rect.bottom + dragAmount.y).coerceIn(rect.top + 100f, bounds.bottom)
                                     )
                                 }
                             }
@@ -158,16 +133,15 @@ fun CropOverlay(
                                     )
                                 } else {
                                     rect.copy(
-                                        right = (rect.right + dragAmount.x).coerceAtLeast(rect.left + 100f),
-                                        bottom = (rect.bottom + dragAmount.y).coerceAtLeast(rect.top + 100f)
+                                        right = (rect.right + dragAmount.x).coerceIn(rect.left + 100f, bounds.right),
+                                        bottom = (rect.bottom + dragAmount.y).coerceIn(rect.top + 100f, bounds.bottom)
                                     )
                                 }
                             }
                             DragHandle.CENTER -> {
                                 // Move entire rect within bounds
-                                val dragBounds = transformedBounds ?: Rect(0f, 0f, size.width.toFloat(), size.height.toFloat())
-                                val newLeft = (rect.left + dragAmount.x).coerceIn(dragBounds.left, dragBounds.right - rect.width)
-                                val newTop = (rect.top + dragAmount.y).coerceIn(dragBounds.top, dragBounds.bottom - rect.height)
+                                val newLeft = (rect.left + dragAmount.x).coerceIn(bounds.left, bounds.right - rect.width)
+                                val newTop = (rect.top + dragAmount.y).coerceIn(bounds.top, bounds.bottom - rect.height)
                                 Rect(
                                     left = newLeft,
                                     top = newTop,
@@ -180,12 +154,11 @@ fun CropOverlay(
                         
                         // Constrain crop rect to image bounds
                         cropRect = cropRect?.let { r ->
-                            val constrainBounds = transformedBounds ?: Rect(0f, 0f, size.width.toFloat(), size.height.toFloat())
                             Rect(
-                                left = r.left.coerceIn(constrainBounds.left, constrainBounds.right),
-                                top = r.top.coerceIn(constrainBounds.top, constrainBounds.bottom),
-                                right = r.right.coerceIn(constrainBounds.left, constrainBounds.right),
-                                bottom = r.bottom.coerceIn(constrainBounds.top, constrainBounds.bottom)
+                                left = r.left.coerceIn(bounds.left, bounds.right),
+                                top = r.top.coerceIn(bounds.top, bounds.bottom),
+                                right = r.right.coerceIn(bounds.left, bounds.right),
+                                bottom = r.bottom.coerceIn(bounds.top, bounds.bottom)
                             )
                         }
                     },
@@ -196,14 +169,11 @@ fun CropOverlay(
                 )
             }
     ) {
-        // Update canvas size
-        canvasSize = size
+        // Use imageBounds if available (real image position), otherwise use full canvas
+        val bounds = imageBounds ?: Rect(0f, 0f, size.width, size.height)
         
-        // Use transformed bounds if available, otherwise use full canvas
-        val bounds = transformedBounds ?: Rect(0f, 0f, size.width, size.height)
-        
-        // Initialize crop rect if not set
-        if (cropRect == null) {
+        // Initialize crop rect if not set - center it on the actual image
+        if (cropRect == null && imageBounds != null) {
             val centerX = bounds.center.x
             val centerY = bounds.center.y
             
@@ -213,19 +183,19 @@ fun CropOverlay(
             
             val (width, height) = if (cropRatio != null) {
                 // Calculate dimensions maintaining aspect ratio
-                val ratioWidth = maxWidth
+                val ratioWidth = maxWidth * 0.8f  // 80% of image width by default
                 val ratioHeight = ratioWidth / cropRatio
                 
                 if (ratioHeight <= maxHeight) {
                     ratioWidth to ratioHeight
                 } else {
-                    val newHeight = maxHeight
+                    val newHeight = maxHeight * 0.8f
                     val newWidth = newHeight * cropRatio
                     newWidth to newHeight
                 }
             } else {
-                // Free crop - use full image
-                maxWidth to maxHeight
+                // Free crop - use 80% of image size
+                maxWidth * 0.8f to maxHeight * 0.8f
             }
             
             cropRect = Rect(
