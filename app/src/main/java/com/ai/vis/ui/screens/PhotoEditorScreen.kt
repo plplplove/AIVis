@@ -409,8 +409,16 @@ fun PhotoEditorScreen(
                             fontFamily = FontFamily(Font(R.font.font_title)),
                             fontWeight = FontWeight.Bold
                         )
+                    } else if (showCropOverlay) {
+                        // In crop mode - show only title, no Undo/Redo
+                        Text(
+                            text = stringResource(id = R.string.crop_rotate),
+                            fontSize = 20.sp,
+                            fontFamily = FontFamily(Font(R.font.font_title)),
+                            fontWeight = FontWeight.Bold
+                        )
                     } else {
-                        // Show Undo/Redo buttons when editing
+                        // Show Undo/Redo buttons when editing (text/adjustment only)
                         Row(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
@@ -998,8 +1006,12 @@ fun PhotoEditorScreen(
                                         offset = Offset.Zero
                                     },
                                     onRotateLeft = {
-                                        saveStateToUndo()
-                                        isEditing = true
+                                        // Save current state to main undo stack (like crop)
+                                        originalBitmap?.let { bitmap ->
+                                            savedStatesUndoStack = savedStatesUndoStack + bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
+                                            savedStatesRedoStack = emptyList()
+                                        }
+                                        
                                         coroutineScope.launch(Dispatchers.IO) {
                                             originalBitmap?.let { bitmap ->
                                                 originalBitmap = ImageProcessor.rotateBitmap(bitmap, -90f)
@@ -1008,8 +1020,12 @@ fun PhotoEditorScreen(
                                         }
                                     },
                                     onRotateRight = {
-                                        saveStateToUndo()
-                                        isEditing = true
+                                        // Save current state to main undo stack (like crop)
+                                        originalBitmap?.let { bitmap ->
+                                            savedStatesUndoStack = savedStatesUndoStack + bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
+                                            savedStatesRedoStack = emptyList()
+                                        }
+                                        
                                         coroutineScope.launch(Dispatchers.IO) {
                                             originalBitmap?.let { bitmap ->
                                                 originalBitmap = ImageProcessor.rotateBitmap(bitmap, 90f)
@@ -1018,8 +1034,12 @@ fun PhotoEditorScreen(
                                         }
                                     },
                                     onFlipHorizontal = {
-                                        saveStateToUndo()
-                                        isEditing = true
+                                        // Save current state to main undo stack (like crop)
+                                        originalBitmap?.let { bitmap ->
+                                            savedStatesUndoStack = savedStatesUndoStack + bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
+                                            savedStatesRedoStack = emptyList()
+                                        }
+                                        
                                         coroutineScope.launch(Dispatchers.IO) {
                                             originalBitmap?.let { bitmap ->
                                                 originalBitmap = ImageProcessor.flipBitmapHorizontal(bitmap)
@@ -1028,8 +1048,12 @@ fun PhotoEditorScreen(
                                         }
                                     },
                                     onFlipVertical = {
-                                        saveStateToUndo()
-                                        isEditing = true
+                                        // Save current state to main undo stack (like crop)
+                                        originalBitmap?.let { bitmap ->
+                                            savedStatesUndoStack = savedStatesUndoStack + bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
+                                            savedStatesRedoStack = emptyList()
+                                        }
+                                        
                                         coroutineScope.launch(Dispatchers.IO) {
                                             originalBitmap?.let { bitmap ->
                                                 originalBitmap = ImageProcessor.flipBitmapVertical(bitmap)
