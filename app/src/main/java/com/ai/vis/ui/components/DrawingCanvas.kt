@@ -1,6 +1,8 @@
 package com.ai.vis.ui.components
 
 import android.graphics.BlurMaskFilter
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,7 +31,8 @@ data class DrawPath(
     val color: Color,
     val strokeWidth: Float,
     val opacity: Float,
-    val softness: Float = 0f // 0 = sharp, higher = blurry edges
+    val softness: Float = 0f, // 0 = sharp, higher = blurry edges
+    val isEraser: Boolean = false // true = eraser mode
 )
 
 @Composable
@@ -40,6 +43,7 @@ fun DrawingCanvas(
     currentStrokeWidth: Float,
     currentOpacity: Float,
     currentSoftness: Float,
+    isEraserMode: Boolean,
     onPathAdded: (DrawPath) -> Unit,
     onDrawingStarted: () -> Unit,
     modifier: Modifier = Modifier
@@ -50,7 +54,7 @@ fun DrawingCanvas(
     Canvas(
         modifier = modifier
             .fillMaxSize()
-            .pointerInput(currentColor, currentStrokeWidth, currentOpacity, currentSoftness) {
+            .pointerInput(currentColor, currentStrokeWidth, currentOpacity, currentSoftness, isEraserMode) {
                 detectDragGestures(
                     onDragStart = { offset ->
                         // Only allow drawing within image bounds
@@ -85,7 +89,8 @@ fun DrawingCanvas(
                                     color = currentColor,
                                     strokeWidth = currentStrokeWidth,
                                     opacity = currentOpacity,
-                                    softness = currentSoftness
+                                    softness = currentSoftness,
+                                    isEraser = isEraserMode
                                 )
                             )
                             currentPath = null
@@ -97,88 +102,88 @@ fun DrawingCanvas(
     ) {
         // Use pathUpdateTrigger to force recomposition when path changes
         pathUpdateTrigger.let { _ ->
-            // Draw all saved paths
-            drawPaths.forEach { drawPath ->
-                // If softness is applied, use native canvas for blur
-                if (drawPath.softness > 0f) {
-                    drawIntoCanvas { canvas ->
-                        val paint = Paint().apply {
+            // Малюємо всі шляхи на окремому layer, щоб eraser стирав тільки малюнок
+            drawIntoCanvas { canvas ->
+                // Створюємо окремий layer для малювання
+                val layerPaint = android.graphics.Paint()
+                val layerBounds = android.graphics.RectF(0f, 0f, size.width, size.height)
+                canvas.nativeCanvas.saveLayer(layerBounds, layerPaint)
+                
+                // Draw all saved paths on the layer
+                drawPaths.forEach { drawPath ->
+                    val paint = Paint().apply {
+                        strokeWidth = drawPath.strokeWidth
+                        strokeCap = StrokeCap.Round
+                        strokeJoin = StrokeJoin.Round
+                        style = androidx.compose.ui.graphics.PaintingStyle.Stroke
+                        isAntiAlias = true
+                        
+                        if (drawPath.isEraser) {
+                            // Eraser - використовуємо DST_OUT для стирання тільки малюнка
+                            asFrameworkPaint().xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
+                            // Для eraser використовуємо повну непрозорість щоб добре стирало
+                            color = Color.Black
+                        } else {
+                            // Normal drawing
                             color = drawPath.color.copy(alpha = drawPath.opacity)
-                            strokeWidth = drawPath.strokeWidth
-                            strokeCap = StrokeCap.Round
-                            strokeJoin = StrokeJoin.Round
-                            style = androidx.compose.ui.graphics.PaintingStyle.Stroke
-                            isAntiAlias = true
                         }
                         
-                        // Apply blur mask filter for softness
-                        val blurRadius = drawPath.softness * (drawPath.strokeWidth / 2f)
-                        if (blurRadius > 0f) {
-                            paint.asFrameworkPaint().maskFilter = BlurMaskFilter(
-                                blurRadius,
-                                BlurMaskFilter.Blur.NORMAL
-                            )
+                        // Apply blur/softness if needed
+                        if (drawPath.softness > 0f) {
+                            val blurRadius = drawPath.softness * (drawPath.strokeWidth / 2f)
+                            if (blurRadius > 0f) {
+                                asFrameworkPaint().maskFilter = BlurMaskFilter(
+                                    blurRadius,
+                                    BlurMaskFilter.Blur.NORMAL
+                                )
+                            }
                         }
-                        
-                        canvas.nativeCanvas.drawPath(
-                            drawPath.path.asAndroidPath(),
-                            paint.asFrameworkPaint()
-                        )
                     }
-                } else {
-                    // No softness - use regular drawing for better performance
-                    drawPath(
-                        path = drawPath.path,
-                        color = drawPath.color.copy(alpha = drawPath.opacity),
-                        style = Stroke(
-                            width = drawPath.strokeWidth,
-                            cap = StrokeCap.Round,
-                            join = StrokeJoin.Round
-                        )
+                    
+                    canvas.nativeCanvas.drawPath(
+                        drawPath.path.asAndroidPath(),
+                        paint.asFrameworkPaint()
                     )
                 }
-            }
-            
-            // Draw current path being drawn
-            currentPath?.let { path ->
-                // If softness is applied, use native canvas for blur
-                if (currentSoftness > 0f) {
-                    drawIntoCanvas { canvas ->
-                        val paint = Paint().apply {
+                
+                // Draw current path being drawn
+                currentPath?.let { path ->
+                    val paint = Paint().apply {
+                        strokeWidth = currentStrokeWidth
+                        strokeCap = StrokeCap.Round
+                        strokeJoin = StrokeJoin.Round
+                        style = androidx.compose.ui.graphics.PaintingStyle.Stroke
+                        isAntiAlias = true
+                        
+                        if (isEraserMode) {
+                            // Eraser - використовуємо DST_OUT для стирання
+                            asFrameworkPaint().xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
+                            color = Color.Black
+                        } else {
+                            // Normal drawing
                             color = currentColor.copy(alpha = currentOpacity)
-                            strokeWidth = currentStrokeWidth
-                            strokeCap = StrokeCap.Round
-                            strokeJoin = StrokeJoin.Round
-                            style = androidx.compose.ui.graphics.PaintingStyle.Stroke
-                            isAntiAlias = true
                         }
                         
-                        // Apply blur mask filter for softness
-                        val blurRadius = currentSoftness * (currentStrokeWidth / 2f)
-                        if (blurRadius > 0f) {
-                            paint.asFrameworkPaint().maskFilter = BlurMaskFilter(
-                                blurRadius,
-                                BlurMaskFilter.Blur.NORMAL
-                            )
+                        // Apply blur/softness if needed
+                        if (currentSoftness > 0f) {
+                            val blurRadius = currentSoftness * (currentStrokeWidth / 2f)
+                            if (blurRadius > 0f) {
+                                asFrameworkPaint().maskFilter = BlurMaskFilter(
+                                    blurRadius,
+                                    BlurMaskFilter.Blur.NORMAL
+                                )
+                            }
                         }
-                        
-                        canvas.nativeCanvas.drawPath(
-                            path.asAndroidPath(),
-                            paint.asFrameworkPaint()
-                        )
                     }
-                } else {
-                    // No softness - use regular drawing for better performance
-                    drawPath(
-                        path = path,
-                        color = currentColor.copy(alpha = currentOpacity),
-                        style = Stroke(
-                            width = currentStrokeWidth,
-                            cap = StrokeCap.Round,
-                            join = StrokeJoin.Round
-                        )
+                    
+                    canvas.nativeCanvas.drawPath(
+                        path.asAndroidPath(),
+                        paint.asFrameworkPaint()
                     )
                 }
+                
+                // Restore canvas
+                canvas.nativeCanvas.restore()
             }
         }
     }

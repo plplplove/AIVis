@@ -124,6 +124,7 @@ fun TextPanel(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .height(100.dp) // Стандартна висота
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -146,7 +147,7 @@ fun TextPanel(
                             )
                         }
                         
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
                         
                         Slider(
                             value = textStyle.size,
@@ -165,6 +166,7 @@ fun TextPanel(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .height(100.dp) // Стандартна висота
                     ) {
                         Text(
                             text = stringResource(id = R.string.text_color),
@@ -233,6 +235,7 @@ fun TextPanel(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .height(100.dp) // Стандартна висота
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -255,7 +258,7 @@ fun TextPanel(
                             )
                         }
                         
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
                         
                         Slider(
                             value = textStyle.opacity,
@@ -276,6 +279,7 @@ fun TextPanel(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 12.dp)
+                                .height(100.dp) // Стандартна висота
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -298,7 +302,7 @@ fun TextPanel(
                                 )
                             }
                             
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
                             
                             Slider(
                                 value = textStyle.backgroundOpacity,
@@ -756,7 +760,7 @@ fun ColorButton(
 ) {
     Box(
         modifier = modifier
-            .size(36.dp)
+            .size(40.dp)
             .background(color, CircleShape)
             .border(
                 width = if (isSelected) 3.dp else 1.dp,

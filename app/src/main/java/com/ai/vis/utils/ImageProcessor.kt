@@ -382,25 +382,32 @@ object ImageProcessor {
         val scaleX = bitmap.width / imageBounds.width
         val scaleY = bitmap.height / imageBounds.height
         
-        // Clip canvas to bitmap bounds
-        canvas.save()
-        canvas.clipRect(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
+        // Створюємо окремий layer для малювання, щоб eraser стирав тільки малюнок
+        val layerPaint = Paint()
+        val layerBounds = android.graphics.RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
+        canvas.saveLayer(layerBounds, layerPaint)
         
         drawPaths.forEach { drawPath ->
-            // Convert color to Android color with opacity
-            val alpha = (drawPath.opacity * 255).toInt().coerceIn(0, 255)
-            val r = (drawPath.color.red * 255).toInt()
-            val g = (drawPath.color.green * 255).toInt()
-            val b = (drawPath.color.blue * 255).toInt()
-            val androidColor = android.graphics.Color.argb(alpha, r, g, b)
-            
             val paint = Paint().apply {
-                color = androidColor
                 strokeWidth = drawPath.strokeWidth * scaleY
                 style = Paint.Style.STROKE
                 strokeCap = Paint.Cap.ROUND
                 strokeJoin = Paint.Join.ROUND
                 isAntiAlias = true
+                
+                if (drawPath.isEraser) {
+                    // Eraser mode - використовуємо DST_OUT для стирання тільки малюнка на layer
+                    xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.DST_OUT)
+                    // Для eraser використовуємо чорний колір з повною непрозорістю
+                    color = android.graphics.Color.BLACK
+                } else {
+                    // Normal drawing - встановлюємо колір
+                    val alpha = (drawPath.opacity * 255).toInt().coerceIn(0, 255)
+                    val r = (drawPath.color.red * 255).toInt()
+                    val g = (drawPath.color.green * 255).toInt()
+                    val b = (drawPath.color.blue * 255).toInt()
+                    color = android.graphics.Color.argb(alpha, r, g, b)
+                }
                 
                 // Apply blur/softness if needed
                 if (drawPath.softness > 0f) {

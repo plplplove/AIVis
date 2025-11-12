@@ -117,6 +117,8 @@
     <string name="draw_opacity">Opacity</string>
     <string name="softness">Softness</string>
     <string name="erase">Erase</string>
+    <string name="eraser">Eraser</string>
+    <string name="brush">Brush</string>
     
     <!-- Common Actions -->
     <string name="reset">Reset</string>

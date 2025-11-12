@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -60,14 +61,17 @@ fun DrawPanel(
     currentSize: Float,
     currentOpacity: Float,
     currentSoftness: Float,
+    isEraserMode: Boolean,
     onColorChange: (Color) -> Unit,
     onSizeChange: (Float) -> Unit,
     onOpacityChange: (Float) -> Unit,
     onSoftnessChange: (Float) -> Unit,
+    onEraserToggle: (Boolean) -> Unit,
     onErase: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val drawParameters = listOf(
+        DrawParameter(R.string.brush, R.drawable.ic_paint),
         DrawParameter(R.string.draw_color, R.drawable.ic_palette),
         DrawParameter(R.string.draw_size, R.drawable.ic_paint),
         DrawParameter(R.string.draw_opacity, R.drawable.ic_opacity),
@@ -102,34 +106,119 @@ fun DrawPanel(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .height(100.dp) // Стандартна висота для всіх секцій
             ) {
                 when (selectedParameterIndex) {
                     0 -> {
-                        // Color picker
+                        // Brush/Eraser toggle
+                        Text(
+                            text = if (isEraserMode) stringResource(id = R.string.eraser) else stringResource(id = R.string.brush),
+                            fontSize = 14.sp,
+                            fontFamily = FontFamily(Font(R.font.font_main_text)),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(
-                                text = stringResource(id = R.string.draw_color),
-                                fontSize = 14.sp,
-                                fontFamily = FontFamily(Font(R.font.font_main_text)),
-                                color = MaterialTheme.colorScheme.onBackground,
-                                fontWeight = FontWeight.Bold
-                            )
+                            // Brush button
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(56.dp),
+                                onClick = { onEraserToggle(false) },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (!isEraserMode)
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                    else
+                                        MaterialTheme.colorScheme.surface
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_paint),
+                                        contentDescription = null,
+                                        tint = if (!isEraserMode)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = stringResource(id = R.string.brush),
+                                        fontSize = 14.sp,
+                                        fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                        color = if (!isEraserMode)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
                             
-                            // Erase button
-                            IconButton(onClick = onErase) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_erase),
-                                    contentDescription = stringResource(id = R.string.erase),
-                                    tint = MaterialTheme.colorScheme.error
-                                )
+                            // Eraser button
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(56.dp),
+                                onClick = { onEraserToggle(true) },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isEraserMode)
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                    else
+                                        MaterialTheme.colorScheme.surface
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_erase),
+                                        contentDescription = null,
+                                        tint = if (isEraserMode)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = stringResource(id = R.string.eraser),
+                                        fontSize = 14.sp,
+                                        fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                        color = if (isEraserMode)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
                             }
                         }
+                    }
+                    1 -> {
+                        // Color picker
+                        Text(
+                            text = stringResource(id = R.string.draw_color),
+                            fontSize = 14.sp,
+                            fontFamily = FontFamily(Font(R.font.font_main_text)),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold
+                        )
                         
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
                         
                         // Color grid
                         LazyRow(
@@ -154,7 +243,7 @@ fun DrawPanel(
                             }
                         }
                     }
-                    1 -> {
+                    2 -> {
                         // Brush size slider
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -177,7 +266,7 @@ fun DrawPanel(
                             )
                         }
                         
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
                         
                         Slider(
                             value = currentSize,
@@ -190,7 +279,7 @@ fun DrawPanel(
                             )
                         )
                     }
-                    2 -> {
+                    3 -> {
                         // Opacity slider
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -213,7 +302,7 @@ fun DrawPanel(
                             )
                         }
                         
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
                         
                         Slider(
                             value = currentOpacity,
@@ -226,7 +315,7 @@ fun DrawPanel(
                             )
                         )
                     }
-                    3 -> {
+                    4 -> {
                         // Softness slider
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -249,7 +338,7 @@ fun DrawPanel(
                             )
                         }
                         
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
                         
                         Slider(
                             value = currentSoftness,
@@ -296,8 +385,8 @@ fun DrawParameterItem(
 ) {
     Card(
         modifier = modifier
-            .width(75.dp)
-            .height(75.dp),
+            .width(80.dp)
+            .height(80.dp),
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
@@ -324,12 +413,12 @@ fun DrawParameterItem(
                     MaterialTheme.colorScheme.primary
                 else
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(28.dp)
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = stringResource(id = parameter.nameRes),
-                fontSize = 9.sp,
+                fontSize = 10.sp,
                 fontFamily = FontFamily(Font(R.font.font_main_text)),
                 color = if (isSelected)
                     MaterialTheme.colorScheme.primary
@@ -337,7 +426,7 @@ fun DrawParameterItem(
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,
                 maxLines = 2,
-                lineHeight = 10.sp
+                lineHeight = 11.sp
             )
         }
     }
