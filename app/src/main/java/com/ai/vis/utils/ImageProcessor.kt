@@ -243,6 +243,98 @@ object ImageProcessor {
     }
     
     /**
+     * Draw text on bitmap
+     * @param textContent: Text to draw
+     * @param textSize: Text size in sp
+     * @param textColor: Text color
+     * @param textPosition: Position in screen coordinates
+     * @param imageBounds: Image bounds in screen coordinates
+     * @param textAlign: Text alignment
+     * @param isBold: Whether text is bold
+     * @param hasStroke: Whether text has stroke/shadow
+     * @param hasBackground: Whether text has background
+     */
+    fun drawTextOnBitmap(
+        bitmap: Bitmap,
+        textContent: String,
+        textSize: Float,
+        textColor: Int,
+        textPosition: androidx.compose.ui.geometry.Offset,
+        imageBounds: androidx.compose.ui.geometry.Rect,
+        textAlign: android.graphics.Paint.Align = android.graphics.Paint.Align.LEFT,
+        isBold: Boolean = false,
+        hasStroke: Boolean = false,
+        hasBackground: Boolean = false
+    ): Bitmap {
+        if (textContent.isEmpty()) return bitmap
+        
+        val result = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(result)
+        
+        // Convert screen coordinates to bitmap coordinates
+        val scaleX = bitmap.width / imageBounds.width
+        val scaleY = bitmap.height / imageBounds.height
+        
+        // Calculate bitmap position - TextField shows text from top-left
+        val bitmapX = (textPosition.x - imageBounds.left) * scaleX
+        val bitmapTextSize = textSize * scaleY
+        
+        val paint = Paint().apply {
+            color = textColor
+            this.textSize = bitmapTextSize
+            this.textAlign = textAlign
+            isAntiAlias = true
+            if (isBold) {
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }
+        }
+        
+        // Get text bounds to calculate proper positioning
+        val textBounds = android.graphics.Rect()
+        paint.getTextBounds(textContent, 0, textContent.length, textBounds)
+        
+        // Adjust Y to draw text baseline (drawText draws from baseline, not top)
+        // TextField position is top-left, so we need to add text height
+        val bitmapY = (textPosition.y - imageBounds.top) * scaleY - textBounds.top
+        
+        // Clip canvas to bitmap bounds to prevent text from going outside
+        canvas.save()
+        canvas.clipRect(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
+        
+        // Draw background if needed
+        if (hasBackground) {
+            val bgPaint = Paint().apply {
+                color = android.graphics.Color.argb(200, 255, 255, 255)
+                style = Paint.Style.FILL
+            }
+            
+            val bgLeft = (bitmapX - 10f).coerceAtLeast(0f)
+            val bgTop = (bitmapY + textBounds.top - 10f).coerceAtLeast(0f)
+            val bgRight = (bitmapX + textBounds.width() + 10f).coerceAtMost(bitmap.width.toFloat())
+            val bgBottom = (bitmapY + textBounds.bottom + 10f).coerceAtMost(bitmap.height.toFloat())
+            
+            canvas.drawRect(bgLeft, bgTop, bgRight, bgBottom, bgPaint)
+        }
+        
+        // Draw stroke/shadow if needed
+        if (hasStroke) {
+            val strokePaint = Paint(paint).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = 4f * scaleY
+                color = android.graphics.Color.BLACK
+            }
+            canvas.drawText(textContent, bitmapX, bitmapY, strokePaint)
+        }
+        
+        // Draw main text (will be clipped if outside bounds)
+        canvas.drawText(textContent, bitmapX, bitmapY, paint)
+        
+        canvas.restore()
+        
+        return result
+    }
+    
+    /**
      * Convert Bitmap to ImageBitmap for Compose
      */
     fun Bitmap.toImageBitmap(): ImageBitmap = this.asImageBitmap()
