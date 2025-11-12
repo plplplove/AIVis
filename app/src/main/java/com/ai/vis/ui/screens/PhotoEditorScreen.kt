@@ -281,13 +281,17 @@ fun PhotoEditorScreen(
                                             (textStyle.color.blue * 255).toInt()
                                         )
                                         
-                                        // textFieldPosition вже в правильних Box-local координатах
-                                        // Конвертуємо до absolute screen coordinates для збереження
-                                        val textPosInImage = textFieldPosition!!
+                                        // НОВИЙ ПРОСТИЙ ПІДХІД: textFieldPosition = де Text малюється
+                                        val textPosInBox = textFieldPosition!!
+                                        val imgRect = imageRectInBox!!
+                                        
+                                        // Конвертуємо Box-local → absolute координати
                                         val drawAbs = Offset(
-                                            imageBounds!!.left + (textPosInImage.x - imageRectInBox!!.left),
-                                            imageBounds!!.top + (textPosInImage.y - imageRectInBox!!.top)
+                                            imageBounds!!.left + (textPosInBox.x - imgRect.left),
+                                            imageBounds!!.top + (textPosInBox.y - imgRect.top)
                                         )
+                                        
+                                        android.util.Log.d("PhotoEditor", "💾 Зберігаємо: textPos=$textPosInBox, imgRect=$imgRect, drawAbs=$drawAbs")
                                         
                                         originalBitmap = ImageProcessor.drawTextOnBitmap(
                                             bitmap = bitmap,
@@ -296,7 +300,7 @@ fun PhotoEditorScreen(
                                             textColor = androidColor,
                                             textPosition = drawAbs,
                                             imageBounds = imageBounds!!,
-                                            textAlign = textAlign,
+                                            textAlign = android.graphics.Paint.Align.LEFT,  // ✅ Завжди LEFT як TextField!
                                             isBold = isBold,
                                             hasStroke = textStyle.hasStroke,
                                             hasBackground = textStyle.hasBackground
@@ -374,7 +378,7 @@ fun PhotoEditorScreen(
                                                 (textStyle.color.blue * 255).toInt()
                                             )
                                             
-                                            // Конвертуємо Box-local координати в absolute для малювання
+                                            // НОВИЙ ПРОСТИЙ ПІДХІД
                                             val drawAbs = Offset(
                                                 imageBounds!!.left + (textFieldPosition!!.x - imgRect.left),
                                                 imageBounds!!.top + (textFieldPosition!!.y - imgRect.top)
@@ -387,7 +391,7 @@ fun PhotoEditorScreen(
                                                 textColor = androidColor,
                                                 textPosition = drawAbs,
                                                 imageBounds = imageBounds!!,
-                                                textAlign = textAlign,
+                                                textAlign = android.graphics.Paint.Align.LEFT,  // ✅ Завжди LEFT як TextField!
                                                 isBold = isBold,
                                                 hasStroke = textStyle.hasStroke,
                                                 hasBackground = textStyle.hasBackground
@@ -542,7 +546,7 @@ fun PhotoEditorScreen(
                     )
                 }
                 
-                // НОВИЙ ТЕКСТОВИЙ OVERLAY - АБСОЛЮТНЕ ПОЗИЦІЮВАННЯ ЯК CANVAS 🎯
+                // НОВИЙ ПІДХІД: Показуємо Text так, як він буде збережено! 🎯
                 if (showTextOverlay && selectedTool?.nameRes == R.string.text_tool && textFieldPosition != null) {
                     val focusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
                     
@@ -552,96 +556,75 @@ fun PhotoEditorScreen(
                         }
                     }
                     
-                    // ВИПРАВЛЕННЯ: використовуємо Layout замість offset для АБСОЛЮТНОГО позиціювання
-                    androidx.compose.ui.layout.Layout(
-                        content = {
-                            Box(
-                                modifier = Modifier
-                                    .pointerInput(imageRectInBox) {
-                                        detectDragGestures { change, dragAmount ->
-                                            change.consume()
-                                            val imgRect = imageRectInBox ?: return@detectDragGestures
-                                            val currentPos = textFieldPosition ?: return@detectDragGestures
-                                            
-                                            // Новa позиція після drag
-                                            val newPos = Offset(
-                                                x = (currentPos.x + dragAmount.x).coerceIn(imgRect.left, imgRect.right),
-                                                y = (currentPos.y + dragAmount.y).coerceIn(imgRect.top, imgRect.bottom)
-                                            )
-                                            textFieldPosition = newPos
-                                            android.util.Log.d("PhotoEditor", "🔄 Drag to: $newPos")
-                                        }
-                                    }
-                            ) {
-                                androidx.compose.foundation.text.BasicTextField(
-                                    value = textStyle.text,
-                                    onValueChange = { text ->
-                                        textStyle = textStyle.copy(text = text)
-                                        isEditing = text.isNotEmpty()
-                                        android.util.Log.d("PhotoEditor", "✏️ Text changed: '$text'")
-                                    },
-                                    textStyle = androidx.compose.ui.text.TextStyle(
-                                        fontSize = textStyle.size.sp,
-                                        color = textStyle.color,
-                                        fontWeight = when (textStyle.weight) {
-                                            com.ai.vis.ui.components.TextWeight.LIGHT -> FontWeight.Light
-                                            com.ai.vis.ui.components.TextWeight.NORMAL -> FontWeight.Normal
-                                            com.ai.vis.ui.components.TextWeight.BOLD -> FontWeight.Bold
-                                        },
-                                        textAlign = when (textStyle.alignment) {
-                                            com.ai.vis.ui.components.TextAlignment.LEFT -> TextAlign.Left
-                                            com.ai.vis.ui.components.TextAlignment.CENTER -> TextAlign.Center
-                                            com.ai.vis.ui.components.TextAlignment.RIGHT -> TextAlign.Right
-                                        },
-                                        shadow = if (textStyle.hasStroke) {
-                                            androidx.compose.ui.graphics.Shadow(
-                                                color = Color.Black,
-                                                offset = Offset(2f, 2f),
-                                                blurRadius = 4f
-                                            )
-                                        } else null
-                                    ),
-                                    modifier = Modifier
-                                        .width(200.dp)
-                                        .focusRequester(focusRequester),
-                                    decorationBox = { innerTextField ->
-                                        Box(
-                                            modifier = Modifier
-                                                .background(
-                                                    // ЗАВЖДИ показуємо background під час редагування для видимості
-                                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                                                    shape = RoundedCornerShape(4.dp)
-                                                )
-                                                .padding(8.dp)
-                                        ) {
-                                            if (textStyle.text.isEmpty()) {
-                                                Text(
-                                                    text = stringResource(id = R.string.text_input),
-                                                    fontSize = textStyle.size.sp,
-                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-                                                )
-                                            }
-                                            innerTextField()
-                                        }
-                                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(imageRectInBox) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    val imgRect = imageRectInBox ?: return@detectDragGestures
+                                    val currentPos = textFieldPosition ?: return@detectDragGestures
+                                    
+                                    val newPos = Offset(
+                                        x = (currentPos.x + dragAmount.x).coerceIn(imgRect.left, imgRect.right),
+                                        y = (currentPos.y + dragAmount.y).coerceIn(imgRect.top, imgRect.bottom)
+                                    )
+                                    textFieldPosition = newPos
+                                }
+                            }
+                    ) {
+                        // PREVIEW: Текст так, як він буде збережено
+                        Text(
+                            text = if (textStyle.text.isEmpty()) "Tap to type" else textStyle.text,
+                            fontSize = textStyle.size.sp,
+                            color = textStyle.color,
+                            fontWeight = when (textStyle.weight) {
+                                com.ai.vis.ui.components.TextWeight.LIGHT -> FontWeight.Light
+                                com.ai.vis.ui.components.TextWeight.NORMAL -> FontWeight.Normal
+                                com.ai.vis.ui.components.TextWeight.BOLD -> FontWeight.Bold
+                            },
+                            modifier = Modifier.offset {
+                                androidx.compose.ui.unit.IntOffset(
+                                    textFieldPosition!!.x.toInt(),
+                                    textFieldPosition!!.y.toInt()
                                 )
                             }
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    ) { measurables, constraints ->
-                        // Вимірюємо TextField
-                        val placeable = measurables.firstOrNull()?.measure(constraints)
+                        )
                         
-                        layout(constraints.maxWidth, constraints.maxHeight) {
-                            placeable?.let {
-                                // Позиціюємо на textFieldPosition (абсолютні координати в Box)
-                                val pos = textFieldPosition!!
-                                android.util.Log.d("PhotoEditor", "📍 Layout TextField at: $pos")
-                                it.placeRelative(pos.x.toInt(), pos.y.toInt())
+                        // Прихований TextField для введення (розташовуємо внизу екрану)
+                        androidx.compose.foundation.text.BasicTextField(
+                            value = textStyle.text,
+                            onValueChange = { text ->
+                                textStyle = textStyle.copy(text = text)
+                                isEditing = text.isNotEmpty()
+                            },
+                            textStyle = androidx.compose.ui.text.TextStyle(
+                                fontSize = textStyle.size.sp,
+                                color = textStyle.color
+                            ),
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surface)
+                                .padding(16.dp)
+                                .focusRequester(focusRequester),
+                            decorationBox = { innerTextField ->
+                                Box(modifier = Modifier.padding(8.dp)) {
+                                    if (textStyle.text.isEmpty()) {
+                                        Text(
+                                            text = stringResource(id = R.string.text_input),
+                                            fontSize = 16.sp,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                        )
+                                    }
+                                    innerTextField()
+                                }
                             }
-                        }
+                        )
                     }
                 }
+                
+
                 
                 // 🔴 DEBUG: Червона точка для перевірки координат
                 textFieldPosition?.let { pos ->
