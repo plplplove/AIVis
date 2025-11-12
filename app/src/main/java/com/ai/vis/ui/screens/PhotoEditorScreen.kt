@@ -105,6 +105,7 @@ data class TextItem(
 data class EditorState(
     val bitmap: Bitmap,
     val textItems: List<TextItem> = emptyList(),
+    val drawPaths: List<com.ai.vis.ui.components.DrawPath> = emptyList(),
     val adjustmentValues: Map<Int, Float> = mapOf(
         0 to 0f, 1 to 0f, 2 to 0f,
         3 to 0f, 4 to 0f, 5 to 0f
@@ -184,6 +185,12 @@ fun PhotoEditorScreen(
     // Track if we saved state for current text transformation
     var savedStateForTransform by remember { mutableStateOf(false) }
     
+    // Drawing state 🎨
+    var drawPaths by remember { mutableStateOf<List<com.ai.vis.ui.components.DrawPath>>(emptyList()) }
+    var drawColor by remember { mutableStateOf(Color.Black) }
+    var drawStrokeWidth by remember { mutableFloatStateOf(10f) }
+    var drawOpacity by remember { mutableFloatStateOf(1f) }
+    
     // Розмір і позиція Image в Box (для збереження тексту на bitmap)
     var imageRectInBox by remember { mutableStateOf<Rect?>(null) }
     
@@ -193,6 +200,7 @@ fun PhotoEditorScreen(
             val currentState = EditorState(
                 bitmap = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true),
                 textItems = textItems.map { it.copy() },
+                drawPaths = drawPaths.map { it.copy() },
                 adjustmentValues = adjustmentValues.toMap()
             )
             undoStack = undoStack + currentState
@@ -207,6 +215,7 @@ fun PhotoEditorScreen(
                 EditorState(
                     bitmap = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true),
                     textItems = textItems.map { it.copy() },
+                    drawPaths = drawPaths.map { it.copy() },
                     adjustmentValues = adjustmentValues.toMap()
                 )
             }
@@ -218,6 +227,7 @@ fun PhotoEditorScreen(
             
             originalBitmap = previousState.bitmap
             textItems = previousState.textItems
+            drawPaths = previousState.drawPaths
             adjustmentValues = previousState.adjustmentValues
             
             // If we're in adjustment mode, re-apply the restored adjustment values to preview
@@ -262,6 +272,7 @@ fun PhotoEditorScreen(
                 EditorState(
                     bitmap = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true),
                     textItems = textItems.map { it.copy() },
+                    drawPaths = drawPaths.map { it.copy() },
                     adjustmentValues = adjustmentValues.toMap()
                 )
             }
@@ -273,6 +284,7 @@ fun PhotoEditorScreen(
             
             originalBitmap = nextState.bitmap
             textItems = nextState.textItems
+            drawPaths = nextState.drawPaths
             adjustmentValues = nextState.adjustmentValues
             
             // If we're in adjustment mode, re-apply the restored adjustment values to preview
@@ -361,6 +373,7 @@ fun PhotoEditorScreen(
             isEditing -> {
                 // Cancel editing
                 textItems = emptyList()
+                drawPaths = emptyList()
                 previewBitmap = null
                 adjustmentValues = mapOf(
                     0 to 0f, 1 to 0f, 2 to 0f,
@@ -467,6 +480,7 @@ fun PhotoEditorScreen(
                             showTextDialog = false
                             selectedTextId = null
                             textItems = emptyList()
+                            drawPaths = emptyList()
                             isEditing = false
                             selectedTool = null
                             // Clear undo/redo stacks for editing session
@@ -581,6 +595,20 @@ fun PhotoEditorScreen(
                                     textItems = emptyList()
                                     showTextDialog = false
                                     selectedTextId = null
+                                }
+                            }
+                            
+                            // Зберігаємо ВСІ малюнки на bitmap 🎨
+                            if (drawPaths.isNotEmpty() && selectedTool?.nameRes == R.string.draw_tool && imageBounds != null) {
+                                coroutineScope.launch(Dispatchers.IO) {
+                                    originalBitmap = originalBitmap?.let { bitmap ->
+                                        ImageProcessor.drawPathsOnBitmap(
+                                            bitmap = bitmap,
+                                            drawPaths = drawPaths,
+                                            imageBounds = imageBounds!!
+                                        )
+                                    }
+                                    drawPaths = emptyList()
                                 }
                             }
                             
@@ -817,6 +845,25 @@ fun PhotoEditorScreen(
                         offset = offset,
                         onCropAreaChange = { rect ->
                             cropRect = rect
+                        }
+                    )
+                }
+                
+                // Show drawing canvas when draw tool is selected
+                if (selectedTool?.nameRes == R.string.draw_tool && imageBounds != null) {
+                    com.ai.vis.ui.components.DrawingCanvas(
+                        imageBounds = imageBounds,
+                        drawPaths = drawPaths,
+                        currentColor = drawColor,
+                        currentStrokeWidth = drawStrokeWidth,
+                        currentOpacity = drawOpacity,
+                        onPathAdded = { newPath ->
+                            drawPaths = drawPaths + newPath
+                        },
+                        onDrawingStarted = {
+                            // Save state before starting to draw
+                            saveStateToUndo()
+                            isEditing = true
                         }
                     )
                 }
@@ -1226,6 +1273,29 @@ fun PhotoEditorScreen(
                                     }
                                 )
                             }
+                            R.string.draw_tool -> {
+                                com.ai.vis.ui.components.DrawPanel(
+                                    currentColor = drawColor,
+                                    currentSize = drawStrokeWidth,
+                                    currentOpacity = drawOpacity,
+                                    onColorChange = { color ->
+                                        drawColor = color
+                                    },
+                                    onSizeChange = { size ->
+                                        drawStrokeWidth = size
+                                    },
+                                    onOpacityChange = { opacity ->
+                                        drawOpacity = opacity
+                                    },
+                                    onErase = {
+                                        // Remove last drawn path (Undo last stroke)
+                                        if (drawPaths.isNotEmpty()) {
+                                            saveStateToUndo()
+                                            drawPaths = drawPaths.dropLast(1)
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -1243,7 +1313,7 @@ fun PhotoEditorScreen(
                         )
                 ) {
                     when (selectedTool?.nameRes) {
-                        R.string.text_tool, R.string.adjust -> {
+                        R.string.text_tool, R.string.adjust, R.string.draw_tool -> {
                             // Режим редагування з прихованим меню - показуємо кнопку "Назад" та назву
                             Row(
                                 modifier = Modifier

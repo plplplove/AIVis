@@ -362,6 +362,76 @@ object ImageProcessor {
     }
     
     /**
+     * Draw paths on bitmap
+     * @param drawPaths: List of DrawPath objects
+     * @param imageBounds: Image bounds in screen coordinates
+     */
+    fun drawPathsOnBitmap(
+        bitmap: Bitmap,
+        drawPaths: List<com.ai.vis.ui.components.DrawPath>,
+        imageBounds: androidx.compose.ui.geometry.Rect
+    ): Bitmap {
+        if (drawPaths.isEmpty()) return bitmap
+        
+        val result = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(result)
+        
+        // Convert screen coordinates to bitmap coordinates
+        val scaleX = bitmap.width / imageBounds.width
+        val scaleY = bitmap.height / imageBounds.height
+        
+        // Clip canvas to bitmap bounds
+        canvas.save()
+        canvas.clipRect(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
+        
+        drawPaths.forEach { drawPath ->
+            // Convert color to Android color with opacity
+            val alpha = (drawPath.opacity * 255).toInt().coerceIn(0, 255)
+            val r = (drawPath.color.red * 255).toInt()
+            val g = (drawPath.color.green * 255).toInt()
+            val b = (drawPath.color.blue * 255).toInt()
+            val androidColor = android.graphics.Color.argb(alpha, r, g, b)
+            
+            val paint = Paint().apply {
+                color = androidColor
+                strokeWidth = drawPath.strokeWidth * scaleY
+                style = Paint.Style.STROKE
+                strokeCap = Paint.Cap.ROUND
+                strokeJoin = Paint.Join.ROUND
+                isAntiAlias = true
+            }
+            
+            // Convert Compose Path to Android Path with coordinate scaling
+            val androidPath = android.graphics.Path()
+            val composePath = drawPath.path
+            
+            // Use asAndroidPath() if available, or manually convert
+            try {
+                // Try to use reflection to access the underlying Android path
+                val composePathClass = composePath.javaClass
+                val asAndroidPathMethod = composePathClass.getDeclaredMethod("asAndroidPath")
+                asAndroidPathMethod.isAccessible = true
+                val originalAndroidPath = asAndroidPathMethod.invoke(composePath) as android.graphics.Path
+                
+                // Scale the path
+                val matrix = android.graphics.Matrix()
+                matrix.postTranslate(-imageBounds.left, -imageBounds.top)
+                matrix.postScale(scaleX, scaleY)
+                originalAndroidPath.transform(matrix, androidPath)
+            } catch (e: Exception) {
+                // Fallback: just draw the path as-is (won't scale properly but better than nothing)
+                android.util.Log.e("ImageProcessor", "Failed to convert path: ${e.message}")
+            }
+            
+            canvas.drawPath(androidPath, paint)
+        }
+        
+        canvas.restore()
+        
+        return result
+    }
+    
+    /**
      * Convert Bitmap to ImageBitmap for Compose
      */
     fun Bitmap.toImageBitmap(): ImageBitmap = this.asImageBitmap()

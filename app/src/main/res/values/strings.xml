@@ -111,6 +111,12 @@
     <string name="shadow_offset_y">Shadow Offset Y</string>
     <string name="edit_text">Edit Text</string>
     
+    <!-- Draw Tool -->
+    <string name="draw_color">Color</string>
+    <string name="draw_size">Brush Size</string>
+    <string name="draw_opacity">Opacity</string>
+    <string name="erase">Erase</string>
+    
     <!-- Common Actions -->
     <string name="reset">Reset</string>
     <string name="apply">Apply</string>
