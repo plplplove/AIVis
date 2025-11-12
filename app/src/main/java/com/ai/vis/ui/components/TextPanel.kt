@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -56,13 +57,36 @@ enum class TextWeight {
     LIGHT, NORMAL, BOLD
 }
 
+enum class TextFontFamily(val fontRes: Int, val nameRes: Int) {
+    ABITE(R.font.abite, R.string.font_abite),
+    AMERICAN_CAPTAIN(R.font.americancaptain, R.string.font_american_captain),
+    BEAR_DAYS(R.font.bear_days, R.string.font_bear_days),
+    COOL_VETICA(R.font.coolveticarg, R.string.font_cool_vetica),
+    CUTE_NOTES(R.font.cutenotes, R.string.font_cute_notes),
+    JMH_TYPEWRITER(R.font.jmhtypewriterlack, R.string.font_jmh_typewriter),
+    KARINA(R.font.karina, R.string.font_karina),
+    KEEP_ON_TRUCKIN(R.font.keepontruckin, R.string.font_keep_on_truckin),
+    KOMICAX(R.font.komicax, R.string.font_komicax),
+    LEMON_MILK(R.font.lemonmilk, R.string.font_lemon_milk),
+    PORKYS(R.font.porkys, R.string.font_porkys),
+    RIFFIC_FREE(R.font.rifficfree, R.string.font_riffic_free),
+    ROSSTEN(R.font.rossten, R.string.font_rossten),
+    SWEETY_RASTY(R.font.sweetyrasty, R.string.font_sweety_rasty),
+    VARSITY_TEAM(R.font.varsityteam, R.string.font_varsity_team)
+}
+
 data class TextStyle(
     var text: String = "",
     var size: Float = 24f, // 16-72
+    var fontFamily: TextFontFamily = TextFontFamily.LEMON_MILK,
     var color: Color = Color.White,
     var opacity: Float = 1f, // 0-1 прозорість тексту
     var alignment: TextAlignment = TextAlignment.CENTER,
     var weight: TextWeight = TextWeight.NORMAL,
+    var letterSpacing: Float = 0f, // -5 to 10
+    var isItalic: Boolean = false,
+    var isUnderline: Boolean = false,
+    var isStrikethrough: Boolean = false,
     var hasStroke: Boolean = false,
     var hasBackground: Boolean = false,
     var backgroundOpacity: Float = 0.7f, // 0-1 прозорість фону
@@ -78,7 +102,7 @@ data class TextOption(
 )
 
 enum class TextOptionType {
-    SIZE, COLOR, OPACITY, ALIGNMENT, WEIGHT, BACKGROUND, SHADOW
+    SIZE, FONT, COLOR, OPACITY, ALIGNMENT, WEIGHT, LETTER_SPACING, DECORATIONS, BACKGROUND, SHADOW
 }
 
 @Composable
@@ -86,22 +110,30 @@ fun TextPanel(
     textStyle: TextStyle,
     onTextChange: (String) -> Unit = {},
     onSizeChange: (Float) -> Unit = {},
+    onFontChange: (TextFontFamily) -> Unit = {},
     onColorChange: (Color) -> Unit = {},
     onOpacityChange: (Float) -> Unit = {},
     onAlignmentChange: (TextAlignment) -> Unit = {},
     onWeightChange: (TextWeight) -> Unit = {},
+    onLetterSpacingChange: (Float) -> Unit = {},
+    onItalicToggle: (Boolean) -> Unit = {},
+    onUnderlineToggle: (Boolean) -> Unit = {},
+    onStrikethroughToggle: (Boolean) -> Unit = {},
     onStrokeToggle: (Boolean) -> Unit = {},
     onBackgroundToggle: (Boolean) -> Unit = {},
     onBackgroundOpacityChange: (Float) -> Unit = {},
     onShadowChange: (Float, Float, Float) -> Unit = { _, _, _ -> }, // radius, offsetX, offsetY
     modifier: Modifier = Modifier
 ) {
-    // Правильний порядок: Size, Color, Opacity, Weight, Background, Shadow, Alignment
+    // Порядок: Size, Font, Color, Opacity, Weight, Letter Spacing, Decorations, Background, Shadow, Alignment
     val textOptions = listOf(
         TextOption(R.string.text_size, R.drawable.ic_text, TextOptionType.SIZE),
+        TextOption(R.string.text_font, R.drawable.ic_text, TextOptionType.FONT),
         TextOption(R.string.text_color, R.drawable.ic_palette, TextOptionType.COLOR),
         TextOption(R.string.text_opacity, R.drawable.ic_opacity, TextOptionType.OPACITY),
         TextOption(R.string.font_weight, R.drawable.ic_text, TextOptionType.WEIGHT),
+        TextOption(R.string.letter_spacing, R.drawable.ic_lette_spacing, TextOptionType.LETTER_SPACING),
+        TextOption(R.string.text_italic, R.drawable.ic_italic, TextOptionType.DECORATIONS),
         TextOption(R.string.background, R.drawable.ic_background, TextOptionType.BACKGROUND),
         TextOption(R.string.shadow, R.drawable.ic_shadow, TextOptionType.SHADOW),
         TextOption(R.string.alignment, R.drawable.ic_align_center, TextOptionType.ALIGNMENT)
@@ -159,6 +191,36 @@ fun TextPanel(
                                 inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
                             )
                         )
+                    }
+                }
+                TextOptionType.FONT -> {
+                    // Font picker with scrollable list
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.text_font),
+                            fontSize = 14.sp,
+                            fontFamily = FontFamily(Font(R.font.font_main_text)),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(TextFontFamily.entries.size) { index ->
+                                val font = TextFontFamily.entries[index]
+                                FontCard(
+                                    font = font,
+                                    isSelected = textStyle.fontFamily == font,
+                                    onClick = { onFontChange(font) }
+                                )
+                            }
+                        }
                     }
                 }
                 TextOptionType.COLOR -> {
@@ -424,6 +486,79 @@ fun TextPanel(
                                 activeTrackColor = MaterialTheme.colorScheme.primary,
                                 inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
                             )
+                        )
+                    }
+                }
+                TextOptionType.LETTER_SPACING -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .height(100.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.letter_spacing),
+                                fontSize = 14.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "${textStyle.letterSpacing.toInt()}",
+                                fontSize = 14.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        Slider(
+                            value = textStyle.letterSpacing,
+                            onValueChange = onLetterSpacingChange,
+                            valueRange = -5f..10f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
+                            )
+                        )
+                    }
+                }
+                TextOptionType.DECORATIONS -> {
+                    // Показуємо 3 toggle кнопки для italic, underline, strikethrough
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        DecorationToggle(
+                            iconRes = R.drawable.ic_italic,
+                            labelRes = R.string.text_italic,
+                            isEnabled = textStyle.isItalic,
+                            onClick = { onItalicToggle(!textStyle.isItalic) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        DecorationToggle(
+                            iconRes = R.drawable.ic_underline,
+                            labelRes = R.string.text_underline,
+                            isEnabled = textStyle.isUnderline,
+                            onClick = { onUnderlineToggle(!textStyle.isUnderline) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        DecorationToggle(
+                            iconRes = R.drawable.ic_cross,
+                            labelRes = R.string.text_strikethrough,
+                            isEnabled = textStyle.isStrikethrough,
+                            onClick = { onStrikethroughToggle(!textStyle.isStrikethrough) },
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
@@ -772,6 +907,104 @@ fun ColorButton(
             )
             .clickable(onClick = onClick)
     )
+}
+
+@Composable
+fun FontCard(
+    font: TextFontFamily,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .width(100.dp)
+            .height(80.dp),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected)
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+            else
+                MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 4.dp else 2.dp
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            // Show "Aa" in the font style
+            Text(
+                text = "Aa",
+                fontSize = 28.sp,
+                fontFamily = FontFamily(Font(font.fontRes)),
+                color = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+fun DecorationToggle(
+    iconRes: Int,
+    labelRes: Int,
+    isEnabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.height(72.dp),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = if (isEnabled)
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+            else
+                MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isEnabled) 4.dp else 2.dp
+        ),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = null,
+                tint = if (isEnabled)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = stringResource(id = labelRes),
+                fontSize = 10.sp,
+                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                color = if (isEnabled)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+        }
+    }
 }
 
 @Composable

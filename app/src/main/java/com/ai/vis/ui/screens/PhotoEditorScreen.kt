@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -154,6 +155,7 @@ fun PhotoEditorScreen(
     var selectedCropRatio by remember { mutableStateOf<CropRatio?>(null) }
     var showCropOverlay by remember { mutableStateOf(false) }
     var cropRect by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+    var straightenAngle by remember { mutableFloatStateOf(0f) } // -10 to +10 degrees
     
     // Image bounds for crop overlay - recalculate only when bitmap changes
     var imageBounds by remember(originalBitmap) { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
@@ -383,6 +385,7 @@ fun PhotoEditorScreen(
                 )
                 showCropOverlay = false
                 selectedCropRatio = null
+                straightenAngle = 0f
                 showTextDialog = false
                 selectedTextId = null
                 isEditing = false
@@ -393,6 +396,7 @@ fun PhotoEditorScreen(
                 selectedTool = null
                 showCropOverlay = false
                 selectedCropRatio = null
+                straightenAngle = 0f
                 showTextDialog = false
             }
             else -> {
@@ -575,6 +579,7 @@ fun PhotoEditorScreen(
                                         resultBitmap = resultBitmap?.let { bitmap ->
                                             ImageProcessor.drawTextOnBitmap(
                                                 bitmap = bitmap,
+                                                context = context,
                                                 textContent = textItem.style.text,
                                                 textSize = textSizePx,
                                                 textColor = androidColor,
@@ -582,6 +587,11 @@ fun PhotoEditorScreen(
                                                 imageBounds = imageBounds!!,
                                                 textAlign = android.graphics.Paint.Align.LEFT,
                                                 isBold = textItem.style.weight == com.ai.vis.ui.components.TextWeight.BOLD,
+                                                fontResourceId = textItem.style.fontFamily.fontRes,
+                                                letterSpacing = textItem.style.letterSpacing,
+                                                isItalic = textItem.style.isItalic,
+                                                isUnderline = textItem.style.isUnderline,
+                                                isStrikethrough = textItem.style.isStrikethrough,
                                                 hasStroke = textItem.style.hasStroke,
                                                 hasBackground = textItem.style.hasBackground,
                                                 textOpacity = textItem.style.opacity,
@@ -624,6 +634,7 @@ fun PhotoEditorScreen(
                             )
                             showCropOverlay = false
                             selectedCropRatio = null
+                            straightenAngle = 0f
                             showTextDialog = false
                             isEditing = false
                             selectedTool = null
@@ -924,12 +935,27 @@ fun PhotoEditorScreen(
                         Text(
                             text = textItem.style.text,
                             fontSize = (textItem.style.size * textItem.scale).sp,
+                            fontFamily = FontFamily(Font(textItem.style.fontFamily.fontRes)),
                             color = textItem.style.color.copy(alpha = textItem.style.opacity),
                             fontWeight = when (textItem.style.weight) {
                                 com.ai.vis.ui.components.TextWeight.LIGHT -> FontWeight.Light
                                 com.ai.vis.ui.components.TextWeight.NORMAL -> FontWeight.Normal
                                 com.ai.vis.ui.components.TextWeight.BOLD -> FontWeight.Bold
                             },
+                            fontStyle = if (textItem.style.isItalic) FontStyle.Italic else FontStyle.Normal,
+                            textDecoration = when {
+                                textItem.style.isUnderline && textItem.style.isStrikethrough -> 
+                                    androidx.compose.ui.text.style.TextDecoration.combine(
+                                        listOf(
+                                            androidx.compose.ui.text.style.TextDecoration.Underline,
+                                            androidx.compose.ui.text.style.TextDecoration.LineThrough
+                                        )
+                                    )
+                                textItem.style.isUnderline -> androidx.compose.ui.text.style.TextDecoration.Underline
+                                textItem.style.isStrikethrough -> androidx.compose.ui.text.style.TextDecoration.LineThrough
+                                else -> androidx.compose.ui.text.style.TextDecoration.None
+                            },
+                            letterSpacing = (textItem.style.letterSpacing * 0.1f).sp,
                             style = if (textItem.style.shadowRadius > 0) {
                                 androidx.compose.ui.text.TextStyle(
                                     shadow = androidx.compose.ui.graphics.Shadow(
@@ -1047,6 +1073,7 @@ fun PhotoEditorScreen(
                         when (selectedTool?.nameRes) {
                             R.string.crop_rotate -> {
                                 com.ai.vis.ui.components.CropRotatePanel(
+                                    currentStraightenAngle = straightenAngle,
                                     onCropRatioSelected = { ratio ->
                                         saveStateToUndo()
                                         selectedCropRatio = ratio
@@ -1055,6 +1082,26 @@ fun PhotoEditorScreen(
                                         // Reset zoom/pan to original position for consistent crop coordinates
                                         scale = 1f
                                         offset = Offset.Zero
+                                    },
+                                    onStraightenAngleChange = { angle ->
+                                        if (straightenAngle == 0f) {
+                                            // Save state before first change
+                                            originalBitmap?.let { bitmap ->
+                                                savedStatesUndoStack = savedStatesUndoStack + bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
+                                                savedStatesRedoStack = emptyList()
+                                            }
+                                        }
+                                        straightenAngle = angle
+                                        isEditing = true
+                                        
+                                        // Apply straighten rotation
+                                        coroutineScope.launch(Dispatchers.IO) {
+                                            originalBitmap?.let { bitmap ->
+                                                // Restore from saved state if exists (to avoid cumulative rotation)
+                                                val basebitmap = savedStatesUndoStack.lastOrNull() ?: bitmap
+                                                previewBitmap = ImageProcessor.rotateBitmap(basebitmap, angle)
+                                            }
+                                        }
                                     },
                                     onRotateLeft = {
                                         // Save current state to main undo stack (like crop)
@@ -1179,6 +1226,16 @@ fun PhotoEditorScreen(
                                             isEditing = true
                                         }
                                     },
+                                    onFontChange = { fontFamily ->
+                                        saveStateToUndo()
+                                        textStyle = textStyle.copy(fontFamily = fontFamily)
+                                        if (selectedTextId != null) {
+                                            textItems = textItems.map {
+                                                if (it.id == selectedTextId) it.copy(style = it.style.copy(fontFamily = fontFamily)) else it
+                                            }
+                                            isEditing = true
+                                        }
+                                    },
                                     onColorChange = { color ->
                                         saveStateToUndo()
                                         textStyle = textStyle.copy(color = color)
@@ -1212,6 +1269,45 @@ fun PhotoEditorScreen(
                                         if (selectedTextId != null) {
                                             textItems = textItems.map {
                                                 if (it.id == selectedTextId) it.copy(style = it.style.copy(weight = nextWeight)) else it
+                                            }
+                                            isEditing = true
+                                        }
+                                    },
+                                    onLetterSpacingChange = { spacing ->
+                                        textStyle = textStyle.copy(letterSpacing = spacing)
+                                        if (selectedTextId != null) {
+                                            textItems = textItems.map {
+                                                if (it.id == selectedTextId) it.copy(style = it.style.copy(letterSpacing = spacing)) else it
+                                            }
+                                            isEditing = true
+                                        }
+                                    },
+                                    onItalicToggle = { isItalic ->
+                                        saveStateToUndo()
+                                        textStyle = textStyle.copy(isItalic = isItalic)
+                                        if (selectedTextId != null) {
+                                            textItems = textItems.map {
+                                                if (it.id == selectedTextId) it.copy(style = it.style.copy(isItalic = isItalic)) else it
+                                            }
+                                            isEditing = true
+                                        }
+                                    },
+                                    onUnderlineToggle = { isUnderline ->
+                                        saveStateToUndo()
+                                        textStyle = textStyle.copy(isUnderline = isUnderline)
+                                        if (selectedTextId != null) {
+                                            textItems = textItems.map {
+                                                if (it.id == selectedTextId) it.copy(style = it.style.copy(isUnderline = isUnderline)) else it
+                                            }
+                                            isEditing = true
+                                        }
+                                    },
+                                    onStrikethroughToggle = { isStrikethrough ->
+                                        saveStateToUndo()
+                                        textStyle = textStyle.copy(isStrikethrough = isStrikethrough)
+                                        if (selectedTextId != null) {
+                                            textItems = textItems.map {
+                                                if (it.id == selectedTextId) it.copy(style = it.style.copy(isStrikethrough = isStrikethrough)) else it
                                             }
                                             isEditing = true
                                         }

@@ -91,6 +91,7 @@
     <string name="ratio_16_9">16:9</string>
     
     <!-- Rotate & Flip -->
+    <string name="straighten">Straighten</string>
     <string name="rotate_left">Rotate Left</string>
     <string name="rotate_right">Rotate Right</string>
     <string name="flip_horizontal">Flip H</string>
@@ -99,10 +100,15 @@
     <!-- Text Tool -->
     <string name="text_input">Enter text</string>
     <string name="text_size">Text Size</string>
+    <string name="text_font">Font</string>
     <string name="text_color">Color</string>
     <string name="text_opacity">Opacity</string>
     <string name="alignment">Alignment</string>
     <string name="font_weight">Weight</string>
+    <string name="letter_spacing">Letter Spacing</string>
+    <string name="text_italic">Italic</string>
+    <string name="text_underline">Underline</string>
+    <string name="text_strikethrough">Strikethrough</string>
     <string name="stroke">Stroke</string>
     <string name="background">Background</string>
     <string name="shadow">Shadow</string>
@@ -110,6 +116,23 @@
     <string name="shadow_offset_x">Shadow Offset X</string>
     <string name="shadow_offset_y">Shadow Offset Y</string>
     <string name="edit_text">Edit Text</string>
+    
+    <!-- Font Names -->
+    <string name="font_abite">Abite</string>
+    <string name="font_american_captain">American Captain</string>
+    <string name="font_bear_days">Bear Days</string>
+    <string name="font_cool_vetica">Cool Vetica</string>
+    <string name="font_cute_notes">Cute Notes</string>
+    <string name="font_jmh_typewriter">JMH Typewriter</string>
+    <string name="font_karina">Karina</string>
+    <string name="font_keep_on_truckin">Keep On Truckin</string>
+    <string name="font_komicax">Komicax</string>
+    <string name="font_lemon_milk">Lemon Milk</string>
+    <string name="font_porkys">Porkys</string>
+    <string name="font_riffic_free">Riffic Free</string>
+    <string name="font_rossten">Rossten</string>
+    <string name="font_sweety_rasty">Sweety Rasty</string>
+    <string name="font_varsity_team">Varsity Team</string>
     
     <!-- Draw Tool -->
     <string name="draw_color">Color</string>

@@ -15,6 +15,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,6 +30,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,7 +45,9 @@ enum class CropRatio(val nameRes: Int) {
 
 @Composable
 fun CropRotatePanel(
+    currentStraightenAngle: Float = 0f,
     onCropRatioSelected: (CropRatio) -> Unit = {},
+    onStraightenAngleChange: (Float) -> Unit = {},
     onRotateLeft: () -> Unit = {},
     onRotateRight: () -> Unit = {},
     onFlipHorizontal: () -> Unit = {},
@@ -81,6 +86,58 @@ fun CropRotatePanel(
                     modifier = Modifier.weight(1f)
                 )
             }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Straighten slider
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_straight),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = stringResource(id = R.string.straighten),
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily(Font(R.font.font_main_text)),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Text(
+                    text = "${currentStraightenAngle.toInt()}°",
+                    fontSize = 14.sp,
+                    fontFamily = FontFamily(Font(R.font.font_main_text)),
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            Slider(
+                value = currentStraightenAngle,
+                onValueChange = onStraightenAngleChange,
+                valueRange = -10f..10f,
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
+                )
+            )
         }
         
         Spacer(modifier = Modifier.height(8.dp))

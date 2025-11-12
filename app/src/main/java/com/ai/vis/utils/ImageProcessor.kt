@@ -258,6 +258,7 @@ object ImageProcessor {
      */
     fun drawTextOnBitmap(
         bitmap: Bitmap,
+        context: android.content.Context,
         textContent: String,
         textSize: Float,
         textColor: Int,
@@ -265,6 +266,11 @@ object ImageProcessor {
         imageBounds: androidx.compose.ui.geometry.Rect,
         textAlign: android.graphics.Paint.Align = android.graphics.Paint.Align.LEFT,
         isBold: Boolean = false,
+        fontResourceId: Int? = null,
+        letterSpacing: Float = 0f,
+        isItalic: Boolean = false,
+        isUnderline: Boolean = false,
+        isStrikethrough: Boolean = false,
         hasStroke: Boolean = false,
         hasBackground: Boolean = false,
         textOpacity: Float = 1f,
@@ -294,9 +300,40 @@ object ImageProcessor {
             this.textSize = bitmapTextSize
             this.textAlign = textAlign
             isAntiAlias = true
-            if (isBold) {
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            
+            // Apply font typeface
+            typeface = when {
+                fontResourceId != null -> {
+                    // Load custom font from resources using androidx.core
+                    try {
+                        androidx.core.content.res.ResourcesCompat.getFont(context, fontResourceId)
+                    } catch (e: Exception) {
+                        // Fallback to default with style
+                        var style = android.graphics.Typeface.NORMAL
+                        if (isBold) style = style or android.graphics.Typeface.BOLD
+                        if (isItalic) style = style or android.graphics.Typeface.ITALIC
+                        android.graphics.Typeface.defaultFromStyle(style)
+                    }
+                }
+                isBold && isItalic -> android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD_ITALIC)
+                isBold -> android.graphics.Typeface.DEFAULT_BOLD
+                isItalic -> android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.ITALIC)
+                else -> android.graphics.Typeface.DEFAULT
             }
+            
+            // Apply letter spacing
+            if (letterSpacing != 0f) {
+                this.letterSpacing = letterSpacing * 0.1f
+            }
+            
+            // Apply text decorations
+            if (isUnderline) {
+                flags = flags or Paint.UNDERLINE_TEXT_FLAG
+            }
+            if (isStrikethrough) {
+                flags = flags or Paint.STRIKE_THRU_TEXT_FLAG
+            }
+            
             // Apply shadow if configured
             if (shadowRadius > 0f) {
                 setShadowLayer(
