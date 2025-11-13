@@ -145,6 +145,44 @@
     <string name="reset">Resetuj</string>
     <string name="apply">Zastosuj</string>
     <string name="done">Gotowe</string>
+    
+    <!-- Exit Confirmation Dialog -->
+    <string name="exit_without_saving">Wyjść bez zapisywania?</string>
+    <string name="exit_confirmation_message">Wszystkie niezapisane zmiany zostaną utracone. Czy na pewno chcesz wyjść?</string>
+    <string name="exit">Wyjdź</string>
+    <string name="continue_editing">Kontynuuj edycję</string>
+    
+    <!-- Save Options Dialog -->
+    <string name="save_photo">Zapisz zdjęcie</string>
+    <string name="save_options_message">Wybierz, gdzie zapisać edytowane zdjęcie</string>
+    <string name="save_to_gallery">Zapisz do galerii</string>
+    <string name="save_to_gallery_desc">Zapisz do galerii urządzenia</string>
+    <string name="save_to_app">Zapisz w aplikacji</string>
+    <string name="save_to_app_desc">Zapisz tylko w galerii aplikacji</string>
+    <string name="save_to_both">Zapisz w obu</string>
+    <string name="save_to_both_desc">Zapisz w obu lokalizacjach</string>
+    
+    <!-- Save Messages -->
+    <string name="photo_saved_successfully">Zdjęcie zapisane pomyślnie</string>
+    <string name="photo_saved_to_gallery">Zdjęcie zapisane do galerii</string>
+    <string name="photo_saved_to_app">Zdjęcie zapisane w aplikacji</string>
+    <string name="photo_saved_to_both">Zdjęcie zapisane w obu lokalizacjach</string>
+    <string name="error_saving_photo">Błąd zapisywania zdjęcia</string>
+    
+    <!-- Full Image Viewer -->
+    <string name="full_image_preview">Podgląd pełnego obrazu</string>
+    <string name="export">Eksportuj</string>
+    <string name="delete">Usuń</string>
+    <string name="re_edit">Edytuj ponownie</string>
+    <string name="share">Udostępnij</string>
+    <string name="delete_photo">Usuń zdjęcie</string>
+    <string name="delete_confirmation_message">Czy na pewno chcesz usunąć to zdjęcie? Ta operacja jest nieodwracalna.</string>
+    <string name="selected">Wybrane</string>
+    <string name="edit_filename">Edytuj nazwę pliku</string>
+    <string name="enter_new_filename">Wprowadź nową nazwę pliku</string>
+    <string name="filename_updated">Nazwa pliku zaktualizowana pomyślnie</string>
 </resources>
+
+
 
 

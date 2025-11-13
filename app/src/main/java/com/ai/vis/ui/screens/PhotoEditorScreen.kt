@@ -79,6 +79,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.ai.vis.R
 import com.ai.vis.ui.components.CropRatio
@@ -131,11 +132,17 @@ data class EditorState(
 fun PhotoEditorScreen(
     imageUri: Uri?,
     onBackClick: () -> Unit,
-    onSaveClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    photoGalleryViewModel: com.ai.vis.viewmodel.PhotoGalleryViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    
+    // Dialog states
+    var showExitDialog by remember { mutableStateOf(false) }
+    var showSaveDialog by remember { mutableStateOf(false) }
+    var showSaveSuccess by remember { mutableStateOf(false) }
+    var saveSuccessMessage by remember { mutableStateOf("") }
     
     // Image states - originalBitmap is the current saved state
     var originalBitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -478,8 +485,105 @@ fun PhotoEditorScreen(
                 showTextDialog = false
             }
             else -> {
-                // Go back to main screen
-                onBackClick()
+                // Show exit confirmation if there are any changes
+                if (savedStatesUndoStack.isNotEmpty() || originalBitmap != null) {
+                    showExitDialog = true
+                } else {
+                    onBackClick()
+                }
+            }
+        }
+    }
+    
+    // Save photo function
+    fun savePhoto(location: com.ai.vis.ui.components.SaveLocation) {
+        coroutineScope.launch(Dispatchers.IO) {
+            try {
+                val finalBitmap = originalBitmap ?: return@launch
+                val fileName = "AIVis_${System.currentTimeMillis()}.jpg"
+                
+                when (location) {
+                    com.ai.vis.ui.components.SaveLocation.GALLERY_ONLY -> {
+                        val uri = com.ai.vis.utils.PhotoSaver.saveToGallery(context, finalBitmap, fileName)
+                        withContext(Dispatchers.Main) {
+                            if (uri != null) {
+                                saveSuccessMessage = context.getString(R.string.photo_saved_to_gallery)
+                                showSaveSuccess = true
+                                android.widget.Toast.makeText(context, saveSuccessMessage, android.widget.Toast.LENGTH_SHORT).show()
+                                // Return to main screen after short delay
+                                kotlinx.coroutines.delay(500)
+                                onBackClick()
+                            } else {
+                                android.widget.Toast.makeText(context, context.getString(R.string.error_saving_photo), android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                    com.ai.vis.ui.components.SaveLocation.APP_ONLY -> {
+                        val file = com.ai.vis.utils.PhotoSaver.saveToAppStorage(context, finalBitmap, fileName)
+                        val thumbnail = com.ai.vis.utils.PhotoSaver.createThumbnail(context, finalBitmap, "thumb_$fileName")
+                        
+                        if (file != null) {
+                            val editedPhoto = com.ai.vis.data.EditedPhoto(
+                                filePath = file.absolutePath,
+                                fileName = fileName,
+                                timestamp = System.currentTimeMillis(),
+                                thumbnailPath = thumbnail?.absolutePath,
+                                width = finalBitmap.width,
+                                height = finalBitmap.height,
+                                sizeBytes = com.ai.vis.utils.PhotoSaver.getFileSize(file.absolutePath)
+                            )
+                            photoGalleryViewModel.insertPhoto(editedPhoto)
+                            
+                            withContext(Dispatchers.Main) {
+                                saveSuccessMessage = context.getString(R.string.photo_saved_to_app)
+                                showSaveSuccess = true
+                                android.widget.Toast.makeText(context, saveSuccessMessage, android.widget.Toast.LENGTH_SHORT).show()
+                                // Return to main screen after short delay
+                                kotlinx.coroutines.delay(500)
+                                onBackClick()
+                            }
+                        } else {
+                            withContext(Dispatchers.Main) {
+                                android.widget.Toast.makeText(context, context.getString(R.string.error_saving_photo), android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                    com.ai.vis.ui.components.SaveLocation.BOTH -> {
+                        val uri = com.ai.vis.utils.PhotoSaver.saveToGallery(context, finalBitmap, fileName)
+                        val file = com.ai.vis.utils.PhotoSaver.saveToAppStorage(context, finalBitmap, fileName)
+                        val thumbnail = com.ai.vis.utils.PhotoSaver.createThumbnail(context, finalBitmap, "thumb_$fileName")
+                        
+                        if (file != null) {
+                            val editedPhoto = com.ai.vis.data.EditedPhoto(
+                                filePath = file.absolutePath,
+                                fileName = fileName,
+                                timestamp = System.currentTimeMillis(),
+                                thumbnailPath = thumbnail?.absolutePath,
+                                width = finalBitmap.width,
+                                height = finalBitmap.height,
+                                sizeBytes = com.ai.vis.utils.PhotoSaver.getFileSize(file.absolutePath)
+                            )
+                            photoGalleryViewModel.insertPhoto(editedPhoto)
+                        }
+                        
+                        withContext(Dispatchers.Main) {
+                            if (uri != null && file != null) {
+                                saveSuccessMessage = context.getString(R.string.photo_saved_to_both)
+                                showSaveSuccess = true
+                                android.widget.Toast.makeText(context, saveSuccessMessage, android.widget.Toast.LENGTH_SHORT).show()
+                                // Return to main screen after short delay
+                                kotlinx.coroutines.delay(500)
+                                onBackClick()
+                            } else {
+                                android.widget.Toast.makeText(context, context.getString(R.string.error_saving_photo), android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(context, "${context.getString(R.string.error_saving_photo)}: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -585,7 +689,12 @@ fun PhotoEditorScreen(
                             selectedCropRatio = null
                             isToolPanelCollapsed = false
                         } else {
-                            onBackClick()
+                            // Show exit confirmation if there are any changes
+                            if (savedStatesUndoStack.isNotEmpty() || originalBitmap != null) {
+                                showExitDialog = true
+                            } else {
+                                onBackClick()
+                            }
                         }
                     }) {
                         Icon(
@@ -767,7 +876,8 @@ fun PhotoEditorScreen(
                             undoStack = emptyList()
                             redoStack = emptyList()
                         } else {
-                            onSaveClick()
+                            // Show save dialog
+                            showSaveDialog = true
                         }
                     }) {
                         Icon(
@@ -1795,6 +1905,26 @@ fun PhotoEditorScreen(
                 }
             }
         }
+        
+        // Exit Confirmation Dialog
+        com.ai.vis.ui.components.ExitConfirmDialog(
+            visible = showExitDialog,
+            onDismiss = { showExitDialog = false },
+            onConfirm = { 
+                showExitDialog = false
+                onBackClick()
+            }
+        )
+        
+        // Save Options Dialog
+        com.ai.vis.ui.components.SaveOptionsDialog(
+            visible = showSaveDialog,
+            onDismiss = { showSaveDialog = false },
+            onSaveLocationSelected = { location ->
+                showSaveDialog = false
+                savePhoto(location)
+            }
+        )
     }
 }
 
@@ -1862,8 +1992,7 @@ fun PhotoEditorScreenPreview() {
     AIVisTheme {
         PhotoEditorScreen(
             imageUri = null,
-            onBackClick = {},
-            onSaveClick = {}
+            onBackClick = {}
         )
     }
 }

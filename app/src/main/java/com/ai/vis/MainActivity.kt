@@ -135,9 +135,6 @@ class MainActivity : ComponentActivity() {
                             onBackClick = { 
                                 showPhotoEditor = false
                                 selectedImageUri = null
-                            },
-                            onSaveClick = {
-                                // TODO: Implement save functionality
                             }
                         )
                     }
@@ -189,6 +186,11 @@ class MainActivity : ComponentActivity() {
                                     cameraImageUri = uri
                                     cameraLauncher.launch(uri)
                                 }
+                            },
+                            onEditPhoto = { photoUri ->
+                                // Handle re-edit from gallery
+                                selectedImageUri = Uri.parse(photoUri)
+                                showPhotoEditor = true
                             }
                         )
                     }

@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import com.ai.vis.R
+import com.ai.vis.data.EditedPhoto
 import com.ai.vis.ui.components.AIVisAppBar
 import com.ai.vis.ui.components.ImageSourceBottomSheet
 import com.ai.vis.ui.theme.AIVisTheme
@@ -41,12 +42,34 @@ fun MainScreen(
     onSettingsClick: () -> Unit = {},
     onGalleryClick: () -> Unit = {},
     onCameraClick: () -> Unit = {},
+    onEditPhoto: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var showBottomSheet by remember { mutableStateOf(false) }
+    var selectedPhotoForViewing by remember { mutableStateOf<EditedPhoto?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
+    
+    // Show full image viewer if a photo is selected
+    if (selectedPhotoForViewing != null) {
+        FullImageViewerScreen(
+            photo = selectedPhotoForViewing!!,
+            onBackClick = {
+                selectedPhotoForViewing = null
+            },
+            onDeleteClick = {
+                // The viewModel will be accessed through the viewer itself
+                selectedPhotoForViewing = null
+            },
+            onReEditClick = {
+                val photoUri = "file://${selectedPhotoForViewing!!.filePath}"
+                selectedPhotoForViewing = null
+                onEditPhoto(photoUri)
+            }
+        )
+        return
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -93,6 +116,12 @@ fun MainScreen(
                 modifier = Modifier.padding(paddingValues)
             )
             1 -> MyGalleryScreen(
+                onReEditPhoto = { photoUri ->
+                    onEditPhoto(photoUri)
+                },
+                onPhotoSelected = { photo ->
+                    selectedPhotoForViewing = photo
+                },
                 modifier = Modifier.padding(paddingValues)
             )
         }

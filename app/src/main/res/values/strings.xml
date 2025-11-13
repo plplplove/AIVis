@@ -171,4 +171,40 @@
     <string name="reset">Reset</string>
     <string name="apply">Apply</string>
     <string name="done">Done</string>
+    
+    <!-- Exit Confirmation Dialog -->
+    <string name="exit_without_saving">Exit without saving?</string>
+    <string name="exit_confirmation_message">All unsaved changes will be lost. Are you sure you want to exit?</string>
+    <string name="exit">Exit</string>
+    <string name="continue_editing">Continue Editing</string>
+    
+    <!-- Save Options Dialog -->
+    <string name="save_photo">Save Photo</string>
+    <string name="save_options_message">Choose where to save your edited photo</string>
+    <string name="save_to_gallery">Save to Gallery</string>
+    <string name="save_to_gallery_desc">Save to device gallery</string>
+    <string name="save_to_app">Save to App</string>
+    <string name="save_to_app_desc">Save in app gallery only</string>
+    <string name="save_to_both">Save to Both</string>
+    <string name="save_to_both_desc">Save to both locations</string>
+    
+    <!-- Save Messages -->
+    <string name="photo_saved_successfully">Photo saved successfully</string>
+    <string name="photo_saved_to_gallery">Photo saved to gallery</string>
+    <string name="photo_saved_to_app">Photo saved to app gallery</string>
+    <string name="photo_saved_to_both">Photo saved to both locations</string>
+    <string name="error_saving_photo">Error saving photo</string>
+    
+    <!-- Full Image Viewer -->
+    <string name="full_image_preview">Full Image Preview</string>
+    <string name="export">Export</string>
+    <string name="delete">Delete</string>
+    <string name="re_edit">Re-Edit</string>
+    <string name="share">Share</string>
+    <string name="delete_photo">Delete Photo</string>
+    <string name="delete_confirmation_message">Are you sure you want to delete this photo? This action cannot be undone.</string>
+    <string name="selected">Selected</string>
+    <string name="edit_filename">Edit Filename</string>
+    <string name="enter_new_filename">Enter new filename</string>
+    <string name="filename_updated">Filename updated successfully</string>
 </resources>
