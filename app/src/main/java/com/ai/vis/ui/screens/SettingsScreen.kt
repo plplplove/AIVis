@@ -58,6 +58,7 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsState()
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showClearCacheDialog by remember { mutableStateOf(false) }
     
     // Debug logging
     androidx.compose.runtime.LaunchedEffect(settings) {
@@ -238,7 +239,7 @@ fun SettingsScreen(
             // Clear Cache
             SettingsCard(
                 onClick = {
-                    viewModel.clearCache()
+                    showClearCacheDialog = true
                 }
             ) {
                 Row(
@@ -275,7 +276,7 @@ fun SettingsScreen(
             // About App
             SettingsCard(
                 onClick = {
-                    showAboutDialog = true
+                    showAboutDialog = !showAboutDialog
                 }
             ) {
                 Row(
@@ -343,6 +344,107 @@ fun SettingsScreen(
                             fontFamily = FontFamily(Font(R.font.font_main_text)),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+    
+    // Clear Cache Confirmation Dialog
+    if (showClearCacheDialog) {
+        ClearCacheConfirmationDialog(
+            onDismiss = { showClearCacheDialog = false },
+            onConfirm = {
+                viewModel.clearAllData()
+                showClearCacheDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun ClearCacheConfirmationDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Title
+                Text(
+                    text = stringResource(id = R.string.clear_cache),
+                    fontSize = 24.sp,
+                    fontFamily = FontFamily(Font(R.font.font_main_text)),
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+                
+                // Warning Message
+                Text(
+                    text = stringResource(id = R.string.clear_cache_warning),
+                    fontSize = 16.sp,
+                    fontFamily = FontFamily(Font(R.font.font_main_text)),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    lineHeight = 22.sp
+                )
+                
+                // Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.cancel),
+                            fontFamily = FontFamily(Font(R.font.font_main_text)),
+                            fontSize = 16.sp
+                        )
+                    }
+                    
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = onConfirm,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.clear),
+                            fontFamily = FontFamily(Font(R.font.font_main_text)),
+                            fontSize = 16.sp
                         )
                     }
                 }

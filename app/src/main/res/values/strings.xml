@@ -207,4 +207,8 @@
     <string name="edit_filename">Edit Filename</string>
     <string name="enter_new_filename">Enter new filename</string>
     <string name="filename_updated">Filename updated successfully</string>
+    
+    <!-- Clear Cache Dialog -->
+    <string name="clear_cache_warning">This will delete all saved photos, reset theme, reset language, and clear all app data. This action cannot be undone.</string>
+    <string name="clear">Clear</string>
 </resources>

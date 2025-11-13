@@ -79,14 +79,6 @@ fun SaveOptionsDialog(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
-                        // Save icon
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_save),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        
                         // Title
                         Text(
                             text = stringResource(id = R.string.save_photo),
@@ -145,15 +137,17 @@ fun SaveOptionsDialog(
                         }
                         
                         // Cancel button
-                        TextButton(
+                        OutlinedButton(
                             onClick = onDismiss,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
                                 text = stringResource(id = R.string.cancel),
                                 fontFamily = FontFamily(Font(R.font.font_main_text)),
-                                fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                fontSize = 16.sp
                             )
                         }
                     }

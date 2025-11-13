@@ -71,14 +71,6 @@ fun ExitConfirmDialog(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
-                        // Warning icon
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_close),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        
                         // Title
                         Text(
                             text = stringResource(id = R.string.exit_without_saving),
@@ -99,47 +91,39 @@ fun ExitConfirmDialog(
                             lineHeight = 22.sp
                         )
                         
-                        // Buttons
-                        Column(
+                        // Buttons - horizontal layout with outlined buttons
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            // Exit button
-                            Button(
+                            OutlinedButton(
+                                onClick = onDismiss,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.cancel),
+                                    fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                    fontSize = 16.sp
+                                )
+                            }
+                            
+                            OutlinedButton(
                                 onClick = onConfirm,
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(50.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.error,
-                                    contentColor = MaterialTheme.colorScheme.onError
-                                )
+                                    .weight(1f)
+                                    .height(48.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                ),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text(
                                     text = stringResource(id = R.string.exit),
                                     fontFamily = FontFamily(Font(R.font.font_main_text)),
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            
-                            // Continue editing button
-                            OutlinedButton(
-                                onClick = onDismiss,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(50.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.primary
-                                )
-                            ) {
-                                Text(
-                                    text = stringResource(id = R.string.continue_editing),
-                                    fontFamily = FontFamily(Font(R.font.font_main_text)),
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium
+                                    fontSize = 16.sp
                                 )
                             }
                         }

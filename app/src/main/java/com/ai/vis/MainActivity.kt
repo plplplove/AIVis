@@ -35,8 +35,12 @@ import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     private val settingsDataStore by lazy { SettingsDataStore(applicationContext) }
+    private val photoRepository by lazy {
+        val photoDao = com.ai.vis.data.AppDatabase.getDatabase(applicationContext).editedPhotoDao()
+        com.ai.vis.data.PhotoRepository(photoDao)
+    }
     private val settingsViewModel: SettingsViewModel by viewModels {
-        SettingsViewModelFactory(settingsDataStore)
+        SettingsViewModelFactory(settingsDataStore, photoRepository)
     }
     
     override fun attachBaseContext(newBase: Context) {

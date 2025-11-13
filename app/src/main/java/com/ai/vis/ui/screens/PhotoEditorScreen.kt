@@ -24,9 +24,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -156,6 +159,9 @@ fun PhotoEditorScreen(
     // Undo/Redo stacks for main screen (saved states after OK)
     var savedStatesUndoStack by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
     var savedStatesRedoStack by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
+    
+    // Store state before entering a tool menu (to save as group later)
+    var stateBeforeEditing by remember { mutableStateOf<Bitmap?>(null) }
     
     // Transform state for zoom and pan
     var scale by remember { mutableFloatStateOf(1f) }
@@ -454,6 +460,13 @@ fun PhotoEditorScreen(
             showTextDialog = true
             dialogInputText = ""
         }
+        
+        // Save state before entering any tool menu (except when deselecting)
+        if (selectedTool != null && !isEditing) {
+            originalBitmap?.let { bitmap ->
+                stateBeforeEditing = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
+            }
+        }
     }
     
     // Handle system back button
@@ -475,6 +488,10 @@ fun PhotoEditorScreen(
                 selectedTextId = null
                 isEditing = false
                 selectedTool = null
+                // Clear editing session state
+                undoStack = emptyList()
+                redoStack = emptyList()
+                stateBeforeEditing = null
             }
             selectedTool != null -> {
                 // Close tool panel
@@ -605,17 +622,8 @@ fun PhotoEditorScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    // Показуємо Undo/Redo коли вибрано інструмент (крім Crop)
-                    val showUndoRedo = selectedTool != null && selectedTool?.nameRes != R.string.crop_rotate
-                    
-                    if (!showUndoRedo) {
-                        Text(
-                            text = stringResource(id = R.string.editing),
-                            fontSize = 20.sp,
-                            fontFamily = FontFamily(Font(R.font.font_title)),
-                            fontWeight = FontWeight.Bold
-                        )
-                    } else if (showCropOverlay) {
+                    // Показуємо Undo/Redo завжди, крім режиму crop
+                    if (showCropOverlay) {
                         // In crop mode - show only title, no Undo/Redo
                         Text(
                             text = stringResource(id = R.string.crop_rotate),
@@ -624,19 +632,21 @@ fun PhotoEditorScreen(
                             fontWeight = FontWeight.Bold
                         )
                     } else {
-                        // Show Undo/Redo buttons when tool is selected
+                        // Show Undo/Redo buttons always (both in editing mode and main menu)
                         Row(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             IconButton(
-                                onClick = { performUndo() },
-                                enabled = undoStack.isNotEmpty()
+                                onClick = { 
+                                    if (isEditing) performUndo() else performSavedStateUndo()
+                                },
+                                enabled = if (isEditing) undoStack.isNotEmpty() else savedStatesUndoStack.isNotEmpty()
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_undo),
                                     contentDescription = "Undo",
-                                    tint = if (undoStack.isNotEmpty()) 
+                                    tint = if ((isEditing && undoStack.isNotEmpty()) || (!isEditing && savedStatesUndoStack.isNotEmpty())) 
                                         MaterialTheme.colorScheme.onBackground 
                                     else 
                                         MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)
@@ -644,13 +654,15 @@ fun PhotoEditorScreen(
                             }
                             
                             IconButton(
-                                onClick = { performRedo() },
-                                enabled = redoStack.isNotEmpty()
+                                onClick = { 
+                                    if (isEditing) performRedo() else performSavedStateRedo()
+                                },
+                                enabled = if (isEditing) redoStack.isNotEmpty() else savedStatesRedoStack.isNotEmpty()
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_redo),
                                     contentDescription = "Redo",
-                                    tint = if (redoStack.isNotEmpty()) 
+                                    tint = if ((isEditing && redoStack.isNotEmpty()) || (!isEditing && savedStatesRedoStack.isNotEmpty())) 
                                         MaterialTheme.colorScheme.onBackground 
                                     else 
                                         MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)
@@ -678,9 +690,10 @@ fun PhotoEditorScreen(
                             isEditing = false
                             selectedTool = null  // Закрити меню інструменту
                             isToolPanelCollapsed = false
-                            // Clear undo/redo stacks for editing session
+                            // Clear undo/redo stacks for editing session and state before editing
                             undoStack = emptyList()
                             redoStack = emptyList()
+                            stateBeforeEditing = null
                         } else if (selectedTool != null) {
                             // Якщо вибрано інструмент (але не редагування) - закриваємо інструмент
                             selectedTool = null
@@ -704,42 +717,14 @@ fun PhotoEditorScreen(
                     }
                 },
                 actions = {
-                    // Show Undo/Redo on main screen (not editing)
-                    if (!isEditing) {
-                        IconButton(
-                            onClick = { performSavedStateUndo() },
-                            enabled = savedStatesUndoStack.isNotEmpty()
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_undo),
-                                contentDescription = "Undo",
-                                tint = if (savedStatesUndoStack.isNotEmpty()) 
-                                    MaterialTheme.colorScheme.onBackground 
-                                else 
-                                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)
-                            )
-                        }
-                        
-                        IconButton(
-                            onClick = { performSavedStateRedo() },
-                            enabled = savedStatesRedoStack.isNotEmpty()
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_redo),
-                                contentDescription = "Redo",
-                                tint = if (savedStatesRedoStack.isNotEmpty()) 
-                                    MaterialTheme.colorScheme.onBackground 
-                                else 
-                                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)
-                            )
-                        }
-                    }
+                    // Save/Apply button - показуємо галочку коли вибрано інструмент або режим редагування
+                    val showCheckmark = selectedTool != null || isEditing
                     
                     IconButton(onClick = {
                         if (isEditing) {
-                            // Save current state before applying changes
-                            originalBitmap?.let { bitmap ->
-                                savedStatesUndoStack = savedStatesUndoStack + bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
+                            // Save state before editing as one group to main undo stack
+                            stateBeforeEditing?.let { beforeState ->
+                                savedStatesUndoStack = savedStatesUndoStack + beforeState.copy(beforeState.config ?: Bitmap.Config.ARGB_8888, true)
                                 savedStatesRedoStack = emptyList() // Clear redo when new change is saved
                             }
                             
@@ -872,16 +857,17 @@ fun PhotoEditorScreen(
                             showTextDialog = false
                             isEditing = false
                             selectedTool = null  // Close bottom panel after applying
-                            // Clear editing session undo/redo
+                            // Clear editing session undo/redo and state before editing
                             undoStack = emptyList()
                             redoStack = emptyList()
+                            stateBeforeEditing = null
                         } else {
                             // Show save dialog
                             showSaveDialog = true
                         }
                     }) {
                         Icon(
-                            painter = painterResource(id = if (isEditing) R.drawable.ic_done else R.drawable.ic_save),
+                            painter = painterResource(id = if (showCheckmark) R.drawable.ic_done else R.drawable.ic_save),
                             contentDescription = if (isEditing) stringResource(id = R.string.apply) else stringResource(id = R.string.save),
                             tint = MaterialTheme.colorScheme.primary
                         )

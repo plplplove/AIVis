@@ -181,6 +181,10 @@
     <string name="edit_filename">Edytuj nazwę pliku</string>
     <string name="enter_new_filename">Wprowadź nową nazwę pliku</string>
     <string name="filename_updated">Nazwa pliku zaktualizowana pomyślnie</string>
+    
+    <!-- Clear Cache Dialog -->
+    <string name="clear_cache_warning">Spowoduje to usunięcie wszystkich zapisanych zdjęć, zresetowanie motywu, zresetowanie języka i wyczyszczenie wszystkich danych aplikacji. Ta operacja jest nieodwracalna.</string>
+    <string name="clear">Wyczyść</string>
 </resources>
 
 
