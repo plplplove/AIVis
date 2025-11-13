@@ -236,7 +236,7 @@ fun StickerPanel(
                 onClick = { selectedParameter = 0 },
                 colors = CardDefaults.cardColors(
                     containerColor = if (selectedParameter == 0)
-                        com.ai.vis.ui.theme.SelectionLightBlue
+                        com.ai.vis.ui.theme.SelectionColor()
                     else MaterialTheme.colorScheme.surface
                 ),
                     elevation = CardDefaults.cardElevation(
@@ -283,9 +283,9 @@ fun StickerPanel(
                     .height(80.dp),
                 onClick = { selectedParameter = 1 },
                 colors = CardDefaults.cardColors(
-                        containerColor = if (selectedParameter == 1)
-                            com.ai.vis.ui.theme.SelectionLightBlue
-                        else MaterialTheme.colorScheme.surface
+                                containerColor = if (selectedParameter == 1)
+                                    com.ai.vis.ui.theme.SelectionColor()
+                                else MaterialTheme.colorScheme.surface
                     ),
                     elevation = CardDefaults.cardElevation(
                         defaultElevation = if (selectedParameter == 1) 4.dp else 2.dp
@@ -332,7 +332,7 @@ fun StickerPanel(
                     onClick = { selectedParameter = 2 },
                     colors = CardDefaults.cardColors(
                         containerColor = if (selectedParameter == 2)
-                            com.ai.vis.ui.theme.SelectionLightBlue
+                            com.ai.vis.ui.theme.SelectionColor()
                         else MaterialTheme.colorScheme.surface
                     ),
                     elevation = CardDefaults.cardElevation(

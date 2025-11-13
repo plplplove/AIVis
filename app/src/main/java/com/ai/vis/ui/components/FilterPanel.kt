@@ -157,12 +157,12 @@ fun FilterItem(
             .width(80.dp)
             .height(80.dp),
         onClick = onClick,
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected)
-                com.ai.vis.ui.theme.SelectionLightBlue
-            else
-                MaterialTheme.colorScheme.surface
-        ),
+                colors = CardDefaults.cardColors(
+                containerColor = if (isSelected)
+                    com.ai.vis.ui.theme.SelectionColor()
+                else
+                    MaterialTheme.colorScheme.surface
+            ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (isSelected) 4.dp else 2.dp
         ),

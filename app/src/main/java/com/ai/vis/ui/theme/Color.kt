@@ -11,6 +11,8 @@ val AccentPurple = Color(0xFF7B61FF)
 
 // Selection Color (light sky blue for selected cards)
 val SelectionLightBlue = Color(0xFFB3D9FF)
+// Selection Color for dark theme (muted/desaturated blue)
+val SelectionDarkBlue = Color(0xFF274A6B)
 
 // Background Colors
 val BackgroundDark = Color(0xFF121212)

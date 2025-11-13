@@ -54,7 +54,7 @@ fun EditorOptionCard(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                com.ai.vis.ui.theme.SelectionLightBlue
+                com.ai.vis.ui.theme.SelectionColor()
             else
                 MaterialTheme.colorScheme.surface
         ),

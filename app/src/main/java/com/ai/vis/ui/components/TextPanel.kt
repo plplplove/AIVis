@@ -636,9 +636,9 @@ fun WeightCard(
             .width(80.dp)
             .height(80.dp),
         onClick = onClick,
-        colors = CardDefaults.cardColors(
+                colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                com.ai.vis.ui.theme.SelectionLightBlue
+                com.ai.vis.ui.theme.SelectionColor()
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -700,7 +700,7 @@ fun BackgroundCard(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                com.ai.vis.ui.theme.SelectionLightBlue
+                com.ai.vis.ui.theme.SelectionColor()
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -784,7 +784,7 @@ fun TextOptionItem(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected && option.type != TextOptionType.WEIGHT && option.type != TextOptionType.BACKGROUND)
-                com.ai.vis.ui.theme.SelectionLightBlue
+                com.ai.vis.ui.theme.SelectionColor()
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -838,7 +838,7 @@ fun AlignmentButton(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                com.ai.vis.ui.theme.SelectionLightBlue
+                com.ai.vis.ui.theme.SelectionColor()
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -873,7 +873,7 @@ fun WeightButton(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                com.ai.vis.ui.theme.SelectionLightBlue
+                com.ai.vis.ui.theme.SelectionColor()
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -939,7 +939,7 @@ fun FontCard(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                com.ai.vis.ui.theme.SelectionLightBlue
+                com.ai.vis.ui.theme.SelectionColor()
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -982,7 +982,7 @@ fun DecorationToggle(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isEnabled)
-                com.ai.vis.ui.theme.SelectionLightBlue
+                com.ai.vis.ui.theme.SelectionColor()
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -1036,7 +1036,7 @@ fun ToggleOption(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isEnabled)
-                com.ai.vis.ui.theme.SelectionLightBlue
+                com.ai.vis.ui.theme.SelectionColor()
             else
                 MaterialTheme.colorScheme.surface
         ),

@@ -138,7 +138,7 @@ fun DrawPanel(
                                 onClick = { onEraserToggle(false) },
                                 colors = CardDefaults.cardColors(
                                     containerColor = if (!isEraserMode)
-                                        com.ai.vis.ui.theme.SelectionLightBlue
+                                        com.ai.vis.ui.theme.SelectionColor()
                                     else
                                         MaterialTheme.colorScheme.surface
                                 ),
@@ -179,7 +179,7 @@ fun DrawPanel(
                                 onClick = { onEraserToggle(true) },
                                 colors = CardDefaults.cardColors(
                                     containerColor = if (isEraserMode)
-                                        com.ai.vis.ui.theme.SelectionLightBlue
+                                        com.ai.vis.ui.theme.SelectionColor()
                                     else
                                         MaterialTheme.colorScheme.surface
                                 ),
@@ -278,7 +278,7 @@ fun DrawPanel(
                                         .clickable { onShapeFillToggle(true) },
                                     colors = CardDefaults.cardColors(
                                         containerColor = if (isShapeFilled)
-                                            com.ai.vis.ui.theme.SelectionLightBlue
+                                            com.ai.vis.ui.theme.SelectionColor()
                                         else
                                             MaterialTheme.colorScheme.surface
                                     ),
@@ -309,7 +309,7 @@ fun DrawPanel(
                                         .clickable { onShapeFillToggle(false) },
                                     colors = CardDefaults.cardColors(
                                         containerColor = if (!isShapeFilled)
-                                            com.ai.vis.ui.theme.SelectionLightBlue
+                                            com.ai.vis.ui.theme.SelectionColor()
                                         else
                                             MaterialTheme.colorScheme.surface
                                     ),
@@ -509,14 +509,14 @@ fun DrawParameterItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+        Card(
         modifier = modifier
             .width(80.dp)
             .height(80.dp),
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                com.ai.vis.ui.theme.SelectionLightBlue
+                com.ai.vis.ui.theme.SelectionColor()
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -586,7 +586,7 @@ fun ShapeButton(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                com.ai.vis.ui.theme.SelectionLightBlue
+                com.ai.vis.ui.theme.SelectionColor()
             else
                 MaterialTheme.colorScheme.surface
         ),
