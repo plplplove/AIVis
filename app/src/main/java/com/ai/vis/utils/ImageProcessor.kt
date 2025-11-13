@@ -209,6 +209,165 @@ object ImageProcessor {
     }
     
     /**
+     * Apply vignette effect (0.0 to 1.0)
+     * Darkens edges gradually from center
+     */
+    fun applyVignette(bitmap: Bitmap, intensity: Float): Bitmap {
+        if (intensity == 0f) return bitmap
+        
+        val result = Bitmap.createBitmap(bitmap.width, bitmap.height, bitmap.config ?: Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(result)
+        
+        // Draw original bitmap first
+        canvas.drawBitmap(bitmap, 0f, 0f, null)
+        
+        // Calculate vignette parameters
+        val centerX = bitmap.width / 2f
+        val centerY = bitmap.height / 2f
+        val maxRadius = Math.sqrt((centerX * centerX + centerY * centerY).toDouble()).toFloat()
+        
+        // Create radial gradient overlay
+        val paint = Paint().apply {
+            isAntiAlias = true
+            shader = android.graphics.RadialGradient(
+                centerX,
+                centerY,
+                maxRadius,
+                intArrayOf(
+                    android.graphics.Color.TRANSPARENT,
+                    android.graphics.Color.argb((intensity * 200).toInt(), 0, 0, 0)
+                ),
+                floatArrayOf(
+                    0.3f, // Start fade from 30% of radius
+                    1.0f  // Full dark at edges
+                ),
+                android.graphics.Shader.TileMode.CLAMP
+            )
+        }
+        
+        // Draw vignette overlay
+        canvas.drawRect(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat(), paint)
+        return result
+    }
+    
+    /**
+     * Apply Black & White filter with intensity (0.0 to 1.0)
+     */
+    fun applyBWFilter(bitmap: Bitmap, intensity: Float): Bitmap {
+        val colorMatrix = ColorMatrix()
+        colorMatrix.setSaturation(1f - intensity)
+        return applyColorMatrixWithIntensity(bitmap, colorMatrix, intensity)
+    }
+    
+    /**
+     * Apply Sepia filter with intensity (0.0 to 1.0)
+     */
+    fun applySepiaFilter(bitmap: Bitmap, intensity: Float): Bitmap {
+        val colorMatrix = ColorMatrix().apply {
+            set(floatArrayOf(
+                0.393f, 0.769f, 0.189f, 0f, 0f,
+                0.349f, 0.686f, 0.168f, 0f, 0f,
+                0.272f, 0.534f, 0.131f, 0f, 0f,
+                0f, 0f, 0f, 1f, 0f
+            ))
+        }
+        return applyColorMatrixWithIntensity(bitmap, colorMatrix, intensity)
+    }
+    
+    /**
+     * Apply Vintage filter with intensity (0.0 to 1.0)
+     */
+    fun applyVintageFilter(bitmap: Bitmap, intensity: Float): Bitmap {
+        val colorMatrix = ColorMatrix().apply {
+            set(floatArrayOf(
+                0.6f, 0.3f, 0.1f, 0f, 30f * intensity,
+                0.2f, 0.6f, 0.2f, 0f, 20f * intensity,
+                0.2f, 0.3f, 0.5f, 0f, 10f * intensity,
+                0f, 0f, 0f, 1f, 0f
+            ))
+        }
+        return applyColorMatrixWithIntensity(bitmap, colorMatrix, intensity)
+    }
+    
+    /**
+     * Apply Cool filter with intensity (0.0 to 1.0)
+     */
+    fun applyCoolFilter(bitmap: Bitmap, intensity: Float): Bitmap {
+        val coolMatrix = ColorMatrix().apply {
+            set(floatArrayOf(
+                1f, 0f, 0f, 0f, -10f * intensity,
+                0f, 1f, 0f, 0f, 10f * intensity,
+                0f, 0f, 1f, 0f, 30f * intensity,
+                0f, 0f, 0f, 1f, 0f
+            ))
+        }
+        return applyColorMatrixWithIntensity(bitmap, coolMatrix, intensity)
+    }
+    
+    /**
+     * Apply Warm filter with intensity (0.0 to 1.0)
+     */
+    fun applyWarmFilter(bitmap: Bitmap, intensity: Float): Bitmap {
+        val warmMatrix = ColorMatrix().apply {
+            set(floatArrayOf(
+                1f, 0f, 0f, 0f, 30f * intensity,
+                0f, 1f, 0f, 0f, 10f * intensity,
+                0f, 0f, 1f, 0f, -20f * intensity,
+                0f, 0f, 0f, 1f, 0f
+            ))
+        }
+        return applyColorMatrixWithIntensity(bitmap, warmMatrix, intensity)
+    }
+    
+    /**
+     * Apply Grayscale filter with intensity (0.0 to 1.0)
+     */
+    fun applyGrayscaleFilter(bitmap: Bitmap, intensity: Float): Bitmap {
+        val colorMatrix = ColorMatrix()
+        colorMatrix.setSaturation(1f - intensity)
+        return applyColorMatrixWithIntensity(bitmap, colorMatrix, intensity)
+    }
+    
+    /**
+     * Apply Invert filter with intensity (0.0 to 1.0)
+     */
+    fun applyInvertFilter(bitmap: Bitmap, intensity: Float): Bitmap {
+        val invertMatrix = ColorMatrix().apply {
+            set(floatArrayOf(
+                -1f, 0f, 0f, 0f, 255f,
+                0f, -1f, 0f, 0f, 255f,
+                0f, 0f, -1f, 0f, 255f,
+                0f, 0f, 0f, 1f, 0f
+            ))
+        }
+        return applyColorMatrixWithIntensity(bitmap, invertMatrix, intensity)
+    }
+    
+    /**
+     * Apply color matrix with intensity blending
+     */
+    private fun applyColorMatrixWithIntensity(bitmap: Bitmap, colorMatrix: ColorMatrix, intensity: Float): Bitmap {
+        if (intensity == 0f) return bitmap
+        
+        val result = Bitmap.createBitmap(bitmap.width, bitmap.height, bitmap.config ?: Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(result)
+        
+        // Draw original if intensity < 1
+        if (intensity < 1f) {
+            canvas.drawBitmap(bitmap, 0f, 0f, null)
+        }
+        
+        // Draw filtered version with alpha based on intensity
+        val paint = Paint().apply {
+            colorFilter = ColorMatrixColorFilter(colorMatrix)
+            alpha = (intensity * 255).toInt()
+        }
+        canvas.drawBitmap(bitmap, 0f, 0f, paint)
+        
+        return result
+    }
+    
+    /**
      * Apply sharpness (simplified version, -1.0 to 1.0)
      * Note: Real sharpness requires convolution matrix, this is a simplified version
      */
@@ -475,6 +634,67 @@ object ImageProcessor {
                 android.util.Log.e("ImageProcessor", "Failed to draw path: ${e.message}")
             }
         }
+        
+        canvas.restore()
+        
+        return result
+    }
+    
+    /**
+     * Draw emoji sticker on bitmap
+     */
+    fun drawStickerOnBitmap(
+        bitmap: Bitmap,
+        emoji: String,
+        position: androidx.compose.ui.geometry.Offset,
+        emojiSizePx: Float,
+        rotation: Float,
+        opacity: Float,
+        imageBounds: androidx.compose.ui.geometry.Rect
+    ): Bitmap {
+        if (emoji.isEmpty()) return bitmap
+        
+        val result = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(result)
+        
+        // Convert screen coordinates to bitmap coordinates
+        val scaleX = bitmap.width / imageBounds.width
+        val scaleY = bitmap.height / imageBounds.height
+        
+        // Scale emoji size to bitmap
+        val bitmapEmojiSize = emojiSizePx * scaleY
+        
+        val paint = Paint().apply {
+            textSize = bitmapEmojiSize
+            textAlign = Paint.Align.LEFT  // Changed to LEFT to match UI offset behavior
+            isAntiAlias = true
+            color = android.graphics.Color.BLACK
+            alpha = (opacity * 255).toInt()
+        }
+        
+        // Get text bounds to calculate proper positioning
+        val textBounds = android.graphics.Rect()
+        paint.getTextBounds(emoji, 0, emoji.length, textBounds)
+        
+        // Calculate bitmap position - offset is top-left like in UI
+        val bitmapX = (position.x - imageBounds.left) * scaleX
+        // Adjust Y to draw text baseline (drawText draws from baseline, not top)
+        // UI position is top-left with padding(4.dp), so we need to subtract textBounds.top
+        val bitmapY = (position.y - imageBounds.top) * scaleY - textBounds.top + (4f * scaleY)
+        
+        // Clip canvas to bitmap bounds
+        canvas.save()
+        canvas.clipRect(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
+        
+        // Apply rotation around the sticker position if needed
+        if (rotation != 0f) {
+            // Calculate rotation center (middle of the emoji)
+            val centerX = bitmapX + textBounds.width() / 2f
+            val centerY = bitmapY + textBounds.height() / 2f
+            canvas.rotate(rotation, centerX, centerY)
+        }
+        
+        canvas.drawText(emoji, bitmapX, bitmapY, paint)
         
         canvas.restore()
         

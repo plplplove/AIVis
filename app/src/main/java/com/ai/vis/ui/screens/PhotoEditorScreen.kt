@@ -102,15 +102,28 @@ data class TextItem(
     var style: com.ai.vis.ui.components.TextStyle
 )
 
+// Sticker item data class
+data class StickerItem(
+    val id: Int,
+    var emoji: String,
+    var position: Offset,
+    var scale: Float = 1f,
+    var rotation: Float = 0f,
+    var opacity: Float = 1f
+)
+
 // Data class to store editor state for undo/redo
 data class EditorState(
     val bitmap: Bitmap,
     val textItems: List<TextItem> = emptyList(),
+    val stickerItems: List<StickerItem> = emptyList(),
     val drawPaths: List<com.ai.vis.ui.components.DrawPath> = emptyList(),
     val adjustmentValues: Map<Int, Float> = mapOf(
         0 to 0f, 1 to 0f, 2 to 0f,
-        3 to 0f, 4 to 0f, 5 to 0f
-    )
+        3 to 0f, 4 to 0f, 5 to 0f, 6 to 0f
+    ),
+    val currentFilter: com.ai.vis.ui.components.FilterType = com.ai.vis.ui.components.FilterType.NONE,
+    val filterIntensity: Float = 1f
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -151,6 +164,9 @@ fun PhotoEditorScreen(
     // Track if user is editing (to show Apply/Cancel buttons)
     var isEditing by remember { mutableStateOf(false) }
     
+    // Tool panel collapse state
+    var isToolPanelCollapsed by remember { mutableStateOf(false) }
+    
     // Crop state - don't select any ratio by default
     var selectedCropRatio by remember { mutableStateOf<CropRatio?>(null) }
     var showCropOverlay by remember { mutableStateOf(false) }
@@ -184,6 +200,13 @@ fun PhotoEditorScreen(
     var dialogInputText by remember { mutableStateOf("") }
     var textStyle by remember { mutableStateOf(com.ai.vis.ui.components.TextStyle()) }
     
+    // Sticker elements 🎨
+    var stickerItems by remember { mutableStateOf<List<StickerItem>>(emptyList()) }
+    var selectedStickerId by remember { mutableStateOf<Int?>(null) }
+    var nextStickerId by remember { mutableStateOf(0) }
+    var stickerSize by remember { mutableFloatStateOf(1.5f) } // Default scale 1.5
+    var stickerOpacity by remember { mutableFloatStateOf(1f) } // Default opacity 1.0
+    
     // Track if we saved state for current text transformation
     var savedStateForTransform by remember { mutableStateOf(false) }
     
@@ -194,6 +217,12 @@ fun PhotoEditorScreen(
     var drawOpacity by remember { mutableFloatStateOf(1f) }
     var drawSoftness by remember { mutableFloatStateOf(0f) }
     var isEraserMode by remember { mutableStateOf(false) }
+    var currentShapeType by remember { mutableStateOf(com.ai.vis.ui.components.ShapeType.FREE_DRAW) }
+    var isShapeFilled by remember { mutableStateOf(false) }
+    
+    // Filter state 🎨
+    var currentFilter by remember { mutableStateOf(com.ai.vis.ui.components.FilterType.NONE) }
+    var filterIntensity by remember { mutableFloatStateOf(1f) }
     
     // Розмір і позиція Image в Box (для збереження тексту на bitmap)
     var imageRectInBox by remember { mutableStateOf<Rect?>(null) }
@@ -204,8 +233,11 @@ fun PhotoEditorScreen(
             val currentState = EditorState(
                 bitmap = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true),
                 textItems = textItems.map { it.copy() },
+                stickerItems = stickerItems.map { it.copy() },
                 drawPaths = drawPaths.map { it.copy() },
-                adjustmentValues = adjustmentValues.toMap()
+                adjustmentValues = adjustmentValues.toMap(),
+                currentFilter = currentFilter,
+                filterIntensity = filterIntensity
             )
             undoStack = undoStack + currentState
             redoStack = emptyList() // Clear redo stack when new action is performed
@@ -219,8 +251,11 @@ fun PhotoEditorScreen(
                 EditorState(
                     bitmap = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true),
                     textItems = textItems.map { it.copy() },
+                    stickerItems = stickerItems.map { it.copy() },
                     drawPaths = drawPaths.map { it.copy() },
-                    adjustmentValues = adjustmentValues.toMap()
+                    adjustmentValues = adjustmentValues.toMap(),
+                    currentFilter = currentFilter,
+                    filterIntensity = filterIntensity
                 )
             }
             
@@ -231,8 +266,11 @@ fun PhotoEditorScreen(
             
             originalBitmap = previousState.bitmap
             textItems = previousState.textItems
+            stickerItems = previousState.stickerItems
             drawPaths = previousState.drawPaths
             adjustmentValues = previousState.adjustmentValues
+            currentFilter = previousState.currentFilter
+            filterIntensity = previousState.filterIntensity
             
             // If we're in adjustment mode, re-apply the restored adjustment values to preview
             if (selectedTool?.nameRes == R.string.adjust) {
@@ -263,6 +301,23 @@ fun PhotoEditorScreen(
                         previewBitmap = result
                     }
                 }
+            } else if (selectedTool?.nameRes == R.string.filters) {
+                // Re-apply filter for preview
+                coroutineScope.launch(Dispatchers.IO) {
+                    originalBitmap?.let { original ->
+                        val result = when (currentFilter) {
+                            com.ai.vis.ui.components.FilterType.NONE -> original
+                            com.ai.vis.ui.components.FilterType.BW -> ImageProcessor.applyBWFilter(original, filterIntensity)
+                            com.ai.vis.ui.components.FilterType.SEPIA -> ImageProcessor.applySepiaFilter(original, filterIntensity)
+                            com.ai.vis.ui.components.FilterType.VINTAGE -> ImageProcessor.applyVintageFilter(original, filterIntensity)
+                            com.ai.vis.ui.components.FilterType.COOL -> ImageProcessor.applyCoolFilter(original, filterIntensity)
+                            com.ai.vis.ui.components.FilterType.WARM -> ImageProcessor.applyWarmFilter(original, filterIntensity)
+                            com.ai.vis.ui.components.FilterType.GRAYSCALE -> ImageProcessor.applyGrayscaleFilter(original, filterIntensity)
+                            com.ai.vis.ui.components.FilterType.INVERT -> ImageProcessor.applyInvertFilter(original, filterIntensity)
+                        }
+                        previewBitmap = result
+                    }
+                }
             } else {
                 previewBitmap = null
             }
@@ -276,8 +331,11 @@ fun PhotoEditorScreen(
                 EditorState(
                     bitmap = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true),
                     textItems = textItems.map { it.copy() },
+                    stickerItems = stickerItems.map { it.copy() },
                     drawPaths = drawPaths.map { it.copy() },
-                    adjustmentValues = adjustmentValues.toMap()
+                    adjustmentValues = adjustmentValues.toMap(),
+                    currentFilter = currentFilter,
+                    filterIntensity = filterIntensity
                 )
             }
             
@@ -288,8 +346,11 @@ fun PhotoEditorScreen(
             
             originalBitmap = nextState.bitmap
             textItems = nextState.textItems
+            stickerItems = nextState.stickerItems
             drawPaths = nextState.drawPaths
             adjustmentValues = nextState.adjustmentValues
+            currentFilter = nextState.currentFilter
+            filterIntensity = nextState.filterIntensity
             
             // If we're in adjustment mode, re-apply the restored adjustment values to preview
             if (selectedTool?.nameRes == R.string.adjust) {
@@ -317,6 +378,23 @@ fun PhotoEditorScreen(
                             if (tint != 0f) result = ImageProcessor.adjustTint(result, tint)
                         }
                         
+                        previewBitmap = result
+                    }
+                }
+            } else if (selectedTool?.nameRes == R.string.filters) {
+                // Re-apply filter for preview
+                coroutineScope.launch(Dispatchers.IO) {
+                    originalBitmap?.let { original ->
+                        val result = when (currentFilter) {
+                            com.ai.vis.ui.components.FilterType.NONE -> original
+                            com.ai.vis.ui.components.FilterType.BW -> ImageProcessor.applyBWFilter(original, filterIntensity)
+                            com.ai.vis.ui.components.FilterType.SEPIA -> ImageProcessor.applySepiaFilter(original, filterIntensity)
+                            com.ai.vis.ui.components.FilterType.VINTAGE -> ImageProcessor.applyVintageFilter(original, filterIntensity)
+                            com.ai.vis.ui.components.FilterType.COOL -> ImageProcessor.applyCoolFilter(original, filterIntensity)
+                            com.ai.vis.ui.components.FilterType.WARM -> ImageProcessor.applyWarmFilter(original, filterIntensity)
+                            com.ai.vis.ui.components.FilterType.GRAYSCALE -> ImageProcessor.applyGrayscaleFilter(original, filterIntensity)
+                            com.ai.vis.ui.components.FilterType.INVERT -> ImageProcessor.applyInvertFilter(original, filterIntensity)
+                        }
                         previewBitmap = result
                     }
                 }
@@ -410,6 +488,8 @@ fun PhotoEditorScreen(
     val editorTools = listOf(
         EditorTool(R.string.crop_rotate, R.drawable.ic_crop),
         EditorTool(R.string.adjust, R.drawable.ic_brightness),
+        EditorTool(R.string.filters, R.drawable.ic_filters_main),
+        EditorTool(R.string.stickers, R.drawable.ic_sticker),
         EditorTool(R.string.ai_tools, R.drawable.ic_ai),
         EditorTool(R.string.ai_effects, R.drawable.ic_filters),
         EditorTool(R.string.text_tool, R.drawable.ic_text),
@@ -421,7 +501,10 @@ fun PhotoEditorScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    if (!isEditing) {
+                    // Показуємо Undo/Redo коли вибрано інструмент (крім Crop)
+                    val showUndoRedo = selectedTool != null && selectedTool?.nameRes != R.string.crop_rotate
+                    
+                    if (!showUndoRedo) {
                         Text(
                             text = stringResource(id = R.string.editing),
                             fontSize = 20.sp,
@@ -437,7 +520,7 @@ fun PhotoEditorScreen(
                             fontWeight = FontWeight.Bold
                         )
                     } else {
-                        // Show Undo/Redo buttons when editing (text/adjustment only)
+                        // Show Undo/Redo buttons when tool is selected
                         Row(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
@@ -474,7 +557,14 @@ fun PhotoEditorScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (isEditing) {
+                        if (selectedTool != null) {
+                            // Якщо вибрано інструмент - закриваємо інструмент
+                            selectedTool = null
+                            selectedTextId = null
+                            showCropOverlay = false
+                            selectedCropRatio = null
+                            isToolPanelCollapsed = false
+                        } else if (isEditing) {
                             // Cancel editing
                             previewBitmap = null
                             adjustmentValues = mapOf(
@@ -487,6 +577,7 @@ fun PhotoEditorScreen(
                             selectedTextId = null
                             textItems = emptyList()
                             drawPaths = emptyList()
+                            stickerItems = emptyList()
                             isEditing = false
                             selectedTool = null
                             // Clear undo/redo stacks for editing session
@@ -610,6 +701,39 @@ fun PhotoEditorScreen(
                                 }
                             }
                             
+                            // Зберігаємо ВСІ стікери на bitmap 🎨
+                            if (stickerItems.isNotEmpty() && selectedTool?.nameRes == R.string.stickers && imageRectInBox != null && imageBounds != null) {
+                                coroutineScope.launch(Dispatchers.IO) {
+                                    var resultBitmap = originalBitmap
+                                    stickerItems.forEach { stickerItem ->
+                                        // Конвертуємо розмір sp в px з врахуванням density
+                                        val finalEmojiSize = 60f * stickerItem.scale
+                                        val emojiSizePx = density.run { finalEmojiSize.sp.toPx() }
+                                        
+                                        // Коректуємо позицію відносно imageRectInBox (як для тексту)
+                                        val drawAbs = Offset(
+                                            imageBounds!!.left + (stickerItem.position.x - imageRectInBox!!.left),
+                                            imageBounds!!.top + (stickerItem.position.y - imageRectInBox!!.top)
+                                        )
+                                        
+                                        resultBitmap = resultBitmap?.let { bitmap ->
+                                            ImageProcessor.drawStickerOnBitmap(
+                                                bitmap = bitmap,
+                                                emoji = stickerItem.emoji,
+                                                position = drawAbs,
+                                                emojiSizePx = emojiSizePx,
+                                                rotation = stickerItem.rotation,
+                                                opacity = stickerItem.opacity,
+                                                imageBounds = imageBounds!!
+                                            )
+                                        }
+                                    }
+                                    originalBitmap = resultBitmap
+                                    stickerItems = emptyList()
+                                    selectedStickerId = null
+                                }
+                            }
+                            
                             // Зберігаємо ВСІ малюнки на bitmap 🎨
                             if (drawPaths.isNotEmpty() && selectedTool?.nameRes == R.string.draw_tool && imageBounds != null) {
                                 coroutineScope.launch(Dispatchers.IO) {
@@ -637,7 +761,7 @@ fun PhotoEditorScreen(
                             straightenAngle = 0f
                             showTextDialog = false
                             isEditing = false
-                            selectedTool = null
+                            selectedTool = null  // Close bottom panel after applying
                             // Clear editing session undo/redo
                             undoStack = emptyList()
                             redoStack = emptyList()
@@ -872,6 +996,8 @@ fun PhotoEditorScreen(
                         currentOpacity = drawOpacity,
                         currentSoftness = drawSoftness,
                         isEraserMode = isEraserMode,
+                        currentShapeType = currentShapeType,
+                        isShapeFilled = isShapeFilled,
                         onPathAdded = { newPath ->
                             drawPaths = drawPaths + newPath
                         },
@@ -995,6 +1121,81 @@ fun PhotoEditorScreen(
                         )
                     }
                 }
+                
+                // Відображення стікерів з pinch-to-zoom + drag + rotation 🎨
+                stickerItems.forEach { stickerItem ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(stickerItem.id) {
+                                detectTapGestures(
+                                    onDoubleTap = {
+                                        // Подвійний тап для видалення стікера
+                                        saveStateToUndo()
+                                        stickerItems = stickerItems.filter { it.id != stickerItem.id }
+                                        if (selectedStickerId == stickerItem.id) {
+                                            selectedStickerId = null
+                                        }
+                                    }
+                                )
+                            }
+                            .pointerInput(stickerItem.id) {
+                                detectTransformGestures(
+                                    onGesture = { _, pan, zoom, rotationChange ->
+                                        // Save state only at the start of transformation
+                                        if (!savedStateForTransform) {
+                                            saveStateToUndo()
+                                            savedStateForTransform = true
+                                        }
+                                        
+                                        stickerItems = stickerItems.map {
+                                            if (it.id == stickerItem.id) {
+                                                val newScale = (it.scale * zoom).coerceIn(0.5f, 5f)
+                                                val newPosition = Offset(
+                                                    x = it.position.x + pan.x,
+                                                    y = it.position.y + pan.y
+                                                )
+                                                val newRotation = it.rotation + rotationChange
+                                                it.copy(scale = newScale, position = newPosition, rotation = newRotation)
+                                            } else it
+                                        }
+                                    }
+                                )
+                            }
+                            .pointerInput(stickerItem.id) {
+                                // Reset transform flag when touch is released
+                                detectTapGestures(
+                                    onPress = {
+                                        savedStateForTransform = false
+                                        tryAwaitRelease()
+                                        savedStateForTransform = false
+                                    }
+                                )
+                            }
+                    ) {
+                        Text(
+                            text = stickerItem.emoji,
+                            fontSize = (60 * stickerItem.scale).sp,
+                            modifier = Modifier
+                                .offset {
+                                    androidx.compose.ui.unit.IntOffset(
+                                        stickerItem.position.x.toInt(),
+                                        stickerItem.position.y.toInt()
+                                    )
+                                }
+                                .graphicsLayer {
+                                    rotationZ = stickerItem.rotation
+                                    alpha = stickerItem.opacity
+                                }
+                                .border(
+                                    width = if (selectedStickerId == stickerItem.id) 2.dp else 0.dp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = RoundedCornerShape(4.dp)
+                                )
+                                .padding(4.dp)
+                        )
+                    }
+                }
             }
 
             // Діалог для введення тексту 💬
@@ -1055,7 +1256,7 @@ fun PhotoEditorScreen(
             ) {
                 // Tool-specific panel (shown when tool is selected with animation)
                 AnimatedVisibility(
-                    visible = selectedTool != null,
+                    visible = selectedTool != null && !isToolPanelCollapsed,
                     enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                     exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
                     modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -1205,6 +1406,102 @@ fun PhotoEditorScreen(
                                     onValueChangeFinished = { index ->
                                         // Save state after finishing adjustment for proper undo/redo
                                         // This ensures each slider change is a separate undo step
+                                    }
+                                )
+                            }
+                            R.string.filters -> {
+                                com.ai.vis.ui.components.FilterPanel(
+                                    currentFilter = currentFilter,
+                                    filterIntensity = filterIntensity,
+                                    onFilterChange = { filter ->
+                                        saveStateToUndo()
+                                        currentFilter = filter
+                                        isEditing = true
+                                        
+                                        coroutineScope.launch(Dispatchers.IO) {
+                                            originalBitmap?.let { original ->
+                                                val result = when (filter) {
+                                                    com.ai.vis.ui.components.FilterType.NONE -> original
+                                                    com.ai.vis.ui.components.FilterType.BW -> ImageProcessor.applyBWFilter(original, filterIntensity)
+                                                    com.ai.vis.ui.components.FilterType.SEPIA -> ImageProcessor.applySepiaFilter(original, filterIntensity)
+                                                    com.ai.vis.ui.components.FilterType.VINTAGE -> ImageProcessor.applyVintageFilter(original, filterIntensity)
+                                                    com.ai.vis.ui.components.FilterType.COOL -> ImageProcessor.applyCoolFilter(original, filterIntensity)
+                                                    com.ai.vis.ui.components.FilterType.WARM -> ImageProcessor.applyWarmFilter(original, filterIntensity)
+                                                    com.ai.vis.ui.components.FilterType.GRAYSCALE -> ImageProcessor.applyGrayscaleFilter(original, filterIntensity)
+                                                    com.ai.vis.ui.components.FilterType.INVERT -> ImageProcessor.applyInvertFilter(original, filterIntensity)
+                                                }
+                                                previewBitmap = result
+                                            }
+                                        }
+                                    },
+                                    onIntensityChangeStarted = {
+                                        saveStateToUndo()
+                                    },
+                                    onIntensityChange = { intensity ->
+                                        filterIntensity = intensity
+                                        
+                                        if (currentFilter != com.ai.vis.ui.components.FilterType.NONE) {
+                                            coroutineScope.launch(Dispatchers.IO) {
+                                                originalBitmap?.let { original ->
+                                                    val result = when (currentFilter) {
+                                                        com.ai.vis.ui.components.FilterType.NONE -> original
+                                                        com.ai.vis.ui.components.FilterType.BW -> ImageProcessor.applyBWFilter(original, intensity)
+                                                        com.ai.vis.ui.components.FilterType.SEPIA -> ImageProcessor.applySepiaFilter(original, intensity)
+                                                        com.ai.vis.ui.components.FilterType.VINTAGE -> ImageProcessor.applyVintageFilter(original, intensity)
+                                                        com.ai.vis.ui.components.FilterType.COOL -> ImageProcessor.applyCoolFilter(original, intensity)
+                                                        com.ai.vis.ui.components.FilterType.WARM -> ImageProcessor.applyWarmFilter(original, intensity)
+                                                        com.ai.vis.ui.components.FilterType.GRAYSCALE -> ImageProcessor.applyGrayscaleFilter(original, intensity)
+                                                        com.ai.vis.ui.components.FilterType.INVERT -> ImageProcessor.applyInvertFilter(original, intensity)
+                                                    }
+                                                    previewBitmap = result
+                                                }
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                            R.string.stickers -> {
+                                com.ai.vis.ui.components.StickerPanel(
+                                    currentSize = stickerSize,
+                                    currentOpacity = stickerOpacity,
+                                    onSizeChange = { size ->
+                                        stickerSize = size
+                                        // Оновлюємо вибраний стікер
+                                        if (selectedStickerId != null) {
+                                            saveStateToUndo()
+                                            stickerItems = stickerItems.map {
+                                                if (it.id == selectedStickerId) it.copy(scale = size) else it
+                                            }
+                                            isEditing = true
+                                        }
+                                    },
+                                    onOpacityChange = { opacity ->
+                                        stickerOpacity = opacity
+                                        selectedStickerId?.let { id ->
+                                            stickerItems = stickerItems.map { sticker ->
+                                                if (sticker.id == id) {
+                                                    sticker.copy(opacity = opacity)
+                                                } else {
+                                                    sticker
+                                                }
+                                            }
+                                        }
+                                    },
+                                    onStickerSelected = { emoji ->
+                                        saveStateToUndo()
+                                        
+                                        val centerPos = imageBounds?.center ?: Offset(500f, 500f)
+                                        val newSticker = StickerItem(
+                                            id = nextStickerId++,
+                                            emoji = emoji,
+                                            position = centerPos,
+                                            scale = stickerSize,
+                                            rotation = 0f,
+                                            opacity = stickerOpacity
+                                        )
+                                        stickerItems = stickerItems + newSticker
+                                        selectedStickerId = newSticker.id
+                                        isEditing = true
                                     }
                                 )
                             }
@@ -1380,6 +1677,8 @@ fun PhotoEditorScreen(
                                     currentOpacity = drawOpacity,
                                     currentSoftness = drawSoftness,
                                     isEraserMode = isEraserMode,
+                                    currentShapeType = currentShapeType,
+                                    isShapeFilled = isShapeFilled,
                                     onColorChange = { color ->
                                         drawColor = color
                                     },
@@ -1394,6 +1693,12 @@ fun PhotoEditorScreen(
                                     },
                                     onEraserToggle = { isEraser ->
                                         isEraserMode = isEraser
+                                    },
+                                    onShapeTypeChange = { shapeType ->
+                                        currentShapeType = shapeType
+                                    },
+                                    onShapeFillToggle = { isFilled ->
+                                        isShapeFilled = isFilled
                                     },
                                     onErase = {
                                         // Remove last drawn path (Undo last stroke)
@@ -1421,8 +1726,8 @@ fun PhotoEditorScreen(
                         )
                 ) {
                     when (selectedTool?.nameRes) {
-                        R.string.text_tool, R.string.adjust, R.string.draw_tool -> {
-                            // Режим редагування з прихованим меню - показуємо кнопку "Назад" та назву
+                        R.string.text_tool, R.string.adjust, R.string.draw_tool, R.string.filters, R.string.stickers -> {
+                            // Режим редагування з прихованим меню - показуємо кнопку згортання та назву
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -1432,15 +1737,14 @@ fun PhotoEditorScreen(
                             ) {
                                 IconButton(
                                     onClick = { 
-                                        selectedTool = null
-                                        selectedTextId = null
-                                        showCropOverlay = false
-                                        selectedCropRatio = null
+                                        isToolPanelCollapsed = !isToolPanelCollapsed
                                     }
                                 ) {
                                     Icon(
-                                        painter = painterResource(id = R.drawable.ic_back),
-                                        contentDescription = stringResource(id = R.string.back),
+                                        painter = painterResource(
+                                            id = if (isToolPanelCollapsed) R.drawable.ic_expand_less else R.drawable.ic_expand_more
+                                        ),
+                                        contentDescription = if (isToolPanelCollapsed) "Розгорнути" else "Згорнути",
                                         tint = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
@@ -1470,7 +1774,12 @@ fun PhotoEditorScreen(
                                         tool = tool,
                                         isSelected = selectedTool == tool,
                                         onClick = { 
-                                            selectedTool = if (selectedTool == tool) null else tool
+                                            val newTool = if (selectedTool == tool) null else tool
+                                            selectedTool = newTool
+                                            // Автоматично розгортаємо панель при виборі нового інструменту
+                                            if (newTool != null) {
+                                                isToolPanelCollapsed = false
+                                            }
                                             // Reset text dialog when deselecting text tool
                                             if (tool.nameRes == R.string.text_tool && selectedTool != tool) {
                                                 showTextDialog = false

@@ -123,7 +123,7 @@ fun AdjustPanel(
                             isAdjusting = false
                             onValueChangeFinished(index)
                         },
-                        valueRange = -1f..1f,
+                        valueRange = if (index == 6) 0f..1f else -1f..1f, // Vignette 0-1, others -1 to 1
                         colors = SliderDefaults.colors(
                             thumbColor = MaterialTheme.colorScheme.primary,
                             activeTrackColor = MaterialTheme.colorScheme.primary,

@@ -25,6 +25,17 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.input.pointer.pointerInput
 
+// Shape types for drawing
+enum class ShapeType {
+    FREE_DRAW,  // Normal drawing
+    LINE,
+    ARROW,
+    RECTANGLE,
+    ROUNDED_RECT,
+    CIRCLE,
+    STAR
+}
+
 // Data class to store a drawing path with its properties
 data class DrawPath(
     val path: Path,
@@ -32,8 +43,113 @@ data class DrawPath(
     val strokeWidth: Float,
     val opacity: Float,
     val softness: Float = 0f, // 0 = sharp, higher = blurry edges
-    val isEraser: Boolean = false // true = eraser mode
+    val isEraser: Boolean = false, // true = eraser mode
+    val shapeType: ShapeType = ShapeType.FREE_DRAW,
+    val isFilled: Boolean = false, // true = filled shape, false = stroke only
+    val startPoint: Offset? = null, // For shapes
+    val endPoint: Offset? = null // For shapes
 )
+
+// Helper function to create shape paths
+fun createShapePath(shapeType: ShapeType, start: Offset, end: Offset): Path {
+    val path = Path()
+    
+    when (shapeType) {
+        ShapeType.LINE -> {
+            path.moveTo(start.x, start.y)
+            path.lineTo(end.x, end.y)
+        }
+        ShapeType.ARROW -> {
+            // Draw line
+            path.moveTo(start.x, start.y)
+            path.lineTo(end.x, end.y)
+            
+            // Draw arrowhead
+            val angle = kotlin.math.atan2((end.y - start.y).toDouble(), (end.x - start.x).toDouble())
+            val arrowLength = 30f
+            val arrowAngle = Math.PI / 6 // 30 degrees
+            
+            val arrow1X = end.x - arrowLength * kotlin.math.cos(angle - arrowAngle).toFloat()
+            val arrow1Y = end.y - arrowLength * kotlin.math.sin(angle - arrowAngle).toFloat()
+            path.moveTo(end.x, end.y)
+            path.lineTo(arrow1X, arrow1Y)
+            
+            val arrow2X = end.x - arrowLength * kotlin.math.cos(angle + arrowAngle).toFloat()
+            val arrow2Y = end.y - arrowLength * kotlin.math.sin(angle + arrowAngle).toFloat()
+            path.moveTo(end.x, end.y)
+            path.lineTo(arrow2X, arrow2Y)
+        }
+        ShapeType.RECTANGLE -> {
+            path.addRect(
+                androidx.compose.ui.geometry.Rect(
+                    left = minOf(start.x, end.x),
+                    top = minOf(start.y, end.y),
+                    right = maxOf(start.x, end.x),
+                    bottom = maxOf(start.y, end.y)
+                )
+            )
+        }
+        ShapeType.ROUNDED_RECT -> {
+            val rect = androidx.compose.ui.geometry.Rect(
+                left = minOf(start.x, end.x),
+                top = minOf(start.y, end.y),
+                right = maxOf(start.x, end.x),
+                bottom = maxOf(start.y, end.y)
+            )
+            val radius = minOf(rect.width, rect.height) * 0.2f
+            path.addRoundRect(
+                androidx.compose.ui.geometry.RoundRect(
+                    rect = rect,
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius, radius)
+                )
+            )
+        }
+        ShapeType.CIRCLE -> {
+            val center = Offset(
+                (start.x + end.x) / 2f,
+                (start.y + end.y) / 2f
+            )
+            val radius = kotlin.math.sqrt(
+                ((end.x - start.x) * (end.x - start.x) + (end.y - start.y) * (end.y - start.y)) / 4f
+            )
+            path.addOval(
+                androidx.compose.ui.geometry.Rect(
+                    center = center,
+                    radius = radius
+                )
+            )
+        }
+        ShapeType.STAR -> {
+            // Draw 5-pointed star
+            val centerX = (start.x + end.x) / 2f
+            val centerY = (start.y + end.y) / 2f
+            val radius = kotlin.math.sqrt(
+                ((end.x - start.x) * (end.x - start.x) + (end.y - start.y) * (end.y - start.y)) / 4f
+            )
+            val innerRadius = radius * 0.4f
+            val points = 5
+            
+            for (i in 0 until points * 2) {
+                val angle = Math.PI / 2 + (i * Math.PI / points)
+                val r = if (i % 2 == 0) radius else innerRadius
+                val x = centerX + r * kotlin.math.cos(angle).toFloat()
+                val y = centerY - r * kotlin.math.sin(angle).toFloat()
+                
+                if (i == 0) {
+                    path.moveTo(x, y)
+                } else {
+                    path.lineTo(x, y)
+                }
+            }
+            path.close()
+        }
+        ShapeType.FREE_DRAW -> {
+            // Should not happen, but handle gracefully
+        }
+    }
+    
+    return path
+}
 
 @Composable
 fun DrawingCanvas(
@@ -44,58 +160,101 @@ fun DrawingCanvas(
     currentOpacity: Float,
     currentSoftness: Float,
     isEraserMode: Boolean,
+    currentShapeType: ShapeType = ShapeType.FREE_DRAW,
+    isShapeFilled: Boolean = false,
     onPathAdded: (DrawPath) -> Unit,
     onDrawingStarted: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var currentPath by remember { mutableStateOf<Path?>(null) }
+    var shapeStartPoint by remember { mutableStateOf<Offset?>(null) }
+    var shapeEndPoint by remember { mutableStateOf<Offset?>(null) }
     var pathUpdateTrigger by remember { mutableStateOf(0) }
     
     Canvas(
         modifier = modifier
             .fillMaxSize()
-            .pointerInput(currentColor, currentStrokeWidth, currentOpacity, currentSoftness, isEraserMode) {
+            .pointerInput(currentColor, currentStrokeWidth, currentOpacity, currentSoftness, isEraserMode, currentShapeType, isShapeFilled) {
                 detectDragGestures(
                     onDragStart = { offset ->
                         // Only allow drawing within image bounds
                         if (imageBounds?.contains(offset) == true) {
                             onDrawingStarted()
-                            currentPath = Path().apply {
-                                moveTo(offset.x, offset.y)
-                                // Add a tiny line to make the initial point visible
-                                lineTo(offset.x + 0.1f, offset.y + 0.1f)
+                            
+                            if (currentShapeType == ShapeType.FREE_DRAW) {
+                                // Normal free drawing
+                                currentPath = Path().apply {
+                                    moveTo(offset.x, offset.y)
+                                    lineTo(offset.x + 0.1f, offset.y + 0.1f)
+                                }
+                            } else {
+                                // Shape drawing - remember start point
+                                shapeStartPoint = offset
+                                shapeEndPoint = offset
+                                currentPath = Path() // Empty path for now
                             }
                             pathUpdateTrigger++
                         }
                     },
                     onDrag = { change, _ ->
                         val position = change.position
-                        // Only draw within image bounds
                         if (imageBounds?.contains(position) == true) {
-                            currentPath?.let { path ->
-                                // Draw in real-time - add point immediately
-                                path.lineTo(position.x, position.y)
-                                // Trigger recomposition to show the line in real-time
+                            if (currentShapeType == ShapeType.FREE_DRAW) {
+                                // Normal free drawing
+                                currentPath?.let { path ->
+                                    path.lineTo(position.x, position.y)
+                                    pathUpdateTrigger++
+                                }
+                            } else {
+                                // Update shape end point for preview
+                                shapeEndPoint = position
                                 pathUpdateTrigger++
                             }
                         }
                     },
                     onDragEnd = {
-                        currentPath?.let { path ->
-                            // Save the completed path
-                            onPathAdded(
-                                DrawPath(
-                                    path = Path().apply { addPath(path) }, // Create a copy
-                                    color = currentColor,
-                                    strokeWidth = currentStrokeWidth,
-                                    opacity = currentOpacity,
-                                    softness = currentSoftness,
-                                    isEraser = isEraserMode
+                        if (currentShapeType == ShapeType.FREE_DRAW) {
+                            // Save normal path
+                            currentPath?.let { path ->
+                                onPathAdded(
+                                    DrawPath(
+                                        path = Path().apply { addPath(path) },
+                                        color = currentColor,
+                                        strokeWidth = currentStrokeWidth,
+                                        opacity = currentOpacity,
+                                        softness = currentSoftness,
+                                        isEraser = isEraserMode
+                                    )
                                 )
-                            )
-                            currentPath = null
-                            pathUpdateTrigger++
+                            }
+                        } else {
+                            // Save shape
+                            if (shapeStartPoint != null && shapeEndPoint != null) {
+                                val shapePath = createShapePath(
+                                    shapeType = currentShapeType,
+                                    start = shapeStartPoint!!,
+                                    end = shapeEndPoint!!
+                                )
+                                onPathAdded(
+                                    DrawPath(
+                                        path = shapePath,
+                                        color = currentColor,
+                                        strokeWidth = currentStrokeWidth,
+                                        opacity = currentOpacity,
+                                        softness = currentSoftness,
+                                        isEraser = isEraserMode,
+                                        shapeType = currentShapeType,
+                                        isFilled = isShapeFilled,
+                                        startPoint = shapeStartPoint,
+                                        endPoint = shapeEndPoint
+                                    )
+                                )
+                            }
                         }
+                        currentPath = null
+                        shapeStartPoint = null
+                        shapeEndPoint = null
+                        pathUpdateTrigger++
                     }
                 )
             }
@@ -115,7 +274,11 @@ fun DrawingCanvas(
                         strokeWidth = drawPath.strokeWidth
                         strokeCap = StrokeCap.Round
                         strokeJoin = StrokeJoin.Round
-                        style = androidx.compose.ui.graphics.PaintingStyle.Stroke
+                        style = if (drawPath.isFilled && drawPath.shapeType != ShapeType.FREE_DRAW) {
+                            androidx.compose.ui.graphics.PaintingStyle.Fill
+                        } else {
+                            androidx.compose.ui.graphics.PaintingStyle.Stroke
+                        }
                         isAntiAlias = true
                         
                         if (drawPath.isEraser) {
@@ -146,25 +309,21 @@ fun DrawingCanvas(
                     )
                 }
                 
-                // Draw current path being drawn
-                currentPath?.let { path ->
-                    val paint = Paint().apply {
+                // Draw shape preview while dragging
+                if (currentShapeType != ShapeType.FREE_DRAW && shapeStartPoint != null && shapeEndPoint != null) {
+                    val previewPath = createShapePath(currentShapeType, shapeStartPoint!!, shapeEndPoint!!)
+                    val previewPaint = Paint().apply {
                         strokeWidth = currentStrokeWidth
                         strokeCap = StrokeCap.Round
                         strokeJoin = StrokeJoin.Round
-                        style = androidx.compose.ui.graphics.PaintingStyle.Stroke
-                        isAntiAlias = true
-                        
-                        if (isEraserMode) {
-                            // Eraser - використовуємо DST_OUT для стирання
-                            asFrameworkPaint().xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
-                            color = Color.Black
+                        style = if (isShapeFilled) {
+                            androidx.compose.ui.graphics.PaintingStyle.Fill
                         } else {
-                            // Normal drawing
-                            color = currentColor.copy(alpha = currentOpacity)
+                            androidx.compose.ui.graphics.PaintingStyle.Stroke
                         }
+                        isAntiAlias = true
+                        color = currentColor.copy(alpha = currentOpacity * 0.7f) // Semi-transparent preview
                         
-                        // Apply blur/softness if needed
                         if (currentSoftness > 0f) {
                             val blurRadius = currentSoftness * (currentStrokeWidth / 2f)
                             if (blurRadius > 0f) {
@@ -177,9 +336,47 @@ fun DrawingCanvas(
                     }
                     
                     canvas.nativeCanvas.drawPath(
-                        path.asAndroidPath(),
-                        paint.asFrameworkPaint()
+                        previewPath.asAndroidPath(),
+                        previewPaint.asFrameworkPaint()
                     )
+                }
+                
+                // Draw current free-draw path being drawn
+                if (currentShapeType == ShapeType.FREE_DRAW) {
+                    currentPath?.let { path ->
+                        val paint = Paint().apply {
+                            strokeWidth = currentStrokeWidth
+                            strokeCap = StrokeCap.Round
+                            strokeJoin = StrokeJoin.Round
+                            style = androidx.compose.ui.graphics.PaintingStyle.Stroke
+                            isAntiAlias = true
+                            
+                            if (isEraserMode) {
+                                // Eraser - використовуємо DST_OUT для стирання
+                                asFrameworkPaint().xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
+                                color = Color.Black
+                            } else {
+                                // Normal drawing
+                                color = currentColor.copy(alpha = currentOpacity)
+                            }
+                            
+                            // Apply blur/softness if needed
+                            if (currentSoftness > 0f) {
+                                val blurRadius = currentSoftness * (currentStrokeWidth / 2f)
+                                if (blurRadius > 0f) {
+                                    asFrameworkPaint().maskFilter = BlurMaskFilter(
+                                        blurRadius,
+                                        BlurMaskFilter.Blur.NORMAL
+                                    )
+                                }
+                            }
+                        }
+                        
+                        canvas.nativeCanvas.drawPath(
+                            path.asAndroidPath(),
+                            paint.asFrameworkPaint()
+                        )
+                    }
                 }
                 
                 // Restore canvas

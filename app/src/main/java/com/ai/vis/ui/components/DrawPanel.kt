@@ -62,16 +62,21 @@ fun DrawPanel(
     currentOpacity: Float,
     currentSoftness: Float,
     isEraserMode: Boolean,
+    currentShapeType: ShapeType,
+    isShapeFilled: Boolean,
     onColorChange: (Color) -> Unit,
     onSizeChange: (Float) -> Unit,
     onOpacityChange: (Float) -> Unit,
     onSoftnessChange: (Float) -> Unit,
     onEraserToggle: (Boolean) -> Unit,
+    onShapeTypeChange: (ShapeType) -> Unit,
+    onShapeFillToggle: (Boolean) -> Unit,
     onErase: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val drawParameters = listOf(
         DrawParameter(R.string.brush, R.drawable.ic_paint),
+        DrawParameter(R.string.shapes, R.drawable.ic_figure),
         DrawParameter(R.string.draw_color, R.drawable.ic_palette),
         DrawParameter(R.string.draw_size, R.drawable.ic_paint),
         DrawParameter(R.string.draw_opacity, R.drawable.ic_opacity),
@@ -209,6 +214,127 @@ fun DrawPanel(
                         }
                     }
                     1 -> {
+                        // Shapes selector
+                        Text(
+                            text = stringResource(id = R.string.shapes),
+                            fontSize = 14.sp,
+                            fontFamily = FontFamily(Font(R.font.font_main_text)),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            val shapes = listOf(
+                                ShapeType.LINE to R.drawable.ic_shape_line,
+                                ShapeType.ARROW to R.drawable.ic_shape_arrow,
+                                ShapeType.RECTANGLE to R.drawable.ic_shape_rectangle,
+                                ShapeType.ROUNDED_RECT to R.drawable.ic_shape_rounded_rect,
+                                ShapeType.CIRCLE to R.drawable.ic_shape_circle,
+                                ShapeType.STAR to R.drawable.ic_shape_star
+                            )
+                            
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(shapes.size) { index ->
+                                    val (shape, icon) = shapes[index]
+                                    ShapeButton(
+                                        shapeType = shape,
+                                        iconRes = icon,
+                                        isSelected = currentShapeType == shape,
+                                        onClick = { onShapeTypeChange(shape) }
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // Fill/Stroke toggle (only for closed shapes, not for lines/arrows)
+                        if (currentShapeType != ShapeType.FREE_DRAW && currentShapeType != ShapeType.LINE && currentShapeType != ShapeType.ARROW) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            Text(
+                                text = stringResource(id = R.string.draw_style),
+                                fontSize = 13.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                            )
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                // Fill button
+                                Card(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp)
+                                        .clickable { onShapeFillToggle(true) },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isShapeFilled)
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                        else
+                                            MaterialTheme.colorScheme.surface
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxSize(),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = stringResource(id = R.string.shape_fill),
+                                            fontSize = 14.sp,
+                                            fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                            color = if (isShapeFilled)
+                                                MaterialTheme.colorScheme.primary
+                                            else
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
+                                
+                                // Stroke button
+                                Card(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp)
+                                        .clickable { onShapeFillToggle(false) },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (!isShapeFilled)
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                        else
+                                            MaterialTheme.colorScheme.surface
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxSize(),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = stringResource(id = R.string.shape_stroke),
+                                            fontSize = 14.sp,
+                                            fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                            color = if (!isShapeFilled)
+                                                MaterialTheme.colorScheme.primary
+                                            else
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    2 -> {
                         // Color picker
                         Text(
                             text = stringResource(id = R.string.draw_color),
@@ -243,7 +369,7 @@ fun DrawPanel(
                             }
                         }
                     }
-                    2 -> {
+                    3 -> {
                         // Brush size slider
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -279,7 +405,7 @@ fun DrawPanel(
                             )
                         )
                     }
-                    3 -> {
+                    4 -> {
                         // Opacity slider
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -315,7 +441,7 @@ fun DrawPanel(
                             )
                         )
                     }
-                    4 -> {
+                    5 -> {
                         // Softness slider
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -427,6 +553,72 @@ fun DrawParameterItem(
                 textAlign = TextAlign.Center,
                 maxLines = 2,
                 lineHeight = 11.sp
+            )
+        }
+    }
+}
+
+@Composable
+fun ShapeButton(
+    shapeType: ShapeType,
+    iconRes: Int,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val shapeName = when (shapeType) {
+        ShapeType.FREE_DRAW -> R.string.brush
+        ShapeType.LINE -> R.string.shape_line
+        ShapeType.ARROW -> R.string.shape_arrow
+        ShapeType.RECTANGLE -> R.string.shape_rectangle
+        ShapeType.ROUNDED_RECT -> R.string.shape_rounded_rect
+        ShapeType.CIRCLE -> R.string.shape_circle
+        ShapeType.STAR -> R.string.shape_star
+    }
+    
+    Card(
+        modifier = modifier
+            .width(60.dp)
+            .height(60.dp),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected)
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+            else
+                MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 4.dp else 2.dp
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = null,
+                tint = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(id = shapeName),
+                fontSize = 9.sp,
+                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                color = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center,
+                maxLines = 1
             )
         }
     }

@@ -51,6 +51,8 @@
     <!-- Editor Tools -->
     <string name="crop_rotate">Przytnij i Obróć</string>
     <string name="adjust">Dostosuj</string>
+    <string name="filters">Filtry</string>
+    <string name="stickers">Naklejki</string>
     <string name="ai_tools">Narzędzia AI</string>
     <string name="ai_effects">Efekty AI</string>
     <string name="text_tool">Tekst</string>
@@ -69,6 +71,18 @@
     <string name="sharpness">Ostrość</string>
     <string name="temperature">Temperatura</string>
     <string name="tint">Odcień</string>
+    <string name="vignette">Winieta</string>
+    
+    <!-- Filters -->
+    <string name="filter_none">Oryginalny</string>
+    <string name="filter_bw">Czarno-biały</string>
+    <string name="filter_sepia">Sepia</string>
+    <string name="filter_vintage">Vintage</string>
+    <string name="filter_cool">Chłodny</string>
+    <string name="filter_warm">Ciepły</string>
+    <string name="filter_grayscale">Skala szarości</string>
+    <string name="filter_invert">Odwróć</string>
+    <string name="filter_intensity">Intensywność</string>
     
     <!-- AI Tools -->
     <string name="remove_background">Usuń tło</string>
@@ -114,6 +128,18 @@
     <string name="draw_opacity">Przezroczystość</string>
     <string name="softness">Miękkość</string>
     <string name="erase">Wymaż</string>
+    <string name="eraser">Gumka</string>
+    <string name="brush">Pędzel</string>
+    <string name="shapes">Kształty</string>
+    <string name="draw_style">Styl</string>
+    <string name="shape_line">Linia</string>
+    <string name="shape_arrow">Strzałka</string>
+    <string name="shape_rectangle">Prostokąt</string>
+    <string name="shape_rounded_rect">Zaokrąglony</string>
+    <string name="shape_circle">Koło</string>
+    <string name="shape_star">Gwiazda</string>
+    <string name="shape_fill">Wypełnienie</string>
+    <string name="shape_stroke">Obramowanie</string>
     
     <!-- Common Actions -->
     <string name="reset">Resetuj</string>

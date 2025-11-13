@@ -51,6 +51,8 @@
     <!-- Editor Tools -->
     <string name="crop_rotate">Crop &amp; Rotate</string>
     <string name="adjust">Adjust</string>
+    <string name="filters">Filters</string>
+    <string name="stickers">Stickers</string>
     <string name="ai_tools">AI Tools</string>
     <string name="ai_effects">AI Effects</string>
     <string name="text_tool">Text</string>
@@ -69,6 +71,18 @@
     <string name="sharpness">Sharpness</string>
     <string name="temperature">Temperature</string>
     <string name="tint">Tint</string>
+    <string name="vignette">Vignette</string>
+    
+    <!-- Filters -->
+    <string name="filter_none">Original</string>
+    <string name="filter_bw">B&amp;W</string>
+    <string name="filter_sepia">Sepia</string>
+    <string name="filter_vintage">Vintage</string>
+    <string name="filter_cool">Cool</string>
+    <string name="filter_warm">Warm</string>
+    <string name="filter_grayscale">Grayscale</string>
+    <string name="filter_invert">Invert</string>
+    <string name="filter_intensity">Intensity</string>
     
     <!-- AI Tools -->
     <string name="remove_background">Remove Background</string>
@@ -142,6 +156,16 @@
     <string name="erase">Erase</string>
     <string name="eraser">Eraser</string>
     <string name="brush">Brush</string>
+    <string name="shapes">Shapes</string>
+    <string name="draw_style">Style</string>
+    <string name="shape_line">Line</string>
+    <string name="shape_arrow">Arrow</string>
+    <string name="shape_rectangle">Rectangle</string>
+    <string name="shape_rounded_rect">Rounded</string>
+    <string name="shape_circle">Circle</string>
+    <string name="shape_star">Star</string>
+    <string name="shape_fill">Fill</string>
+    <string name="shape_stroke">Stroke</string>
     
     <!-- Common Actions -->
     <string name="reset">Reset</string>
