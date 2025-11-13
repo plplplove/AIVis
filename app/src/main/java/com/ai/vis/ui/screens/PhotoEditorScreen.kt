@@ -557,15 +557,8 @@ fun PhotoEditorScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (selectedTool != null) {
-                            // Якщо вибрано інструмент - закриваємо інструмент
-                            selectedTool = null
-                            selectedTextId = null
-                            showCropOverlay = false
-                            selectedCropRatio = null
-                            isToolPanelCollapsed = false
-                        } else if (isEditing) {
-                            // Cancel editing
+                        if (isEditing) {
+                            // Cancel editing - скасувати всі зміни і закрити меню
                             previewBitmap = null
                             adjustmentValues = mapOf(
                                 0 to 0f, 1 to 0f, 2 to 0f,
@@ -579,10 +572,18 @@ fun PhotoEditorScreen(
                             drawPaths = emptyList()
                             stickerItems = emptyList()
                             isEditing = false
-                            selectedTool = null
+                            selectedTool = null  // Закрити меню інструменту
+                            isToolPanelCollapsed = false
                             // Clear undo/redo stacks for editing session
                             undoStack = emptyList()
                             redoStack = emptyList()
+                        } else if (selectedTool != null) {
+                            // Якщо вибрано інструмент (але не редагування) - закриваємо інструмент
+                            selectedTool = null
+                            selectedTextId = null
+                            showCropOverlay = false
+                            selectedCropRatio = null
+                            isToolPanelCollapsed = false
                         } else {
                             onBackClick()
                         }
