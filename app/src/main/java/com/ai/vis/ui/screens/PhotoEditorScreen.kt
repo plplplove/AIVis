@@ -1928,7 +1928,7 @@ fun EditorToolItem(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) 
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
             else 
                 MaterialTheme.colorScheme.surface
         ),
@@ -1937,37 +1937,40 @@ fun EditorToolItem(
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .padding(12.dp)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            Icon(
-                painter = painterResource(id = tool.iconRes),
-                contentDescription = null,
-                tint = if (isSelected) 
-                    MaterialTheme.colorScheme.primary 
-                else 
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                modifier = Modifier.size(28.dp)
-            )
-            Spacer(modifier = Modifier.size(6.dp))
-            Text(
-                text = stringResource(id = tool.nameRes),
-                fontSize = 10.sp,
-                fontFamily = FontFamily(Font(R.font.font_main_text)),
-                color = if (isSelected) 
-                    MaterialTheme.colorScheme.primary 
-                else 
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                lineHeight = 12.sp,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                minLines = 2
-            )
+            Column(
+                modifier = Modifier.padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = tool.iconRes),
+                    contentDescription = null,
+                    tint = if (isSelected) 
+                        MaterialTheme.colorScheme.primary 
+                    else 
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.size(28.dp)
+                )
+                Spacer(modifier = Modifier.size(6.dp))
+                Text(
+                    text = stringResource(id = tool.nameRes),
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily(Font(R.font.font_main_text)),
+                    color = if (isSelected) 
+                        MaterialTheme.colorScheme.primary 
+                    else 
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    lineHeight = 12.sp,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    minLines = 2
+                )
+            }
         }
     }
 }

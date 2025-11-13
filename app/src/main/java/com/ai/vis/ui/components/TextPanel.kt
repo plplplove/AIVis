@@ -637,38 +637,41 @@ fun WeightCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            // Велика "A" з поточною жирністю
-            Text(
-                text = "A",
-                fontSize = 28.sp,
-                fontFamily = FontFamily(Font(R.font.font_main_text)),
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = when (textStyle.weight) {
-                    TextWeight.LIGHT -> FontWeight.Light
-                    TextWeight.NORMAL -> FontWeight.Normal
-                    TextWeight.BOLD -> FontWeight.Bold
-                }
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = when (textStyle.weight) {
-                    TextWeight.LIGHT -> "Light"
-                    TextWeight.NORMAL -> "Normal"
-                    TextWeight.BOLD -> "Bold"
-                },
-                fontSize = 10.sp,
-                fontFamily = FontFamily(Font(R.font.font_main_text)),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center,
-                maxLines = 1
-            )
+            Column(
+                modifier = Modifier.padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Велика "A" з поточною жирністю
+                Text(
+                    text = "A",
+                    fontSize = 28.sp,
+                    fontFamily = FontFamily(Font(R.font.font_main_text)),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = when (textStyle.weight) {
+                        TextWeight.LIGHT -> FontWeight.Light
+                        TextWeight.NORMAL -> FontWeight.Normal
+                        TextWeight.BOLD -> FontWeight.Bold
+                    }
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = when (textStyle.weight) {
+                        TextWeight.LIGHT -> "Light"
+                        TextWeight.NORMAL -> "Normal"
+                        TextWeight.BOLD -> "Bold"
+                    },
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily(Font(R.font.font_main_text)),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center,
+                    maxLines = 1
+                )
+            }
         }
     }
 }
@@ -687,7 +690,7 @@ fun BackgroundCard(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -696,13 +699,15 @@ fun BackgroundCard(
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
+            Column(
+                modifier = Modifier.padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
             // Checkbox icon - filled if enabled, empty if disabled
             Box(
                 modifier = Modifier.size(28.dp),
@@ -750,6 +755,7 @@ fun BackgroundCard(
                 textAlign = TextAlign.Center,
                 maxLines = 1
             )
+            }
         }
     }
 }

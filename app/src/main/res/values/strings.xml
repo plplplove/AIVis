@@ -202,7 +202,9 @@
     <string name="re_edit">Re-Edit</string>
     <string name="share">Share</string>
     <string name="delete_photo">Delete Photo</string>
+    <string name="delete_photos">Delete Photos</string>
     <string name="delete_confirmation_message">Are you sure you want to delete this photo? This action cannot be undone.</string>
+    <string name="delete_multiple_confirmation">Are you sure you want to delete %1$d photos? This action cannot be undone.</string>
     <string name="selected">Selected</string>
     <string name="edit_filename">Edit Filename</string>
     <string name="enter_new_filename">Enter new filename</string>

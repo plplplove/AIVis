@@ -71,6 +71,7 @@ fun MyGalleryScreen(
     val photos by viewModel.allPhotos.collectAsState()
     var isSelectionMode by remember { mutableStateOf(false) }
     val selectedPhotos = remember { mutableStateListOf<Long>() }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -139,11 +140,7 @@ fun MyGalleryScreen(
                             Row {
                                 if (selectedPhotos.isNotEmpty()) {
                                     IconButton(onClick = {
-                                        selectedPhotos.forEach { photoId ->
-                                            viewModel.deletePhotoById(photoId)
-                                        }
-                                        selectedPhotos.clear()
-                                        isSelectionMode = false
+                                        showDeleteDialog = true
                                     }) {
                                         Icon(
                                             imageVector = Icons.Default.Delete,
@@ -209,6 +206,25 @@ fun MyGalleryScreen(
                 }
             }
         }
+    }
+    
+    // Delete Confirmation Dialog
+    if (showDeleteDialog) {
+        com.ai.vis.ui.components.ConfirmationDialog(
+            title = stringResource(id = R.string.delete_photos),
+            message = stringResource(id = R.string.delete_multiple_confirmation, selectedPhotos.size),
+            confirmText = stringResource(id = R.string.delete),
+            cancelText = stringResource(id = R.string.cancel),
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
+                selectedPhotos.forEach { photoId ->
+                    viewModel.deletePhotoById(photoId)
+                }
+                selectedPhotos.clear()
+                isSelectionMode = false
+                showDeleteDialog = false
+            }
+        )
     }
 }
 
