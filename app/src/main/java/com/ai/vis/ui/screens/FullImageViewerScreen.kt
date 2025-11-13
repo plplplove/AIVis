@@ -72,6 +72,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.ai.vis.R
 import com.ai.vis.data.EditedPhoto
+import com.ai.vis.ui.components.ConfirmationDialog
 import com.ai.vis.viewmodel.PhotoGalleryViewModel
 import java.io.File
 
@@ -294,7 +295,11 @@ fun FullImageViewerScreen(
     
     // Delete Confirmation Dialog
     if (showDeleteDialog) {
-        DeleteConfirmationDialog(
+        ConfirmationDialog(
+            title = stringResource(id = R.string.delete_photo),
+            message = stringResource(id = R.string.delete_confirmation_message),
+            confirmText = stringResource(id = R.string.delete),
+            cancelText = stringResource(id = R.string.cancel),
             onDismiss = { showDeleteDialog = false },
             onConfirm = {
                 showDeleteDialog = false

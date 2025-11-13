@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -140,7 +142,7 @@ fun StickerPanel(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(horizontal = 8.dp, vertical = 12.dp)
                         .height(100.dp)
                 ) {
                     Row(
@@ -181,7 +183,7 @@ fun StickerPanel(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(horizontal = 8.dp, vertical = 12.dp)
                         .height(100.dp)
                 ) {
                     Row(
@@ -234,44 +236,45 @@ fun StickerPanel(
                 onClick = { selectedParameter = 0 },
                 colors = CardDefaults.cardColors(
                     containerColor = if (selectedParameter == 0)
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        com.ai.vis.ui.theme.SelectionLightBlue
                     else MaterialTheme.colorScheme.surface
                 ),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = if (selectedParameter == 0) 4.dp else 2.dp
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = if (selectedParameter == 0) 4.dp else 2.dp
+                    ),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_sticker),
-                            contentDescription = null,
-                            tint = if (selectedParameter == 0)
-                                MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Stickers",
-                            fontSize = 10.sp,
-                            color = if (selectedParameter == 0)
-                                MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                            textAlign = TextAlign.Center,
-                            maxLines = 1
-                        )
+                        Column(
+                            modifier = Modifier.padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_sticker),
+                                contentDescription = null,
+                                tint = if (selectedParameter == 0)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Stickers",
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = if (selectedParameter == 0)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center,
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
-            }
             
             // Size card
             Card(
@@ -280,92 +283,94 @@ fun StickerPanel(
                     .height(80.dp),
                 onClick = { selectedParameter = 1 },
                 colors = CardDefaults.cardColors(
-                    containerColor = if (selectedParameter == 1)
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                    else MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = if (selectedParameter == 1) 4.dp else 2.dp
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                        containerColor = if (selectedParameter == 1)
+                            com.ai.vis.ui.theme.SelectionLightBlue
+                        else MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = if (selectedParameter == 1) 4.dp else 2.dp
+                    ),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_size),
-                            contentDescription = null,
-                            tint = if (selectedParameter == 1)
-                                MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Size",
-                            fontSize = 10.sp,
-                            color = if (selectedParameter == 1)
-                                MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                            textAlign = TextAlign.Center,
-                            maxLines = 1
-                        )
+                        Column(
+                            modifier = Modifier.padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_size),
+                                contentDescription = null,
+                                tint = if (selectedParameter == 1)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Size",
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = if (selectedParameter == 1)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center,
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
-            }
             
             // Opacity card
             Card(
                 modifier = Modifier
                     .weight(1f)
                     .height(80.dp),
-                onClick = { selectedParameter = 2 },
-                colors = CardDefaults.cardColors(
-                    containerColor = if (selectedParameter == 2)
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                    else MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = if (selectedParameter == 2) 4.dp else 2.dp
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    onClick = { selectedParameter = 2 },
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (selectedParameter == 2)
+                            com.ai.vis.ui.theme.SelectionLightBlue
+                        else MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = if (selectedParameter == 2) 4.dp else 2.dp
+                    ),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_opacity),
-                            contentDescription = null,
-                            tint = if (selectedParameter == 2)
-                                MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Opacity",
-                            fontSize = 10.sp,
-                            color = if (selectedParameter == 2)
-                                MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                            textAlign = TextAlign.Center,
-                            maxLines = 1
-                        )
+                        Column(
+                            modifier = Modifier.padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_opacity),
+                                contentDescription = null,
+                                tint = if (selectedParameter == 2)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Opacity",
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = if (selectedParameter == 2)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center,
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
-            }
         }
     }
 }

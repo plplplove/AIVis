@@ -198,7 +198,7 @@ fun CropRatioButton(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                MaterialTheme.colorScheme.primary
+                com.ai.vis.ui.theme.SelectionLightBlue
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -218,7 +218,7 @@ fun CropRatioButton(
                 fontSize = 13.sp,
                 fontFamily = FontFamily(Font(R.font.font_main_text)),
                 color = if (isSelected)
-                    MaterialTheme.colorScheme.onPrimary
+                    MaterialTheme.colorScheme.primary
                 else
                     MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center

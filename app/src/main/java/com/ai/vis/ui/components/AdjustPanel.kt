@@ -87,7 +87,7 @@ fun AdjustPanel(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(horizontal = 8.dp, vertical = 12.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -166,12 +166,12 @@ fun AdjustParameterItem(
 ) {
     Card(
         modifier = modifier
-            .width(75.dp)
-            .height(75.dp),
+            .width(80.dp)
+            .height(80.dp),
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                com.ai.vis.ui.theme.SelectionLightBlue
             else
                 MaterialTheme.colorScheme.surface
         ),

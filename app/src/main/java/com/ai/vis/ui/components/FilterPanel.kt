@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ai.vis.R
@@ -76,7 +77,7 @@ fun FilterPanel(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(horizontal = 8.dp, vertical = 12.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -151,47 +152,64 @@ fun FilterItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.clickable(onClick = onClick)
-    ) {
-        // Preview box with gradient or solid color
-        Box(
-            modifier = Modifier
-                .size(70.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(
-                    if (filter.type == FilterType.INVERT) {
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Black, Color.White)
-                        )
-                    } else {
-                        Brush.linearGradient(
-                            colors = listOf(filter.color.copy(alpha = 0.5f), filter.color)
-                        )
-                    }
-                )
-                .then(
-                    if (isSelected) {
-                        Modifier.background(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                            RoundedCornerShape(12.dp)
-                        )
-                    } else Modifier
-                )
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Text(
-            text = stringResource(id = filter.nameRes),
-            fontSize = 12.sp,
-            fontFamily = FontFamily(Font(R.font.font_main_text)),
-            color = if (isSelected)
-                MaterialTheme.colorScheme.primary
+    Card(
+        modifier = modifier
+            .width(80.dp)
+            .height(80.dp),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected)
+                com.ai.vis.ui.theme.SelectionLightBlue
             else
-                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-        )
+                MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 4.dp else 2.dp
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(8.dp)
+            ) {
+                // Preview box with gradient or solid color
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            if (filter.type == FilterType.INVERT) {
+                                Brush.verticalGradient(
+                                    colors = listOf(Color.Black, Color.White)
+                                )
+                            } else {
+                                Brush.linearGradient(
+                                    colors = listOf(filter.color.copy(alpha = 0.5f), filter.color)
+                                )
+                            }
+                        )
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Text(
+                    text = stringResource(id = filter.nameRes),
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily(Font(R.font.font_main_text)),
+                    color = if (isSelected)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1
+                )
+            }
+        }
     }
 }

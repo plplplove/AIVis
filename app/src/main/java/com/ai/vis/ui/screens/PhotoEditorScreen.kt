@@ -186,6 +186,10 @@ fun PhotoEditorScreen(
     var cropRect by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     var straightenAngle by remember { mutableFloatStateOf(0f) } // -10 to +10 degrees
     
+    // Track if crop/straighten has been modified (for showing checkmark vs gallery icon)
+    var cropFieldModified by remember { mutableStateOf(false) }
+    var straightenModified by remember { mutableStateOf(false) }
+    
     // Image bounds for crop overlay - recalculate only when bitmap changes
     var imageBounds by remember(originalBitmap) { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     
@@ -682,6 +686,8 @@ fun PhotoEditorScreen(
                             )
                             showCropOverlay = false
                             selectedCropRatio = null
+                            cropFieldModified = false
+                            straightenModified = false
                             showTextDialog = false
                             selectedTextId = null
                             textItems = emptyList()
@@ -700,6 +706,8 @@ fun PhotoEditorScreen(
                             selectedTextId = null
                             showCropOverlay = false
                             selectedCropRatio = null
+                            cropFieldModified = false
+                            straightenModified = false
                             isToolPanelCollapsed = false
                         } else {
                             // Show exit confirmation if there are any changes
@@ -717,8 +725,14 @@ fun PhotoEditorScreen(
                     }
                 },
                 actions = {
-                    // Save/Apply button - показуємо галочку коли вибрано інструмент або режим редагування
-                    val showCheckmark = selectedTool != null || isEditing
+                    // Save/Apply button logic:
+                    // Show checkmark (apply) only when:
+                    // - Crop field has been modified OR straighten has been modified
+                    // - OR user is editing other tools (text, draw, adjust, filter, sticker)
+                    // Do NOT show checkmark for rotate/flip (they save immediately)
+                    val isCropModified = selectedTool?.nameRes == R.string.crop_rotate && (cropFieldModified || straightenModified)
+                    val isOtherToolEditing = selectedTool != null && selectedTool?.nameRes != R.string.crop_rotate && isEditing
+                    val showCheckmark = isCropModified || isOtherToolEditing
                     
                     IconButton(onClick = {
                         if (isEditing) {
@@ -854,6 +868,8 @@ fun PhotoEditorScreen(
                             showCropOverlay = false
                             selectedCropRatio = null
                             straightenAngle = 0f
+                            cropFieldModified = false
+                            straightenModified = false
                             showTextDialog = false
                             isEditing = false
                             selectedTool = null  // Close bottom panel after applying
@@ -889,7 +905,7 @@ fun PhotoEditorScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(selectedTool, textItems) {
+                    .pointerInput(selectedTool, textItems, isEditing) {
                         detectTapGestures(
                             onTap = { tapOffset ->
                                 // Одинарний тап для вибору тексту
@@ -913,7 +929,10 @@ fun PhotoEditorScreen(
                                         }
                                     }
                                 } else if (selectedTool != null && selectedTool?.nameRes != R.string.text_tool) {
-                                    selectedTool = null
+                                    // Ховаємо/показуємо меню (як стрілка вниз)
+                                    if (!isToolPanelCollapsed) {
+                                        isToolPanelCollapsed = true
+                                    }
                                 }
                             },
                             onDoubleTap = { tapOffset ->
@@ -1079,6 +1098,7 @@ fun PhotoEditorScreen(
                         offset = offset,
                         onCropAreaChange = { rect ->
                             cropRect = rect
+                            cropFieldModified = true  // Mark that crop field has been modified
                         }
                     )
                 }
@@ -1376,6 +1396,7 @@ fun PhotoEditorScreen(
                                         saveStateToUndo()
                                         selectedCropRatio = ratio
                                         showCropOverlay = true
+                                        cropFieldModified = false  // Reset - just selecting ratio doesn't count as modification
                                         isEditing = true
                                         // Reset zoom/pan to original position for consistent crop coordinates
                                         scale = 1f
@@ -1390,6 +1411,7 @@ fun PhotoEditorScreen(
                                             }
                                         }
                                         straightenAngle = angle
+                                        straightenModified = true  // Mark that straighten has been modified
                                         isEditing = true
                                         
                                         // Apply straighten rotation
@@ -1924,11 +1946,11 @@ fun EditorToolItem(
     Card(
         modifier = modifier
             .width(80.dp)
-            .height(90.dp),
+            .height(80.dp),
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) 
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                com.ai.vis.ui.theme.SelectionLightBlue
             else 
                 MaterialTheme.colorScheme.surface
         ),

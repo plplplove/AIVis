@@ -9,6 +9,9 @@ val PrimaryPurple = Color(0xFF6C5CE7)
 val AccentBlue = Color(0xFF00B8FF)
 val AccentPurple = Color(0xFF7B61FF)
 
+// Selection Color (light sky blue for selected cards)
+val SelectionLightBlue = Color(0xFFB3D9FF)
+
 // Background Colors
 val BackgroundDark = Color(0xFF121212)
 val BackgroundLight = Color(0xFFFFFFFF)

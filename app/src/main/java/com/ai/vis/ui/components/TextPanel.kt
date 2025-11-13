@@ -155,7 +155,7 @@ fun TextPanel(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .padding(horizontal = 8.dp, vertical = 12.dp)
                             .height(100.dp) // Стандартна висота
                     ) {
                         Row(
@@ -198,7 +198,7 @@ fun TextPanel(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .padding(horizontal = 8.dp, vertical = 12.dp)
                     ) {
                         Text(
                             text = stringResource(id = R.string.text_font),
@@ -227,7 +227,7 @@ fun TextPanel(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .padding(horizontal = 8.dp, vertical = 12.dp)
                             .height(100.dp) // Стандартна висота
                     ) {
                         Text(
@@ -269,7 +269,7 @@ fun TextPanel(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                            .padding(horizontal = 8.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         AlignmentButton(
@@ -296,7 +296,7 @@ fun TextPanel(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .padding(horizontal = 8.dp, vertical = 12.dp)
                             .height(100.dp) // Стандартна висота
                     ) {
                         Row(
@@ -340,7 +340,7 @@ fun TextPanel(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                                .padding(horizontal = 8.dp, vertical = 12.dp)
                                 .height(100.dp) // Стандартна висота
                         ) {
                             Row(
@@ -383,7 +383,7 @@ fun TextPanel(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .padding(horizontal = 8.dp, vertical = 12.dp)
                     ) {
                         // Shadow Radius
                         Row(
@@ -493,7 +493,7 @@ fun TextPanel(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .padding(horizontal = 8.dp, vertical = 12.dp)
                             .height(100.dp)
                     ) {
                         Row(
@@ -536,7 +536,7 @@ fun TextPanel(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                            .padding(horizontal = 8.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         DecorationToggle(
@@ -583,7 +583,11 @@ fun TextPanel(
                     TextOptionType.WEIGHT -> {
                         WeightCard(
                             textStyle = textStyle,
-                            onClick = { onWeightChange(textStyle.weight) }
+                            isSelected = selectedOption == TextOptionType.WEIGHT,
+                            onClick = { 
+                                selectedOption = TextOptionType.WEIGHT
+                                onWeightChange(textStyle.weight) 
+                            }
                         )
                     }
                     TextOptionType.BACKGROUND -> {
@@ -623,6 +627,7 @@ fun TextPanel(
 @Composable
 fun WeightCard(
     textStyle: TextStyle,
+    isSelected: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -632,9 +637,14 @@ fun WeightCard(
             .height(80.dp),
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (isSelected)
+                com.ai.vis.ui.theme.SelectionLightBlue
+            else
+                MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 4.dp else 2.dp
+        ),
         shape = RoundedCornerShape(12.dp)
     ) {
         Box(
@@ -690,7 +700,7 @@ fun BackgroundCard(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                com.ai.vis.ui.theme.SelectionLightBlue
             else
                 MaterialTheme.colorScheme.surface
         ),

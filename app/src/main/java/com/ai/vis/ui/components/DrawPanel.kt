@@ -110,7 +110,7 @@ fun DrawPanel(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(horizontal = 8.dp, vertical = 12.dp)
                     .height(100.dp) // Стандартна висота для всіх секцій
             ) {
                 when (selectedParameterIndex) {
@@ -138,7 +138,7 @@ fun DrawPanel(
                                 onClick = { onEraserToggle(false) },
                                 colors = CardDefaults.cardColors(
                                     containerColor = if (!isEraserMode)
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                        com.ai.vis.ui.theme.SelectionLightBlue
                                     else
                                         MaterialTheme.colorScheme.surface
                                 ),
@@ -179,7 +179,7 @@ fun DrawPanel(
                                 onClick = { onEraserToggle(true) },
                                 colors = CardDefaults.cardColors(
                                     containerColor = if (isEraserMode)
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                        com.ai.vis.ui.theme.SelectionLightBlue
                                     else
                                         MaterialTheme.colorScheme.surface
                                 ),
@@ -516,7 +516,7 @@ fun DrawParameterItem(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                com.ai.vis.ui.theme.SelectionLightBlue
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -581,12 +581,12 @@ fun ShapeButton(
     
     Card(
         modifier = modifier
-            .width(60.dp)
-            .height(60.dp),
+            .width(80.dp)
+            .height(80.dp),
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                com.ai.vis.ui.theme.SelectionLightBlue
             else
                 MaterialTheme.colorScheme.surface
         ),
