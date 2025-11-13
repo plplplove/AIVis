@@ -305,7 +305,8 @@ fun FullImageViewerScreen(
                 showDeleteDialog = false
                 viewModel.deletePhoto(photo)
                 onDeleteClick()
-            }
+            },
+            confirmIsDestructive = true
         )
     }
 }

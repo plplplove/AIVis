@@ -224,6 +224,8 @@ fun MyGalleryScreen(
                 isSelectionMode = false
                 showDeleteDialog = false
             }
+            ,
+            confirmIsDestructive = true
         )
     }
 }

@@ -784,7 +784,7 @@ fun TextOptionItem(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected && option.type != TextOptionType.WEIGHT && option.type != TextOptionType.BACKGROUND)
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                com.ai.vis.ui.theme.SelectionLightBlue
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -838,7 +838,7 @@ fun AlignmentButton(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                com.ai.vis.ui.theme.SelectionLightBlue
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -873,7 +873,7 @@ fun WeightButton(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                com.ai.vis.ui.theme.SelectionLightBlue
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -939,7 +939,7 @@ fun FontCard(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                com.ai.vis.ui.theme.SelectionLightBlue
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -982,7 +982,7 @@ fun DecorationToggle(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isEnabled)
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                com.ai.vis.ui.theme.SelectionLightBlue
             else
                 MaterialTheme.colorScheme.surface
         ),
@@ -1036,7 +1036,7 @@ fun ToggleOption(
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = if (isEnabled)
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                com.ai.vis.ui.theme.SelectionLightBlue
             else
                 MaterialTheme.colorScheme.surface
         ),

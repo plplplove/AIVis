@@ -278,7 +278,7 @@ fun DrawPanel(
                                         .clickable { onShapeFillToggle(true) },
                                     colors = CardDefaults.cardColors(
                                         containerColor = if (isShapeFilled)
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                            com.ai.vis.ui.theme.SelectionLightBlue
                                         else
                                             MaterialTheme.colorScheme.surface
                                     ),
@@ -309,7 +309,7 @@ fun DrawPanel(
                                         .clickable { onShapeFillToggle(false) },
                                     colors = CardDefaults.cardColors(
                                         containerColor = if (!isShapeFilled)
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                            com.ai.vis.ui.theme.SelectionLightBlue
                                         else
                                             MaterialTheme.colorScheme.surface
                                     ),

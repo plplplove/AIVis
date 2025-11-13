@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.Font
@@ -23,7 +25,8 @@ fun ConfirmationDialog(
     confirmText: String,
     cancelText: String,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    confirmIsDestructive: Boolean = false // when true, render confirm as outlined destructive button
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -74,6 +77,7 @@ fun ConfirmationDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // Cancel button (outlined)
                     OutlinedButton(
                         onClick = onDismiss,
                         modifier = Modifier
@@ -87,22 +91,46 @@ fun ConfirmationDialog(
                             fontSize = 16.sp
                         )
                     }
-                    
-                    Button(
-                        onClick = onConfirm,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            text = confirmText,
-                            fontFamily = FontFamily(Font(R.font.font_main_text)),
-                            fontSize = 16.sp
-                        )
+
+                    // Confirm button: either destructive outlined (red text, transparent bg, gray border)
+                    // or filled error button (legacy)
+                    if (confirmIsDestructive) {
+                        OutlinedButton(
+                            onClick = onConfirm,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Text(
+                                text = confirmText,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    } else {
+                        Button(
+                            onClick = onConfirm,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = confirmText,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                fontSize = 16.sp
+                            )
+                        }
                     }
                 }
             }
