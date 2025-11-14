@@ -128,6 +128,8 @@ data class EditorState(
     ),
     val currentFilter: com.ai.vis.ui.components.FilterType = com.ai.vis.ui.components.FilterType.NONE,
     val filterIntensity: Float = 1f
+    ,
+    val selectedAIStyle: com.ai.vis.domain.model.AIStyle = com.ai.vis.domain.model.AIStyle.NONE
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -244,6 +246,8 @@ fun PhotoEditorScreen(
     // AI Styles state 🤖
     var selectedAIStyle by remember { mutableStateOf(com.ai.vis.domain.model.AIStyle.NONE) }
     var isApplyingAIStyle by remember { mutableStateOf(false) }
+    // Committed/applied AI style (represents current style baked into originalBitmap)
+    var committedAIStyle by remember { mutableStateOf(com.ai.vis.domain.model.AIStyle.NONE) }
     
     // Розмір і позиція Image в Box (для збереження тексту на bitmap)
     var imageRectInBox by remember { mutableStateOf<Rect?>(null) }
@@ -258,7 +262,8 @@ fun PhotoEditorScreen(
                 drawPaths = drawPaths.map { it.copy() },
                 adjustmentValues = adjustmentValues.toMap(),
                 currentFilter = currentFilter,
-                filterIntensity = filterIntensity
+                filterIntensity = filterIntensity,
+                selectedAIStyle = selectedAIStyle
             )
             undoStack = undoStack + currentState
             redoStack = emptyList() // Clear redo stack when new action is performed
@@ -276,7 +281,8 @@ fun PhotoEditorScreen(
                     drawPaths = drawPaths.map { it.copy() },
                     adjustmentValues = adjustmentValues.toMap(),
                     currentFilter = currentFilter,
-                    filterIntensity = filterIntensity
+                    filterIntensity = filterIntensity,
+                    selectedAIStyle = selectedAIStyle
                 )
             }
             
@@ -292,6 +298,9 @@ fun PhotoEditorScreen(
             adjustmentValues = previousState.adjustmentValues
             currentFilter = previousState.currentFilter
             filterIntensity = previousState.filterIntensity
+            selectedAIStyle = previousState.selectedAIStyle
+            // Update committed style as well to reflect the restored (baked) state
+            committedAIStyle = previousState.selectedAIStyle
             
             // If we're in adjustment mode, re-apply the restored adjustment values to preview
             if (selectedTool?.nameRes == R.string.adjust) {
@@ -337,6 +346,28 @@ fun PhotoEditorScreen(
                             com.ai.vis.ui.components.FilterType.INVERT -> ImageProcessor.applyInvertFilter(original, filterIntensity)
                         }
                         previewBitmap = result
+                    }
+                }
+            } else if (selectedTool?.nameRes == R.string.ai_styles) {
+                // Re-apply AI style for preview
+                coroutineScope.launch(Dispatchers.IO) {
+                    originalBitmap?.let { original ->
+                        if (selectedAIStyle == com.ai.vis.domain.model.AIStyle.NONE) {
+                            previewBitmap = null
+                        } else {
+                            try {
+                                val applyAIStyleUseCase = com.ai.vis.domain.usecase.ApplyAIStyleUseCase(context)
+                                val result = applyAIStyleUseCase(original, selectedAIStyle)
+                                withContext(Dispatchers.Main) {
+                                    previewBitmap = result
+                                }
+                                applyAIStyleUseCase.release()
+                            } catch (e: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    previewBitmap = originalBitmap
+                                }
+                            }
+                        }
                     }
                 }
             } else {
@@ -356,7 +387,8 @@ fun PhotoEditorScreen(
                     drawPaths = drawPaths.map { it.copy() },
                     adjustmentValues = adjustmentValues.toMap(),
                     currentFilter = currentFilter,
-                    filterIntensity = filterIntensity
+                    filterIntensity = filterIntensity,
+                    selectedAIStyle = selectedAIStyle
                 )
             }
             
@@ -372,6 +404,9 @@ fun PhotoEditorScreen(
             adjustmentValues = nextState.adjustmentValues
             currentFilter = nextState.currentFilter
             filterIntensity = nextState.filterIntensity
+            selectedAIStyle = nextState.selectedAIStyle
+            // Update committed style as well to reflect the restored (baked) state
+            committedAIStyle = nextState.selectedAIStyle
             
             // If we're in adjustment mode, re-apply the restored adjustment values to preview
             if (selectedTool?.nameRes == R.string.adjust) {
@@ -417,6 +452,28 @@ fun PhotoEditorScreen(
                             com.ai.vis.ui.components.FilterType.INVERT -> ImageProcessor.applyInvertFilter(original, filterIntensity)
                         }
                         previewBitmap = result
+                    }
+                }
+            } else if (selectedTool?.nameRes == R.string.ai_styles) {
+                // Re-apply AI style for preview
+                coroutineScope.launch(Dispatchers.IO) {
+                    originalBitmap?.let { original ->
+                        if (selectedAIStyle == com.ai.vis.domain.model.AIStyle.NONE) {
+                            previewBitmap = null
+                        } else {
+                            try {
+                                val applyAIStyleUseCase = com.ai.vis.domain.usecase.ApplyAIStyleUseCase(context)
+                                val result = applyAIStyleUseCase(original, selectedAIStyle)
+                                withContext(Dispatchers.Main) {
+                                    previewBitmap = result
+                                }
+                                applyAIStyleUseCase.release()
+                            } catch (e: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    previewBitmap = originalBitmap
+                                }
+                            }
+                        }
                     }
                 }
             } else {
@@ -699,6 +756,8 @@ fun PhotoEditorScreen(
                             stickerItems = emptyList()
                             isEditing = false
                             selectedTool = null  // Закрити меню інструменту
+                            // Revert selection to committed (applied) style when cancelling
+                            selectedAIStyle = committedAIStyle
                             isToolPanelCollapsed = false
                             // Clear undo/redo stacks for editing session and state before editing
                             undoStack = emptyList()
@@ -707,6 +766,10 @@ fun PhotoEditorScreen(
                         } else if (selectedTool != null) {
                             // Якщо вибрано інструмент (але не редагування) - закриваємо інструмент
                             selectedTool = null
+                            // When simply closing the tool panel without applying, ensure
+                            // AI Styles selection reverts to the committed style and preview is cleared
+                            selectedAIStyle = committedAIStyle
+                            previewBitmap = null
                             selectedTextId = null
                             showCropOverlay = false
                             selectedCropRatio = null
@@ -864,6 +927,10 @@ fun PhotoEditorScreen(
                             previewBitmap?.let {
                                 originalBitmap = it
                                 previewBitmap = null
+                            }
+                            // If we applied an AI style, commit it so reopening the menu shows the applied style
+                            if (selectedTool?.nameRes == R.string.ai_styles) {
+                                committedAIStyle = selectedAIStyle
                             }
                             adjustmentValues = mapOf(
                                 0 to 0f, 1 to 0f, 2 to 0f,
@@ -1836,17 +1903,20 @@ fun PhotoEditorScreen(
                                     isProcessing = isApplyingAIStyle,
                                     onStyleSelected = { style ->
                                         if (!isApplyingAIStyle) {
-                                            selectedAIStyle = style
-                                            
                                             if (style == com.ai.vis.domain.model.AIStyle.NONE) {
+                                                // Selecting None: clear preview and exit editing state
+                                                selectedAIStyle = style
                                                 previewBitmap = null
                                                 isEditing = false
                                             } else {
                                                 originalBitmap?.let { original ->
+                                                    // Save current state BEFORE changing the selected style
                                                     saveStateToUndo()
+                                                    // Now update selection and start applying
+                                                    selectedAIStyle = style
                                                     isApplyingAIStyle = true
                                                     isEditing = true
-                                                    
+
                                                     coroutineScope.launch(Dispatchers.IO) {
                                                         try {
                                                             val applyAIStyleUseCase = com.ai.vis.domain.usecase.ApplyAIStyleUseCase(context)
@@ -1888,7 +1958,7 @@ fun PhotoEditorScreen(
                         )
                 ) {
                     when (selectedTool?.nameRes) {
-                        R.string.text_tool, R.string.adjust, R.string.draw_tool, R.string.filters, R.string.stickers -> {
+                        R.string.text_tool, R.string.adjust, R.string.draw_tool, R.string.filters, R.string.stickers, R.string.ai_styles -> {
                             // Режим редагування з прихованим меню - показуємо кнопку згортання та назву
                             Row(
                                 modifier = Modifier
