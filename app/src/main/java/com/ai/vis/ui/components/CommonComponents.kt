@@ -31,10 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ai.vis.R
 
-/**
- * Універсальна картка для опцій редактора з єдиним стилем
- * Використовується в TextPanel, DrawPanel, StickerPanel, AdjustPanel тощо
- */
 @Composable
 fun EditorOptionCard(
     nameRes: Int,
@@ -102,10 +98,6 @@ fun EditorOptionCard(
     }
 }
 
-/**
- * Універсальна картка для параметрів що потребують слайдера
- * Забезпечує однаковий вигляд для Brightness, Contrast, Size, Opacity тощо
- */
 @Composable
 fun ParameterSliderSection(
     nameRes: Int,
@@ -155,10 +147,6 @@ fun ParameterSliderSection(
     }
 }
 
-/**
- * Універсальний діалог для підтвердження дій
- * Має єдиний стиль для всіх діалогів в додатку
- */
 @Composable
 fun StandardDialog(
     title: String,
@@ -204,9 +192,6 @@ fun StandardDialog(
     }
 }
 
-/**
- * Універсальна кнопка для діалогів
- */
 @Composable
 fun DialogButton(
     text: String,

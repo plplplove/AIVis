@@ -2,5 +2,5 @@ package com.ai.vis.data
 
 data class AppSettings(
     val isDarkTheme: Boolean = false,
-    val selectedLanguage: String = "English" // "English" or "Polski"
+    val selectedLanguage: String = "en"
 )

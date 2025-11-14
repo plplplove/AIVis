@@ -14,7 +14,7 @@ object LocaleHelper {
     
     fun getLocale(languageCode: String): Locale {
         return when (languageCode) {
-            "Polski" -> Locale("pl")
+            "pl" -> Locale("pl")
             else -> Locale("en")
         }
     }

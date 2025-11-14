@@ -51,7 +51,6 @@ fun MainScreen(
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     
-    // Show full image viewer if a photo is selected
     if (selectedPhotoForViewing != null) {
         FullImageViewerScreen(
             photo = selectedPhotoForViewing!!,
@@ -59,7 +58,6 @@ fun MainScreen(
                 selectedPhotoForViewing = null
             },
             onDeleteClick = {
-                // The viewModel will be accessed through the viewer itself
                 selectedPhotoForViewing = null
             },
             onReEditClick = {
@@ -126,7 +124,6 @@ fun MainScreen(
             )
         }
 
-        // Bottom sheet for image source selection
         if (showBottomSheet) {
             ImageSourceBottomSheet(
                 onDismiss = {

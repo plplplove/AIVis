@@ -7,7 +7,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
 import com.ai.vis.data.EditedPhoto
 import java.io.File
 import java.io.FileOutputStream
@@ -15,12 +14,8 @@ import java.io.OutputStream
 
 object PhotoSaver {
     
-    private const val TAG = "PhotoSaver"
     private const val AIVIS_FOLDER = "AIVis"
     
-    /**
-     * Зберегти фото в галерею пристрою через MediaStore
-     */
     fun saveToGallery(
         context: Context,
         bitmap: Bitmap,
@@ -55,18 +50,13 @@ object PhotoSaver {
                     contentResolver.update(it, contentValues, null, null)
                 }
                 
-                Log.d(TAG, "Photo saved to gallery: $it")
                 it
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error saving photo to gallery", e)
             null
         }
     }
     
-    /**
-     * Зберегти фото локально в папку додатку
-     */
     fun saveToAppStorage(
         context: Context,
         bitmap: Bitmap,
@@ -84,17 +74,12 @@ object PhotoSaver {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
             }
             
-            Log.d(TAG, "Photo saved to app storage: ${file.absolutePath}")
             file
         } catch (e: Exception) {
-            Log.e(TAG, "Error saving photo to app storage", e)
             null
         }
     }
     
-    /**
-     * Створити thumbnail для фото
-     */
     fun createThumbnail(
         context: Context,
         bitmap: Bitmap,
@@ -122,17 +107,12 @@ object PhotoSaver {
                 thumbnail.recycle()
             }
             
-            Log.d(TAG, "Thumbnail created: ${file.absolutePath}")
             file
         } catch (e: Exception) {
-            Log.e(TAG, "Error creating thumbnail", e)
             null
         }
     }
     
-    /**
-     * Видалити фото з файлової системи
-     */
     fun deletePhotoFile(filePath: String): Boolean {
         return try {
             val file = File(filePath)
@@ -142,14 +122,10 @@ object PhotoSaver {
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error deleting photo file", e)
             false
         }
     }
     
-    /**
-     * Видалити всі фото з папки додатку
-     */
     fun deleteAllAppPhotos(context: Context): Int {
         var deletedCount = 0
         try {
@@ -162,7 +138,6 @@ object PhotoSaver {
                 }
             }
             
-            // Also delete thumbnails
             val thumbDirectory = File(context.filesDir, "thumbnails")
             if (thumbDirectory.exists() && thumbDirectory.isDirectory) {
                 thumbDirectory.listFiles()?.forEach { file ->
@@ -170,14 +145,10 @@ object PhotoSaver {
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error deleting all app photos", e)
         }
         return deletedCount
     }
     
-    /**
-     * Отримати розмір файлу в байтах
-     */
     fun getFileSize(filePath: String): Long {
         return try {
             File(filePath).length()

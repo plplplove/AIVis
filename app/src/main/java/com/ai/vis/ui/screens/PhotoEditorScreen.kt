@@ -1022,8 +1022,6 @@ fun PhotoEditorScreen(
                                 
                                 // Для crop та text збереження - використовуємо ті ж локальні координати
                                 imageBounds = imageRectInBox
-                                
-                                android.util.Log.d("PhotoEditor", "🎨 Image bounds (local): $imageBounds")
                             }
                             .graphicsLayer(
                                 scaleX = scale,
@@ -1460,7 +1458,7 @@ fun PhotoEditorScreen(
                                         
                                         coroutineScope.launch(Dispatchers.IO) {
                                             originalBitmap?.let { bitmap ->
-                                                originalBitmap = ImageProcessor.flipBitmapHorizontal(bitmap)
+                                                originalBitmap = ImageProcessor.flipBitmap(bitmap, horizontal = true)
                                                 previewBitmap = null
                                             }
                                         }
@@ -1474,7 +1472,7 @@ fun PhotoEditorScreen(
                                         
                                         coroutineScope.launch(Dispatchers.IO) {
                                             originalBitmap?.let { bitmap ->
-                                                originalBitmap = ImageProcessor.flipBitmapVertical(bitmap)
+                                                originalBitmap = ImageProcessor.flipBitmap(bitmap, horizontal = false)
                                                 previewBitmap = null
                                             }
                                         }

@@ -20,31 +20,24 @@ class SettingsDataStore(private val context: Context) {
     }
 
     val settingsFlow: Flow<AppSettings> = context.dataStore.data.map { preferences ->
-        val settings = AppSettings(
+        AppSettings(
             isDarkTheme = preferences[IS_DARK_THEME] ?: false,
-            selectedLanguage = preferences[SELECTED_LANGUAGE] ?: "English"
+            selectedLanguage = preferences[SELECTED_LANGUAGE] ?: "en"
         )
-        android.util.Log.d("SettingsDataStore", "Loading settings: $settings")
-        settings
     }
 
     suspend fun updateTheme(isDarkTheme: Boolean) {
-        android.util.Log.d("SettingsDataStore", "Updating theme to: $isDarkTheme")
         context.dataStore.edit { preferences ->
             preferences[IS_DARK_THEME] = isDarkTheme
         }
-        android.util.Log.d("SettingsDataStore", "Theme updated successfully")
     }
 
     suspend fun updateLanguage(language: String) {
-        android.util.Log.d("SettingsDataStore", "Updating language to: $language")
         context.dataStore.edit { preferences ->
             preferences[SELECTED_LANGUAGE] = language
         }
-        android.util.Log.d("SettingsDataStore", "Language updated successfully")
     }
 
     suspend fun clearCache() {
-        // TODO: Implement cache clearing logic
     }
 }

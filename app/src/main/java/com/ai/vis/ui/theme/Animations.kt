@@ -20,9 +20,6 @@ object AppAnimations {
     private const val DURATION_MEDIUM = 300
     private const val DURATION_LONG = 400
     
-    /**
-     * Анімація появи елементів з fade in
-     */
     fun fadeInAnimation(duration: Int = DURATION_MEDIUM): EnterTransition {
         return fadeIn(
             animationSpec = tween(
@@ -32,9 +29,6 @@ object AppAnimations {
         )
     }
     
-    /**
-     * Анімація зникнення елементів з fade out
-     */
     fun fadeOutAnimation(duration: Int = DURATION_MEDIUM): ExitTransition {
         return fadeOut(
             animationSpec = tween(
@@ -44,9 +38,6 @@ object AppAnimations {
         )
     }
     
-    /**
-     * Анімація появи з масштабуванням (для кнопок, карток)
-     */
     fun scaleInAnimation(duration: Int = DURATION_MEDIUM): EnterTransition {
         return scaleIn(
             initialScale = 0.8f,
@@ -59,9 +50,6 @@ object AppAnimations {
         )
     }
     
-    /**
-     * Анімація зникнення з масштабуванням
-     */
     fun scaleOutAnimation(duration: Int = DURATION_MEDIUM): ExitTransition {
         return scaleOut(
             targetScale = 0.8f,
@@ -74,9 +62,6 @@ object AppAnimations {
         )
     }
     
-    /**
-     * Анімація появи знизу (для діалогів, bottom sheets)
-     */
     fun slideInFromBottomAnimation(duration: Int = DURATION_MEDIUM): EnterTransition {
         return slideInVertically(
             initialOffsetY = { it },
@@ -89,9 +74,6 @@ object AppAnimations {
         )
     }
     
-    /**
-     * Анімація зникнення вниз
-     */
     fun slideOutToBottomAnimation(duration: Int = DURATION_MEDIUM): ExitTransition {
         return slideOutVertically(
             targetOffsetY = { it },
@@ -104,9 +86,6 @@ object AppAnimations {
         )
     }
     
-    /**
-     * Анімація появи зверху (для топ-бару, повідомлень)
-     */
     fun slideInFromTopAnimation(duration: Int = DURATION_MEDIUM): EnterTransition {
         return slideInVertically(
             initialOffsetY = { -it },
@@ -119,9 +98,6 @@ object AppAnimations {
         )
     }
     
-    /**
-     * Анімація зникнення вгору
-     */
     fun slideOutToTopAnimation(duration: Int = DURATION_MEDIUM): ExitTransition {
         return slideOutVertically(
             targetOffsetY = { -it },
@@ -134,9 +110,6 @@ object AppAnimations {
         )
     }
     
-    /**
-     * Анімація появи справа (для нових екранів)
-     */
     fun slideInFromRightAnimation(duration: Int = DURATION_MEDIUM): EnterTransition {
         return slideInHorizontally(
             initialOffsetX = { it },
@@ -149,9 +122,6 @@ object AppAnimations {
         )
     }
     
-    /**
-     * Анімація зникнення вправо
-     */
     fun slideOutToRightAnimation(duration: Int = DURATION_MEDIUM): ExitTransition {
         return slideOutHorizontally(
             targetOffsetX = { it },
@@ -164,9 +134,6 @@ object AppAnimations {
         )
     }
     
-    /**
-     * Анімація появи зліва (для повернення назад)
-     */
     fun slideInFromLeftAnimation(duration: Int = DURATION_MEDIUM): EnterTransition {
         return slideInHorizontally(
             initialOffsetX = { -it },
@@ -179,9 +146,6 @@ object AppAnimations {
         )
     }
     
-    /**
-     * Анімація зникнення вліво
-     */
     fun slideOutToLeftAnimation(duration: Int = DURATION_MEDIUM): ExitTransition {
         return slideOutHorizontally(
             targetOffsetX = { -it },
@@ -194,9 +158,6 @@ object AppAnimations {
         )
     }
     
-    /**
-     * Комбінована анімація для появи карток та кнопок з легким ефектом пружини
-     */
     fun springScaleInAnimation(): EnterTransition {
         return scaleIn(
             initialScale = 0.9f,

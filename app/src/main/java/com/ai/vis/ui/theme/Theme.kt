@@ -16,11 +16,6 @@ import com.ai.vis.ui.theme.SelectionLightBlue
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.luminance
 
-/**
- * Return selection color based on the currently applied MaterialTheme colors.
- * We use the background luminance to decide whether the active theme is light or dark.
- * This respects in-app theme switching that sets MaterialTheme.colorScheme, not the system setting.
- */
 @Composable
 fun SelectionColor(): Color {
     val bg = MaterialTheme.colorScheme.background
@@ -61,7 +56,6 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun AIVisTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color disabled to use brand colors
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {

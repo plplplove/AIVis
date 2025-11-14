@@ -18,20 +18,14 @@ import coil.request.SuccessResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/**
- * Utility class for image processing operations
- */
 object ImageProcessor {
     
-    /**
-     * Load bitmap from URI
-     */
     suspend fun loadBitmap(context: Context, uri: Uri): Bitmap? = withContext(Dispatchers.IO) {
         try {
             val loader = ImageLoader(context)
             val request = ImageRequest.Builder(context)
                 .data(uri)
-                .allowHardware(false) // Disable hardware bitmaps for processing
+                .allowHardware(false)
                 .build()
             
             val result = (loader.execute(request) as? SuccessResult)?.drawable
@@ -42,9 +36,6 @@ object ImageProcessor {
         }
     }
     
-    /**
-     * Rotate bitmap by 90 degrees
-     */
     fun rotateBitmap(bitmap: Bitmap, degrees: Float): Bitmap {
         val matrix = Matrix().apply {
             postRotate(degrees)
@@ -52,37 +43,22 @@ object ImageProcessor {
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
     
-    /**
-     * Flip bitmap horizontally
-     */
-    fun flipBitmapHorizontal(bitmap: Bitmap): Bitmap {
+    fun flipBitmap(bitmap: Bitmap, horizontal: Boolean): Bitmap {
         val matrix = Matrix().apply {
-            postScale(-1f, 1f, bitmap.width / 2f, bitmap.height / 2f)
+            if (horizontal) {
+                postScale(-1f, 1f, bitmap.width / 2f, bitmap.height / 2f)
+            } else {
+                postScale(1f, -1f, bitmap.width / 2f, bitmap.height / 2f)
+            }
         }
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
     
-    /**
-     * Flip bitmap vertically
-     */
-    fun flipBitmapVertical(bitmap: Bitmap): Bitmap {
-        val matrix = Matrix().apply {
-            postScale(1f, -1f, bitmap.width / 2f, bitmap.height / 2f)
-        }
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-    }
-    
-    /**
-     * Crop bitmap with specific screen coordinates
-     * @param cropRect: Screen coordinates of crop area
-     * @param imageBounds: Screen bounds where image is displayed (with ContentScale.Fit)
-     */
     fun cropBitmapWithRect(
         bitmap: Bitmap,
         cropRect: androidx.compose.ui.geometry.Rect,
         imageBounds: androidx.compose.ui.geometry.Rect
     ): Bitmap {
-        // Convert screen coordinates to bitmap coordinates
         val scaleX = bitmap.width / imageBounds.width
         val scaleY = bitmap.height / imageBounds.height
         
@@ -105,33 +81,24 @@ object ImageProcessor {
         )
     }
     
-    /**
-     * Crop bitmap to specific ratio
-     * @param ratio: null for free crop, or width/height ratio (e.g., 1.0f for 1:1, 1.333f for 4:3)
-     */
     fun cropBitmap(bitmap: Bitmap, ratio: Float?): Bitmap {
-        if (ratio == null) return bitmap // Free crop, return original
+        if (ratio == null) return bitmap
         
         val originalWidth = bitmap.width.toFloat()
         val originalHeight = bitmap.height.toFloat()
         val originalRatio = originalWidth / originalHeight
         
         return if (originalRatio > ratio) {
-            // Image is wider than target ratio, crop width
             val newWidth = (originalHeight * ratio).toInt()
             val x = ((originalWidth - newWidth) / 2).toInt()
             Bitmap.createBitmap(bitmap, x, 0, newWidth, bitmap.height)
         } else {
-            // Image is taller than target ratio, crop height
             val newHeight = (originalWidth / ratio).toInt()
             val y = ((originalHeight - newHeight) / 2).toInt()
             Bitmap.createBitmap(bitmap, 0, y, bitmap.width, newHeight)
         }
     }
     
-    /**
-     * Apply brightness adjustment (-1.0 to 1.0)
-     */
     fun adjustBrightness(bitmap: Bitmap, value: Float): Bitmap {
         val colorMatrix = ColorMatrix().apply {
             val brightness = value * 255
@@ -145,11 +112,8 @@ object ImageProcessor {
         return applyColorMatrix(bitmap, colorMatrix)
     }
     
-    /**
-     * Apply contrast adjustment (-1.0 to 1.0)
-     */
     fun adjustContrast(bitmap: Bitmap, value: Float): Bitmap {
-        val contrast = value + 1f // Convert to 0-2 range
+        val contrast = value + 1f
         val translate = (-.5f * contrast + .5f) * 255f
         
         val colorMatrix = ColorMatrix().apply {
@@ -163,24 +127,17 @@ object ImageProcessor {
         return applyColorMatrix(bitmap, colorMatrix)
     }
     
-    /**
-     * Apply saturation adjustment (-1.0 to 1.0)
-     */
     fun adjustSaturation(bitmap: Bitmap, value: Float): Bitmap {
-        val saturation = value + 1f // Convert to 0-2 range
+        val saturation = value + 1f
         val colorMatrix = ColorMatrix().apply {
             setSaturation(saturation)
         }
         return applyColorMatrix(bitmap, colorMatrix)
     }
     
-    /**
-     * Apply temperature adjustment (-1.0 to 1.0)
-     * Warm (positive) = more red/yellow, Cool (negative) = more blue
-     */
     fun adjustTemperature(bitmap: Bitmap, value: Float): Bitmap {
         val colorMatrix = ColorMatrix().apply {
-            val warm = value * 50 // Scale factor for temperature
+            val warm = value * 50
             set(floatArrayOf(
                 1f, 0f, 0f, 0f, warm,
                 0f, 1f, 0f, 0f, warm * 0.5f,
@@ -191,10 +148,6 @@ object ImageProcessor {
         return applyColorMatrix(bitmap, colorMatrix)
     }
     
-    /**
-     * Apply tint adjustment (-1.0 to 1.0)
-     * Green (positive) or Magenta (negative)
-     */
     fun adjustTint(bitmap: Bitmap, value: Float): Bitmap {
         val colorMatrix = ColorMatrix().apply {
             val tint = value * 50
@@ -208,25 +161,18 @@ object ImageProcessor {
         return applyColorMatrix(bitmap, colorMatrix)
     }
     
-    /**
-     * Apply vignette effect (0.0 to 1.0)
-     * Darkens edges gradually from center
-     */
     fun applyVignette(bitmap: Bitmap, intensity: Float): Bitmap {
         if (intensity == 0f) return bitmap
         
         val result = Bitmap.createBitmap(bitmap.width, bitmap.height, bitmap.config ?: Bitmap.Config.ARGB_8888)
         val canvas = Canvas(result)
         
-        // Draw original bitmap first
         canvas.drawBitmap(bitmap, 0f, 0f, null)
         
-        // Calculate vignette parameters
         val centerX = bitmap.width / 2f
         val centerY = bitmap.height / 2f
         val maxRadius = Math.sqrt((centerX * centerX + centerY * centerY).toDouble()).toFloat()
         
-        // Create radial gradient overlay
         val paint = Paint().apply {
             isAntiAlias = true
             shader = android.graphics.RadialGradient(
@@ -238,30 +184,23 @@ object ImageProcessor {
                     android.graphics.Color.argb((intensity * 200).toInt(), 0, 0, 0)
                 ),
                 floatArrayOf(
-                    0.3f, // Start fade from 30% of radius
-                    1.0f  // Full dark at edges
+                    0.3f,
+                    1.0f
                 ),
                 android.graphics.Shader.TileMode.CLAMP
             )
         }
         
-        // Draw vignette overlay
         canvas.drawRect(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat(), paint)
         return result
     }
     
-    /**
-     * Apply Black & White filter with intensity (0.0 to 1.0)
-     */
     fun applyBWFilter(bitmap: Bitmap, intensity: Float): Bitmap {
         val colorMatrix = ColorMatrix()
         colorMatrix.setSaturation(1f - intensity)
         return applyColorMatrixWithIntensity(bitmap, colorMatrix, intensity)
     }
     
-    /**
-     * Apply Sepia filter with intensity (0.0 to 1.0)
-     */
     fun applySepiaFilter(bitmap: Bitmap, intensity: Float): Bitmap {
         val colorMatrix = ColorMatrix().apply {
             set(floatArrayOf(
@@ -274,9 +213,6 @@ object ImageProcessor {
         return applyColorMatrixWithIntensity(bitmap, colorMatrix, intensity)
     }
     
-    /**
-     * Apply Vintage filter with intensity (0.0 to 1.0)
-     */
     fun applyVintageFilter(bitmap: Bitmap, intensity: Float): Bitmap {
         val colorMatrix = ColorMatrix().apply {
             set(floatArrayOf(
@@ -289,9 +225,6 @@ object ImageProcessor {
         return applyColorMatrixWithIntensity(bitmap, colorMatrix, intensity)
     }
     
-    /**
-     * Apply Cool filter with intensity (0.0 to 1.0)
-     */
     fun applyCoolFilter(bitmap: Bitmap, intensity: Float): Bitmap {
         val coolMatrix = ColorMatrix().apply {
             set(floatArrayOf(
@@ -304,9 +237,6 @@ object ImageProcessor {
         return applyColorMatrixWithIntensity(bitmap, coolMatrix, intensity)
     }
     
-    /**
-     * Apply Warm filter with intensity (0.0 to 1.0)
-     */
     fun applyWarmFilter(bitmap: Bitmap, intensity: Float): Bitmap {
         val warmMatrix = ColorMatrix().apply {
             set(floatArrayOf(
@@ -319,18 +249,12 @@ object ImageProcessor {
         return applyColorMatrixWithIntensity(bitmap, warmMatrix, intensity)
     }
     
-    /**
-     * Apply Grayscale filter with intensity (0.0 to 1.0)
-     */
     fun applyGrayscaleFilter(bitmap: Bitmap, intensity: Float): Bitmap {
         val colorMatrix = ColorMatrix()
         colorMatrix.setSaturation(1f - intensity)
         return applyColorMatrixWithIntensity(bitmap, colorMatrix, intensity)
     }
     
-    /**
-     * Apply Invert filter with intensity (0.0 to 1.0)
-     */
     fun applyInvertFilter(bitmap: Bitmap, intensity: Float): Bitmap {
         val invertMatrix = ColorMatrix().apply {
             set(floatArrayOf(
@@ -343,9 +267,6 @@ object ImageProcessor {
         return applyColorMatrixWithIntensity(bitmap, invertMatrix, intensity)
     }
     
-    /**
-     * Apply color matrix with intensity blending
-     */
     private fun applyColorMatrixWithIntensity(bitmap: Bitmap, colorMatrix: ColorMatrix, intensity: Float): Bitmap {
         if (intensity == 0f) return bitmap
         
@@ -390,9 +311,6 @@ object ImageProcessor {
         return applyColorMatrix(bitmap, colorMatrix)
     }
     
-    /**
-     * Apply color matrix to bitmap
-     */
     private fun applyColorMatrix(bitmap: Bitmap, colorMatrix: ColorMatrix): Bitmap {
         val result = Bitmap.createBitmap(bitmap.width, bitmap.height, bitmap.config ?: Bitmap.Config.ARGB_8888)
         val canvas = Canvas(result)
@@ -559,11 +477,6 @@ object ImageProcessor {
         return result
     }
     
-    /**
-     * Draw paths on bitmap
-     * @param drawPaths: List of DrawPath objects
-     * @param imageBounds: Image bounds in screen coordinates
-     */
     fun drawPathsOnBitmap(
         bitmap: Bitmap,
         drawPaths: List<com.ai.vis.ui.components.DrawPath>,
@@ -631,8 +544,7 @@ object ImageProcessor {
                 srcPath.transform(matrix, androidPath)
                 canvas.drawPath(androidPath, paint)
             } catch (e: Exception) {
-                android.util.Log.e("ImageProcessor", "Failed to draw path: ${e.message}")
-            }
+                            }
         }
         
         canvas.restore()
@@ -640,9 +552,6 @@ object ImageProcessor {
         return result
     }
     
-    /**
-     * Draw emoji sticker on bitmap
-     */
     fun drawStickerOnBitmap(
         bitmap: Bitmap,
         emoji: String,
@@ -701,8 +610,5 @@ object ImageProcessor {
         return result
     }
     
-    /**
-     * Convert Bitmap to ImageBitmap for Compose
-     */
     fun Bitmap.toImageBitmap(): ImageBitmap = this.asImageBitmap()
 }

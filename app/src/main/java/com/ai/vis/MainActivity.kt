@@ -44,8 +44,6 @@ class MainActivity : ComponentActivity() {
     }
     
     override fun attachBaseContext(newBase: Context) {
-        // Get saved language from DataStore synchronously is not possible here
-        // So we'll apply locale in onCreate after collecting the flow
         super.attachBaseContext(newBase)
     }
     
@@ -53,17 +51,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
-        // Check if this is a recreate (e.g., after language change)
         val isRecreating = savedInstanceState != null
         
         setContent {
             val settings by settingsViewModel.settings.collectAsState()
             var previousLanguage by remember { mutableStateOf(settings.selectedLanguage) }
             
-            // Apply locale whenever language changes and recreate activity
             LaunchedEffect(settings.selectedLanguage) {
                 LocaleHelper.applyLocale(this@MainActivity, settings.selectedLanguage)
-                // Only recreate if language actually changed (not initial load)
                 if (previousLanguage != settings.selectedLanguage && previousLanguage.isNotEmpty()) {
                     this@MainActivity.recreate()
                 }
@@ -71,41 +66,34 @@ class MainActivity : ComponentActivity() {
             }
             
             AIVisTheme(darkTheme = settings.isDarkTheme) {
-                // Don't show splash if this is a recreate (e.g., after language change)
                 var showSplash by remember { mutableStateOf(!isRecreating) }
                 var showSettings by remember { mutableStateOf(false) }
                 var showPhotoEditor by remember { mutableStateOf(false) }
                 var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
                 var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
                 
-                // Gallery picker launcher
                 val galleryLauncher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.GetContent()
                 ) { uri: Uri? ->
-                    android.util.Log.d("MainActivity", "Gallery returned URI: $uri")
                     uri?.let {
                         selectedImageUri = it
                         showPhotoEditor = true
                     }
                 }
                 
-                // Camera launcher
                 val cameraLauncher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.TakePicture()
                 ) { success ->
-                    android.util.Log.d("MainActivity", "Camera success: $success, URI: $cameraImageUri")
                     if (success && cameraImageUri != null) {
                         selectedImageUri = cameraImageUri
                         showPhotoEditor = true
                     }
                 }
                 
-                // Camera permission launcher
                 val cameraPermissionLauncher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestPermission()
                 ) { isGranted ->
                     if (isGranted) {
-                        // Launch camera after permission granted
                         val photoFile = File.createTempFile(
                             "camera_photo_${System.currentTimeMillis()}",
                             ".jpg",
@@ -146,17 +134,13 @@ class MainActivity : ComponentActivity() {
                         MainScreen(
                             onSettingsClick = { showSettings = true },
                             onGalleryClick = {
-                                android.util.Log.d("MainActivity", "onGalleryClick called")
                                 galleryLauncher.launch("image/*")
                             },
                             onCameraClick = {
-                                android.util.Log.d("MainActivity", "onCameraClick called")
-                                // Check camera permission first
                                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                                     when {
                                         checkSelfPermission(android.Manifest.permission.CAMERA) == 
                                             android.content.pm.PackageManager.PERMISSION_GRANTED -> {
-                                            // Permission already granted, launch camera
                                             val photoFile = File.createTempFile(
                                                 "camera_photo_${System.currentTimeMillis()}",
                                                 ".jpg",
@@ -171,12 +155,10 @@ class MainActivity : ComponentActivity() {
                                             cameraLauncher.launch(uri)
                                         }
                                         else -> {
-                                            // Request permission
                                             cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
                                         }
                                     }
                                 } else {
-                                    // No permission needed for older versions
                                     val photoFile = File.createTempFile(
                                         "camera_photo_${System.currentTimeMillis()}",
                                         ".jpg",
@@ -192,7 +174,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             onEditPhoto = { photoUri ->
-                                // Handle re-edit from gallery
                                 selectedImageUri = Uri.parse(photoUri)
                                 showPhotoEditor = true
                             }
@@ -205,7 +186,6 @@ class MainActivity : ComponentActivity() {
     
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        // Mark that we're saving state, so we know on recreate to skip splash
         outState.putBoolean("hasBeenCreated", true)
     }
 }

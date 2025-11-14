@@ -135,8 +135,7 @@ fun AdjustPanel(
                 }
             }
         }
-        
-        // Horizontal list of parameters
+
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()

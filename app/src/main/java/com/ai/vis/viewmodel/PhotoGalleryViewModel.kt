@@ -6,6 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.ai.vis.data.AppDatabase
 import com.ai.vis.data.EditedPhoto
 import com.ai.vis.data.PhotoRepository
+import com.ai.vis.domain.usecase.DeletePhotoUseCase
+import com.ai.vis.domain.usecase.GetAllPhotosUseCase
+import com.ai.vis.domain.usecase.InsertPhotoUseCase
+import com.ai.vis.domain.usecase.UpdatePhotoFileNameUseCase
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -13,13 +17,23 @@ import kotlinx.coroutines.launch
 
 class PhotoGalleryViewModel(application: Application) : AndroidViewModel(application) {
     
-    private val repository: PhotoRepository
+    private val getAllPhotosUseCase: GetAllPhotosUseCase
+    private val insertPhotoUseCase: InsertPhotoUseCase
+    private val deletePhotoUseCase: DeletePhotoUseCase
+    private val updatePhotoFileNameUseCase: UpdatePhotoFileNameUseCase
+    
     val allPhotos: StateFlow<List<EditedPhoto>>
     
     init {
         val photoDao = AppDatabase.getDatabase(application).editedPhotoDao()
-        repository = PhotoRepository(photoDao)
-        allPhotos = repository.allPhotos.stateIn(
+        val repository = PhotoRepository(photoDao)
+        
+        getAllPhotosUseCase = GetAllPhotosUseCase(repository)
+        insertPhotoUseCase = InsertPhotoUseCase(repository)
+        deletePhotoUseCase = DeletePhotoUseCase(repository)
+        updatePhotoFileNameUseCase = UpdatePhotoFileNameUseCase(repository)
+        
+        allPhotos = getAllPhotosUseCase().stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
@@ -28,32 +42,35 @@ class PhotoGalleryViewModel(application: Application) : AndroidViewModel(applica
     
     fun insertPhoto(photo: EditedPhoto, onSuccess: (Long) -> Unit = {}) {
         viewModelScope.launch {
-            val id = repository.insertPhoto(photo)
+            val id = insertPhotoUseCase(photo)
             onSuccess(id)
         }
     }
     
     fun deletePhoto(photo: EditedPhoto) {
         viewModelScope.launch {
-            repository.deletePhoto(photo)
+            deletePhotoUseCase(photo)
         }
     }
     
     fun deletePhotoById(photoId: Long) {
         viewModelScope.launch {
-            repository.deletePhotoById(photoId)
+            deletePhotoUseCase.byId(photoId)
         }
     }
     
     fun deleteAllPhotos() {
         viewModelScope.launch {
-            repository.deleteAllPhotos()
+            val photos = allPhotos.value
+            photos.forEach { photo ->
+                deletePhotoUseCase(photo)
+            }
         }
     }
     
     fun updatePhotoFileName(photoId: Long, newFileName: String) {
         viewModelScope.launch {
-            repository.updatePhotoFileName(photoId, newFileName)
+            updatePhotoFileNameUseCase(photoId, newFileName)
         }
     }
 }

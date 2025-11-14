@@ -59,11 +59,6 @@ fun SettingsScreen(
     val settings by viewModel.settings.collectAsState()
     var showAboutDialog by remember { mutableStateOf(false) }
     var showClearCacheDialog by remember { mutableStateOf(false) }
-    
-    // Debug logging
-    androidx.compose.runtime.LaunchedEffect(settings) {
-        android.util.Log.d("SettingsScreen", "Settings changed: $settings")
-    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -176,7 +171,7 @@ fun SettingsScreen(
                                 color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
-                                text = settings.selectedLanguage,
+                                text = if (settings.selectedLanguage == "pl") stringResource(id = R.string.polish) else stringResource(id = R.string.english),
                                 fontSize = 14.sp,
                                 fontFamily = FontFamily(Font(R.font.font_main_text)),
                                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
@@ -184,11 +179,10 @@ fun SettingsScreen(
                         }
                     }
 
-                    // English option
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { viewModel.setLanguage("English") }
+                            .clickable { viewModel.setLanguage("en") }
                             .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -200,8 +194,8 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         RadioButton(
-                            selected = settings.selectedLanguage == "English",
-                            onClick = { viewModel.setLanguage("English") },
+                            selected = settings.selectedLanguage == "en",
+                            onClick = { viewModel.setLanguage("en") },
                             colors = RadioButtonDefaults.colors(
                                 selectedColor = MaterialTheme.colorScheme.primary,
                                 unselectedColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
@@ -209,11 +203,10 @@ fun SettingsScreen(
                         )
                     }
 
-                    // Polish option
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { viewModel.setLanguage("Polski") }
+                            .clickable { viewModel.setLanguage("pl") }
                             .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -225,8 +218,8 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         RadioButton(
-                            selected = settings.selectedLanguage == "Polski",
-                            onClick = { viewModel.setLanguage("Polski") },
+                            selected = settings.selectedLanguage == "pl",
+                            onClick = { viewModel.setLanguage("pl") },
                             colors = RadioButtonDefaults.colors(
                                 selectedColor = MaterialTheme.colorScheme.primary,
                                 unselectedColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
@@ -310,7 +303,6 @@ fun SettingsScreen(
                 }
             }
 
-            // About Dialog info
             if (showAboutDialog) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Card(
@@ -351,7 +343,6 @@ fun SettingsScreen(
         }
     }
     
-    // Clear Cache Confirmation Dialog
     if (showClearCacheDialog) {
         ClearCacheConfirmationDialog(
             onDismiss = { showClearCacheDialog = false },
@@ -392,7 +383,6 @@ private fun ClearCacheConfirmationDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Title
                 Text(
                     text = stringResource(id = R.string.clear_cache),
                     fontSize = 24.sp,
@@ -402,7 +392,6 @@ private fun ClearCacheConfirmationDialog(
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
                 
-                // Warning Message
                 Text(
                     text = stringResource(id = R.string.clear_cache_warning),
                     fontSize = 16.sp,
@@ -412,7 +401,6 @@ private fun ClearCacheConfirmationDialog(
                     lineHeight = 22.sp
                 )
                 
-                // Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -484,7 +472,6 @@ fun SettingsCard(
 @Composable
 fun SettingsScreenPreview() {
     AIVisTheme {
-        // Preview не може використовувати DataStore, тому показуємо заглушку
         androidx.compose.foundation.layout.Box(
             modifier = androidx.compose.ui.Modifier.fillMaxSize(),
             contentAlignment = androidx.compose.ui.Alignment.Center

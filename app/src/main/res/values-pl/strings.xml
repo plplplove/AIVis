@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">AIVis</string>
     
-    <!-- Settings Screen -->
     <string name="settings">Ustawienia</string>
     <string name="theme">Motyw</string>
     <string name="dark_mode">Tryb ciemny</string>
@@ -12,43 +11,35 @@
     <string name="about_app">O aplikacji</string>
     <string name="version">Wersja 1.0.0</string>
     
-    <!-- Editor Screen -->
     <string name="start_editing">Rozpocznij edycję</string>
     <string name="edit_photos_hint">Edytuj zdjęcia za pomocą narzędzi AI</string>
     
-    <!-- Bottom Navigation -->
     <string name="editor">Edytor</string>
     <string name="my_gallery">Moja galeria</string>
     
-    <!-- Image Source Bottom Sheet -->
     <string name="choose_image_source">Wybierz źródło obrazu</string>
     <string name="choose_from_gallery">Wybierz z galerii</string>
     <string name="select_existing_photo">Wybierz istniejące zdjęcie</string>
     <string name="take_photo">Zrób zdjęcie</string>
     <string name="capture_new_photo">Zrób nowe zdjęcie</string>
     
-    <!-- Gallery Screen -->
     <string name="no_photos_yet">Brak zdjęć</string>
     <string name="start_editing_to_save">Zacznij edytować, aby zapisać zdjęcia tutaj</string>
     <string name="select_multiple">Zaznacz wiele</string>
     <string name="cancel">Anuluj</string>
     
-    <!-- About -->
     <string name="about_title">AIVis - AI Vision</string>
     <string name="about_description">Aplikacja do edycji zdjęć offline z narzędziami AI wykorzystującymi lokalne modele (TFLite/ONNX Runtime).</string>
     <string name="diploma_project">Projekt dyplomowy 2025</string>
     
-    <!-- Languages -->
     <string name="english">English</string>
     <string name="polish">Polski</string>
     
-    <!-- Photo Editor Screen -->
     <string name="editing">Edycja</string>
     <string name="save">Zapisz</string>
     <string name="back">Wstecz</string>
     <string name="tap_tool_hint">Dotknij narzędzie poniżej, aby rozpocząć edycję</string>
     
-    <!-- Editor Tools -->
     <string name="crop_rotate">Przytnij i Obróć</string>
     <string name="adjust">Dostosuj</string>
     <string name="filters">Filtry</string>
@@ -58,13 +49,11 @@
     <string name="text_tool">Tekst</string>
     <string name="draw_tool">Rysuj</string>
     
-    <!-- Crop & Rotate Tools -->
     <string name="crop">Przytnij</string>
     <string name="rotate">Obróć</string>
     <string name="flip">Odbij</string>
     <string name="stretch">Rozciągnij</string>
     
-    <!-- Adjust Tools -->
     <string name="brightness">Jasność</string>
     <string name="contrast">Kontrast</string>
     <string name="saturation">Nasycenie</string>
@@ -73,7 +62,6 @@
     <string name="tint">Odcień</string>
     <string name="vignette">Winieta</string>
     
-    <!-- Filters -->
     <string name="filter_none">Oryginalny</string>
     <string name="filter_bw">Czarno-biały</string>
     <string name="filter_sepia">Sepia</string>
@@ -84,33 +72,28 @@
     <string name="filter_invert">Odwróć</string>
     <string name="filter_intensity">Intensywność</string>
     
-    <!-- AI Tools -->
     <string name="remove_background">Usuń tło</string>
     <string name="replace_background">Zamień tło</string>
     <string name="enhance_resolution">Popraw rozdzielczość</string>
     <string name="denoise">Redukcja szumów</string>
     <string name="retouch_face">Retusz twarzy</string>
     
-    <!-- AI Effects -->
     <string name="cartoonize">Kreskówka</string>
     <string name="sketch">Szkic</string>
     <string name="oil_painting">Obraz olejny</string>
     <string name="portrait_style">Styl portretowy</string>
     <string name="color_boost">Wzmocnienie kolorów</string>
     
-    <!-- Crop Ratios -->
     <string name="free_crop">Dowolny</string>
     <string name="ratio_1_1">1:1</string>
     <string name="ratio_4_3">4:3</string>
     <string name="ratio_16_9">16:9</string>
     
-    <!-- Rotate & Flip -->
     <string name="rotate_left">Obróć w lewo</string>
     <string name="rotate_right">Obróć w prawo</string>
     <string name="flip_horizontal">Odbij poziomo</string>
     <string name="flip_vertical">Odbij pionowo</string>
     
-    <!-- Text Tool -->
     <string name="text_input">Wprowadź tekst</string>
     <string name="text_size">Rozmiar tekstu</string>
     <string name="text_color">Kolor</string>
@@ -122,7 +105,6 @@
     <string name="shadow">Cień</string>
     <string name="edit_text">Edytuj tekst</string>
     
-    <!-- Draw Tool -->
     <string name="draw_color">Kolor</string>
     <string name="draw_size">Rozmiar pędzla</string>
     <string name="draw_opacity">Przezroczystość</string>
@@ -141,18 +123,15 @@
     <string name="shape_fill">Wypełnienie</string>
     <string name="shape_stroke">Obramowanie</string>
     
-    <!-- Common Actions -->
     <string name="reset">Resetuj</string>
     <string name="apply">Zastosuj</string>
     <string name="done">Gotowe</string>
     
-    <!-- Exit Confirmation Dialog -->
     <string name="exit_without_saving">Wyjść bez zapisywania?</string>
     <string name="exit_confirmation_message">Wszystkie niezapisane zmiany zostaną utracone. Czy na pewno chcesz wyjść?</string>
     <string name="exit">Wyjdź</string>
     <string name="continue_editing">Kontynuuj edycję</string>
     
-    <!-- Save Options Dialog -->
     <string name="save_photo">Zapisz zdjęcie</string>
     <string name="save_options_message">Wybierz, gdzie zapisać edytowane zdjęcie</string>
     <string name="save_to_gallery">Zapisz do galerii</string>
@@ -162,14 +141,12 @@
     <string name="save_to_both">Zapisz w obu</string>
     <string name="save_to_both_desc">Zapisz w obu lokalizacjach</string>
     
-    <!-- Save Messages -->
     <string name="photo_saved_successfully">Zdjęcie zapisane pomyślnie</string>
     <string name="photo_saved_to_gallery">Zdjęcie zapisane do galerii</string>
     <string name="photo_saved_to_app">Zdjęcie zapisane w aplikacji</string>
     <string name="photo_saved_to_both">Zdjęcie zapisane w obu lokalizacjach</string>
     <string name="error_saving_photo">Błąd zapisywania zdjęcia</string>
     
-    <!-- Full Image Viewer -->
     <string name="full_image_preview">Podgląd pełnego obrazu</string>
     <string name="export">Eksportuj</string>
     <string name="delete">Usuń</string>
@@ -182,11 +159,6 @@
     <string name="enter_new_filename">Wprowadź nową nazwę pliku</string>
     <string name="filename_updated">Nazwa pliku zaktualizowana pomyślnie</string>
     
-    <!-- Clear Cache Dialog -->
     <string name="clear_cache_warning">Spowoduje to usunięcie wszystkich zapisanych zdjęć, zresetowanie motywu, zresetowanie języka i wyczyszczenie wszystkich danych aplikacji. Ta operacja jest nieodwracalna.</string>
     <string name="clear">Wyczyść</string>
 </resources>
-
-
-
-

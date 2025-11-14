@@ -52,15 +52,12 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     
-    // DataStore for settings persistence
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     
-    // Room Database for photo gallery
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
     
-    // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.5.0")
     
     testImplementation(libs.junit)
