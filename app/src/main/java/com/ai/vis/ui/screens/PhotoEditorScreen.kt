@@ -241,6 +241,10 @@ fun PhotoEditorScreen(
     var currentFilter by remember { mutableStateOf(com.ai.vis.ui.components.FilterType.NONE) }
     var filterIntensity by remember { mutableFloatStateOf(1f) }
     
+    // AI Styles state 🤖
+    var selectedAIStyle by remember { mutableStateOf(com.ai.vis.domain.model.AIStyle.NONE) }
+    var isApplyingAIStyle by remember { mutableStateOf(false) }
+    
     // Розмір і позиція Image в Box (для збереження тексту на bitmap)
     var imageRectInBox by remember { mutableStateOf<Rect?>(null) }
     
@@ -616,7 +620,7 @@ fun PhotoEditorScreen(
         EditorTool(R.string.filters, R.drawable.ic_filters_main),
         EditorTool(R.string.stickers, R.drawable.ic_sticker),
         EditorTool(R.string.ai_tools, R.drawable.ic_ai),
-        EditorTool(R.string.ai_effects, R.drawable.ic_filters),
+        EditorTool(R.string.ai_styles, R.drawable.ic_filters),
         EditorTool(R.string.text_tool, R.drawable.ic_text),
         EditorTool(R.string.draw_tool, R.drawable.ic_paint)
     )
@@ -1822,6 +1826,47 @@ fun PhotoEditorScreen(
                                         if (drawPaths.isNotEmpty()) {
                                             saveStateToUndo()
                                             drawPaths = drawPaths.dropLast(1)
+                                        }
+                                    }
+                                )
+                            }
+                            R.string.ai_styles -> {
+                                com.ai.vis.ui.components.AIStylesPanel(
+                                    selectedStyle = selectedAIStyle,
+                                    isProcessing = isApplyingAIStyle,
+                                    onStyleSelected = { style ->
+                                        if (!isApplyingAIStyle) {
+                                            selectedAIStyle = style
+                                            
+                                            if (style == com.ai.vis.domain.model.AIStyle.NONE) {
+                                                previewBitmap = null
+                                                isEditing = false
+                                            } else {
+                                                originalBitmap?.let { original ->
+                                                    saveStateToUndo()
+                                                    isApplyingAIStyle = true
+                                                    isEditing = true
+                                                    
+                                                    coroutineScope.launch(Dispatchers.IO) {
+                                                        try {
+                                                            val applyAIStyleUseCase = com.ai.vis.domain.usecase.ApplyAIStyleUseCase(context)
+                                                            val result = applyAIStyleUseCase(original, style)
+                                                            withContext(Dispatchers.Main) {
+                                                                previewBitmap = result
+                                                            }
+                                                            applyAIStyleUseCase.release()
+                                                        } catch (e: Exception) {
+                                                            withContext(Dispatchers.Main) {
+                                                                previewBitmap = originalBitmap
+                                                            }
+                                                        } finally {
+                                                            withContext(Dispatchers.Main) {
+                                                                isApplyingAIStyle = false
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 )

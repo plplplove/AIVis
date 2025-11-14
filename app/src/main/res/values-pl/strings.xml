@@ -45,7 +45,7 @@
     <string name="filters">Filtry</string>
     <string name="stickers">Naklejki</string>
     <string name="ai_tools">Narzędzia AI</string>
-    <string name="ai_effects">Efekty AI</string>
+    <string name="ai_styles">Style AI</string>
     <string name="text_tool">Tekst</string>
     <string name="draw_tool">Rysuj</string>
     
@@ -161,4 +161,16 @@
     
     <string name="clear_cache_warning">Spowoduje to usunięcie wszystkich zapisanych zdjęć, zresetowanie motywu, zresetowanie języka i wyczyszczenie wszystkich danych aplikacji. Ta operacja jest nieodwracalna.</string>
     <string name="clear">Wyczyść</string>
+    
+    <string name="style_none">Oryginał</string>
+    <string name="style_oil_painting">Malarstwo olejne</string>
+    <string name="style_watercolor">Akwarela</string>
+    <string name="style_cartoon">Kreskówka</string>
+    <string name="style_pencil_sketch">Szkic ołówkiem</string>
+    <string name="style_van_gogh">Van Gogh</string>
+    <string name="style_pop_art">Pop Art</string>
+    <string name="style_impressionism">Impresjonizm</string>
+    
+    <string name="applying_style">Stosowanie stylu…</string>
+    <string name="processing">Przetwarzanie…</string>
 </resources>

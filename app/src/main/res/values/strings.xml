@@ -45,7 +45,7 @@
     <string name="filters">Filters</string>
     <string name="stickers">Stickers</string>
     <string name="ai_tools">AI Tools</string>
-    <string name="ai_effects">AI Effects</string>
+    <string name="ai_styles">AI Styles</string>
     <string name="text_tool">Text</string>
     <string name="draw_tool">Draw</string>
     
@@ -188,4 +188,16 @@
     
     <string name="clear_cache_warning">This will delete all saved photos, reset theme, reset language, and clear all app data. This action cannot be undone.</string>
     <string name="clear">Clear</string>
+    
+    <string name="style_none">Original</string>
+    <string name="style_oil_painting">Oil Painting</string>
+    <string name="style_watercolor">Watercolor</string>
+    <string name="style_cartoon">Cartoon</string>
+    <string name="style_pencil_sketch">Pencil Sketch</string>
+    <string name="style_van_gogh">Van Gogh</string>
+    <string name="style_pop_art">Pop Art</string>
+    <string name="style_impressionism">Impressionism</string>
+    
+    <string name="applying_style">Applying style…</string>
+    <string name="processing">Processing…</string>
 </resources>
