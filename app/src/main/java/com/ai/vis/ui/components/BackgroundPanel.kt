@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,6 +47,7 @@ data class BackgroundItem(
 fun BackgroundPanel(
     selectedOption: BackgroundOption,
     onOptionSelected: (BackgroundOption) -> Unit,
+    isProcessing: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val itemsList = listOf(
@@ -69,7 +71,11 @@ fun BackgroundPanel(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(80.dp),
-                    onClick = { onOptionSelected(item.option) },
+                    onClick = { 
+                        if (!isProcessing) {
+                            onOptionSelected(item.option)
+                        }
+                    },
                     colors = CardDefaults.cardColors(
                         containerColor = if (isSelected) com.ai.vis.ui.theme.SelectionColor() else MaterialTheme.colorScheme.surface
                     ),
@@ -80,28 +86,37 @@ fun BackgroundPanel(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(8.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = item.iconRes),
-                                contentDescription = null,
-                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                modifier = Modifier.size(28.dp)
+                        if (isProcessing && isSelected) {
+                            // Show loading indicator when processing
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(32.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 3.dp
                             )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = stringResource(id = item.nameRes),
-                                fontSize = 12.sp,
-                                fontFamily = FontFamily(Font(R.font.font_main_text)),
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                textAlign = TextAlign.Center,
-                                maxLines = 1
-                            )
+                        } else {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                                modifier = Modifier.padding(8.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = item.iconRes),
+                                    contentDescription = null,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(28.dp)
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = stringResource(id = item.nameRes),
+                                    fontSize = 12.sp,
+                                    fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1
+                                )
 
+                            }
                         }
                     }
                 }

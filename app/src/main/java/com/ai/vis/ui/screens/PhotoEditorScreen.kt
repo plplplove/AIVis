@@ -249,6 +249,10 @@ fun PhotoEditorScreen(
     // Committed/applied AI style (represents current style baked into originalBitmap)
     var committedAIStyle by remember { mutableStateOf(com.ai.vis.domain.model.AIStyle.NONE) }
     
+    // Background processing state 🖼️
+    var selectedBackgroundOption by remember { mutableStateOf(com.ai.vis.ui.components.BackgroundOption.REMOVE) }
+    var isProcessingBackground by remember { mutableStateOf(false) }
+    
     // Розмір і позиція Image в Box (для збереження тексту на bitmap)
     var imageRectInBox by remember { mutableStateOf<Rect?>(null) }
     
@@ -1899,25 +1903,78 @@ fun PhotoEditorScreen(
                                 )
                             }
                             R.string.background -> {
-                                // Background panel - UI only. Hook up selection handling here.
+                                // Background panel with actual processing
                                 com.ai.vis.ui.components.BackgroundPanel(
-                                    selectedOption = if (committedAIStyle != com.ai.vis.domain.model.AIStyle.NONE && selectedAIStyle == committedAIStyle) com.ai.vis.ui.components.BackgroundOption.REPLACE else com.ai.vis.ui.components.BackgroundOption.REMOVE,
+                                    selectedOption = selectedBackgroundOption,
+                                    isProcessing = isProcessingBackground,
                                     onOptionSelected = { option ->
-                                        // UI-only: mark editing state and save an undo state placeholder
-                                        saveStateToUndo()
-                                        isEditing = true
-                                        // For now only set preview/flags; actual processing to be implemented separately
-                                        when (option) {
-                                            com.ai.vis.ui.components.BackgroundOption.REMOVE -> {
-                                                // trigger remove background UI state: clear preview and show appropriate UI
-                                                previewBitmap = null
-                                            }
-                                            com.ai.vis.ui.components.BackgroundOption.BLUR -> {
-                                                // Blur selected: show original as placeholder preview (processing to be implemented)
-                                                previewBitmap = originalBitmap
-                                            }
-                                            com.ai.vis.ui.components.BackgroundOption.REPLACE -> {
-                                                // Open replace picker or show placeholder (noop here)
+                                        if (!isProcessingBackground) {
+                                            selectedBackgroundOption = option
+                                            saveStateToUndo()
+                                            isEditing = true
+                                            isProcessingBackground = true
+                                            
+                                            originalBitmap?.let { original ->
+                                                coroutineScope.launch(Dispatchers.IO) {
+                                                    try {
+                                                        android.util.Log.d("PhotoEditor", "Starting background processing: $option")
+                                                        val processBackgroundUseCase = com.ai.vis.domain.usecase.ProcessBackgroundUseCase(context)
+                                                        
+                                                        android.util.Log.d("PhotoEditor", "Initializing model...")
+                                                        processBackgroundUseCase.initialize()
+                                                        
+                                                        android.util.Log.d("PhotoEditor", "Processing image...")
+                                                        val result = when (option) {
+                                                            com.ai.vis.ui.components.BackgroundOption.REMOVE -> {
+                                                                processBackgroundUseCase(original, option)
+                                                            }
+                                                            com.ai.vis.ui.components.BackgroundOption.BLUR -> {
+                                                                processBackgroundUseCase(original, option)
+                                                            }
+                                                            com.ai.vis.ui.components.BackgroundOption.REPLACE -> {
+                                                                // Replace with white background by default
+                                                                processBackgroundUseCase(
+                                                                    original, 
+                                                                    option,
+                                                                    backgroundColor = 0xFFFFFFFF.toInt()
+                                                                )
+                                                            }
+                                                        }
+                                                        
+                                                        withContext(Dispatchers.Main) {
+                                                            android.util.Log.d("PhotoEditor", "✅ Background processing completed!")
+                                                            previewBitmap = result
+                                                            isProcessingBackground = false
+                                                            android.widget.Toast.makeText(
+                                                                context,
+                                                                "Background processed successfully!",
+                                                                android.widget.Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        }
+                                                        
+                                                        processBackgroundUseCase.release()
+                                                    } catch (e: java.io.FileNotFoundException) {
+                                                        android.util.Log.e("PhotoEditor", "❌ Model file not found!", e)
+                                                        withContext(Dispatchers.Main) {
+                                                            isProcessingBackground = false
+                                                            android.widget.Toast.makeText(
+                                                                context,
+                                                                "Model file not found! Please add selfie_segmentation.tflite to assets/models/",
+                                                                android.widget.Toast.LENGTH_LONG
+                                                            ).show()
+                                                        }
+                                                    } catch (e: Exception) {
+                                                        android.util.Log.e("PhotoEditor", "❌ Error processing background: ${e.message}", e)
+                                                        withContext(Dispatchers.Main) {
+                                                            isProcessingBackground = false
+                                                            android.widget.Toast.makeText(
+                                                                context,
+                                                                "Error: ${e.message}",
+                                                                android.widget.Toast.LENGTH_LONG
+                                                            ).show()
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
