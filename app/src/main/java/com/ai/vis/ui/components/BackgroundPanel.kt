@@ -1,5 +1,15 @@
 package com.ai.vis.ui.components
 
+import android.graphics.Bitmap
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -9,10 +19,15 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
@@ -32,6 +47,7 @@ import com.ai.vis.R
  * This component does not implement processing; it exposes selection via onOptionSelected.
  */
 enum class BackgroundOption {
+    NONE,
     REMOVE,
     BLUR,
     REPLACE
@@ -48,6 +64,10 @@ fun BackgroundPanel(
     selectedOption: BackgroundOption,
     onOptionSelected: (BackgroundOption) -> Unit,
     isProcessing: Boolean = false,
+    blurRadius: Float = 25f,
+    onBlurRadiusChange: (Float) -> Unit = {},
+    selectedBackgroundImage: Bitmap? = null,
+    onSelectBackgroundImage: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val itemsList = listOf(
@@ -56,17 +76,128 @@ fun BackgroundPanel(
         BackgroundItem(BackgroundOption.REPLACE, R.string.replace_background, R.drawable.ic_replace)
     )
 
-    // Use a Row with equal weights so three cards span the full width evenly.
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        itemsList.forEach { item ->
-            val isSelected = selectedOption == item.option
-            Box(modifier = Modifier.weight(1f)) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Slider for Blur (shown when Blur is selected)
+        AnimatedVisibility(
+            visible = selectedOption == BackgroundOption.BLUR,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Blur Intensity",
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily(Font(R.font.font_main_text)),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${blurRadius.toInt()}",
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily(Font(R.font.font_main_text)),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Slider(
+                    value = blurRadius,
+                    onValueChange = onBlurRadiusChange,
+                    valueRange = 5f..50f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
+                    )
+                )
+            }
+        }
+        
+        // Image picker for Replace (shown when Replace is selected)
+        AnimatedVisibility(
+            visible = selectedOption == BackgroundOption.REPLACE,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 12.dp)
+            ) {
+                Text(
+                    text = "Select Background",
+                    fontSize = 14.sp,
+                    fontFamily = FontFamily(Font(R.font.font_main_text)),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(
+                            width = 2.dp,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .clickable(onClick = onSelectBackgroundImage),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (selectedBackgroundImage != null) {
+                        Image(
+                            bitmap = selectedBackgroundImage.asImageBitmap(),
+                            contentDescription = "Selected background",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_gallery),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Choose from Gallery",
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily(Font(R.font.font_main_text)),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Options Row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            itemsList.forEach { item ->
+                val isSelected = selectedOption == item.option
+                Box(modifier = Modifier.weight(1f)) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -122,5 +253,6 @@ fun BackgroundPanel(
                 }
             }
         }
+    }
     }
 }

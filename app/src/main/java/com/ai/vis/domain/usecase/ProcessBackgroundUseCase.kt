@@ -20,6 +20,7 @@ class ProcessBackgroundUseCase(private val context: Context) {
     suspend operator fun invoke(
         bitmap: Bitmap,
         option: BackgroundOption,
+        blurRadius: Int = 25,
         backgroundColor: Int? = null,
         backgroundImage: Bitmap? = null
     ): Bitmap {
@@ -28,7 +29,7 @@ class ProcessBackgroundUseCase(private val context: Context) {
                 backgroundProcessor.removeBackground(bitmap)
             }
             BackgroundOption.BLUR -> {
-                backgroundProcessor.blurBackground(bitmap, blurRadius = 25)
+                backgroundProcessor.blurBackground(bitmap, blurRadius = blurRadius)
             }
             BackgroundOption.REPLACE -> {
                 if (backgroundImage != null) {
@@ -39,6 +40,7 @@ class ProcessBackgroundUseCase(private val context: Context) {
                     backgroundProcessor.replaceBackground(bitmap, bgColor)
                 }
             }
+            BackgroundOption.NONE -> bitmap // No processing
         }
     }
     

@@ -134,11 +134,12 @@ class BackgroundProcessor(context: Context) {
     }
     
     /**
-     * Replaces the background with a solid color.
+     * Replaces the background with a solid color or custom image.
      */
     suspend fun replaceBackground(
-        bitmap: Bitmap,
-        backgroundColor: Int = 0xFFFFFFFF.toInt() // White by default
+        bitmap: Bitmap, 
+        backgroundColor: Int = 0xFFFFFFFF.toInt(),
+        backgroundImage: Bitmap? = null
     ): Bitmap = withContext(Dispatchers.IO) {
         Log.d(TAG, "Replacing background...")
         

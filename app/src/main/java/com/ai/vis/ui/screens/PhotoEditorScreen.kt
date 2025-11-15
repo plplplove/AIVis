@@ -48,6 +48,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -127,9 +129,9 @@ data class EditorState(
         3 to 0f, 4 to 0f, 5 to 0f, 6 to 0f
     ),
     val currentFilter: com.ai.vis.ui.components.FilterType = com.ai.vis.ui.components.FilterType.NONE,
-    val filterIntensity: Float = 1f
-    ,
-    val selectedAIStyle: com.ai.vis.domain.model.AIStyle = com.ai.vis.domain.model.AIStyle.NONE
+    val filterIntensity: Float = 1f,
+    val selectedAIStyle: com.ai.vis.domain.model.AIStyle = com.ai.vis.domain.model.AIStyle.NONE,
+    val selectedBackgroundOption: com.ai.vis.ui.components.BackgroundOption = com.ai.vis.ui.components.BackgroundOption.NONE
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -250,8 +252,26 @@ fun PhotoEditorScreen(
     var committedAIStyle by remember { mutableStateOf(com.ai.vis.domain.model.AIStyle.NONE) }
     
     // Background processing state 🖼️
-    var selectedBackgroundOption by remember { mutableStateOf(com.ai.vis.ui.components.BackgroundOption.REMOVE) }
+    var selectedBackgroundOption by remember { mutableStateOf(com.ai.vis.ui.components.BackgroundOption.NONE) }
     var isProcessingBackground by remember { mutableStateOf(false) }
+    var blurRadius by remember { mutableStateOf(25f) }
+    var selectedBackgroundImage by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    
+    // Gallery launcher for background image
+    val backgroundImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            try {
+                val inputStream = context.contentResolver.openInputStream(it)
+                val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
+                selectedBackgroundImage = bitmap
+                inputStream?.close()
+            } catch (e: Exception) {
+                android.util.Log.e("PhotoEditor", "Error loading background image", e)
+            }
+        }
+    }
     
     // Розмір і позиція Image в Box (для збереження тексту на bitmap)
     var imageRectInBox by remember { mutableStateOf<Rect?>(null) }
@@ -267,7 +287,8 @@ fun PhotoEditorScreen(
                 adjustmentValues = adjustmentValues.toMap(),
                 currentFilter = currentFilter,
                 filterIntensity = filterIntensity,
-                selectedAIStyle = selectedAIStyle
+                selectedAIStyle = selectedAIStyle,
+                selectedBackgroundOption = selectedBackgroundOption
             )
             undoStack = undoStack + currentState
             redoStack = emptyList() // Clear redo stack when new action is performed
@@ -286,7 +307,8 @@ fun PhotoEditorScreen(
                     adjustmentValues = adjustmentValues.toMap(),
                     currentFilter = currentFilter,
                     filterIntensity = filterIntensity,
-                    selectedAIStyle = selectedAIStyle
+                    selectedAIStyle = selectedAIStyle,
+                    selectedBackgroundOption = selectedBackgroundOption
                 )
             }
             
@@ -303,6 +325,7 @@ fun PhotoEditorScreen(
             currentFilter = previousState.currentFilter
             filterIntensity = previousState.filterIntensity
             selectedAIStyle = previousState.selectedAIStyle
+            selectedBackgroundOption = previousState.selectedBackgroundOption
             // Update committed style as well to reflect the restored (baked) state
             committedAIStyle = previousState.selectedAIStyle
             
@@ -374,6 +397,37 @@ fun PhotoEditorScreen(
                         }
                     }
                 }
+            } else if (selectedTool?.nameRes == R.string.background) {
+                // Re-apply background processing for preview
+                if (selectedBackgroundOption != com.ai.vis.ui.components.BackgroundOption.NONE) {
+                    isProcessingBackground = true
+                    coroutineScope.launch(Dispatchers.IO) {
+                        originalBitmap?.let { original ->
+                            try {
+                                val processBackgroundUseCase = com.ai.vis.domain.usecase.ProcessBackgroundUseCase(context)
+                                processBackgroundUseCase.initialize()
+                                val result = processBackgroundUseCase(
+                                    bitmap = original,
+                                    option = selectedBackgroundOption,
+                                    blurRadius = blurRadius.toInt(),
+                                    backgroundImage = selectedBackgroundImage
+                                )
+                                withContext(Dispatchers.Main) {
+                                    previewBitmap = result
+                                    isProcessingBackground = false
+                                }
+                                processBackgroundUseCase.release()
+                            } catch (e: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    previewBitmap = originalBitmap
+                                    isProcessingBackground = false
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    previewBitmap = null
+                }
             } else {
                 previewBitmap = null
             }
@@ -392,7 +446,8 @@ fun PhotoEditorScreen(
                     adjustmentValues = adjustmentValues.toMap(),
                     currentFilter = currentFilter,
                     filterIntensity = filterIntensity,
-                    selectedAIStyle = selectedAIStyle
+                    selectedAIStyle = selectedAIStyle,
+                    selectedBackgroundOption = selectedBackgroundOption
                 )
             }
             
@@ -409,6 +464,7 @@ fun PhotoEditorScreen(
             currentFilter = nextState.currentFilter
             filterIntensity = nextState.filterIntensity
             selectedAIStyle = nextState.selectedAIStyle
+            selectedBackgroundOption = nextState.selectedBackgroundOption
             // Update committed style as well to reflect the restored (baked) state
             committedAIStyle = nextState.selectedAIStyle
             
@@ -479,6 +535,37 @@ fun PhotoEditorScreen(
                             }
                         }
                     }
+                }
+            } else if (selectedTool?.nameRes == R.string.background) {
+                // Re-apply background processing for preview
+                if (selectedBackgroundOption != com.ai.vis.ui.components.BackgroundOption.NONE) {
+                    isProcessingBackground = true
+                    coroutineScope.launch(Dispatchers.IO) {
+                        originalBitmap?.let { original ->
+                            try {
+                                val processBackgroundUseCase = com.ai.vis.domain.usecase.ProcessBackgroundUseCase(context)
+                                processBackgroundUseCase.initialize()
+                                val result = processBackgroundUseCase(
+                                    bitmap = original,
+                                    option = selectedBackgroundOption,
+                                    blurRadius = blurRadius.toInt(),
+                                    backgroundImage = selectedBackgroundImage
+                                )
+                                withContext(Dispatchers.Main) {
+                                    previewBitmap = result
+                                    isProcessingBackground = false
+                                }
+                                processBackgroundUseCase.release()
+                            } catch (e: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    previewBitmap = originalBitmap
+                                    isProcessingBackground = false
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    previewBitmap = null
                 }
             } else {
                 previewBitmap = null
@@ -569,6 +656,9 @@ fun PhotoEditorScreen(
                 selectedCropRatio = null
                 straightenAngle = 0f
                 showTextDialog = false
+                // Reset background option when closing Background tool
+                selectedBackgroundOption = com.ai.vis.ui.components.BackgroundOption.NONE
+                selectedBackgroundImage = null
             }
             else -> {
                 // Show exit confirmation if there are any changes
@@ -778,6 +868,9 @@ fun PhotoEditorScreen(
                             selectedTextId = null
                             showCropOverlay = false
                             selectedCropRatio = null
+                            // Reset background option when closing
+                            selectedBackgroundOption = com.ai.vis.ui.components.BackgroundOption.NONE
+                            selectedBackgroundImage = null
                             cropFieldModified = false
                             straightenModified = false
                             isToolPanelCollapsed = false
@@ -1907,6 +2000,40 @@ fun PhotoEditorScreen(
                                 com.ai.vis.ui.components.BackgroundPanel(
                                     selectedOption = selectedBackgroundOption,
                                     isProcessing = isProcessingBackground,
+                                    blurRadius = blurRadius,
+                                    onBlurRadiusChange = { newRadius ->
+                                        blurRadius = newRadius
+                                        // Trigger real-time blur update
+                                        if (selectedBackgroundOption == com.ai.vis.ui.components.BackgroundOption.BLUR && !isProcessingBackground) {
+                                            isProcessingBackground = true
+                                            originalBitmap?.let { original ->
+                                                coroutineScope.launch(Dispatchers.IO) {
+                                                    try {
+                                                        val processBackgroundUseCase = com.ai.vis.domain.usecase.ProcessBackgroundUseCase(context)
+                                                        processBackgroundUseCase.initialize()
+                                                        val result = processBackgroundUseCase(
+                                                            bitmap = original,
+                                                            option = com.ai.vis.ui.components.BackgroundOption.BLUR,
+                                                            blurRadius = newRadius.toInt()
+                                                        )
+                                                        withContext(Dispatchers.Main) {
+                                                            previewBitmap = result
+                                                            isProcessingBackground = false
+                                                        }
+                                                        processBackgroundUseCase.release()
+                                                    } catch (e: Exception) {
+                                                        withContext(Dispatchers.Main) {
+                                                            isProcessingBackground = false
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    selectedBackgroundImage = selectedBackgroundImage,
+                                    onSelectBackgroundImage = {
+                                        backgroundImageLauncher.launch("image/*")
+                                    },
                                     onOptionSelected = { option ->
                                         if (!isProcessingBackground) {
                                             selectedBackgroundOption = option
@@ -1924,22 +2051,12 @@ fun PhotoEditorScreen(
                                                         processBackgroundUseCase.initialize()
                                                         
                                                         android.util.Log.d("PhotoEditor", "Processing image...")
-                                                        val result = when (option) {
-                                                            com.ai.vis.ui.components.BackgroundOption.REMOVE -> {
-                                                                processBackgroundUseCase(original, option)
-                                                            }
-                                                            com.ai.vis.ui.components.BackgroundOption.BLUR -> {
-                                                                processBackgroundUseCase(original, option)
-                                                            }
-                                                            com.ai.vis.ui.components.BackgroundOption.REPLACE -> {
-                                                                // Replace with white background by default
-                                                                processBackgroundUseCase(
-                                                                    original, 
-                                                                    option,
-                                                                    backgroundColor = 0xFFFFFFFF.toInt()
-                                                                )
-                                                            }
-                                                        }
+                                                        val result = processBackgroundUseCase(
+                                                            bitmap = original,
+                                                            option = option,
+                                                            blurRadius = blurRadius.toInt(),
+                                                            backgroundImage = selectedBackgroundImage
+                                                        )
                                                         
                                                         withContext(Dispatchers.Main) {
                                                             android.util.Log.d("PhotoEditor", "✅ Background processing completed!")
@@ -1979,6 +2096,37 @@ fun PhotoEditorScreen(
                                         }
                                     }
                                 )
+                                
+                                // Auto-process Replace when background image is selected
+                                LaunchedEffect(selectedBackgroundImage) {
+                                    if (selectedBackgroundOption == com.ai.vis.ui.components.BackgroundOption.REPLACE && 
+                                        selectedBackgroundImage != null && 
+                                        !isProcessingBackground) {
+                                        isProcessingBackground = true
+                                        originalBitmap?.let { original ->
+                                            coroutineScope.launch(Dispatchers.IO) {
+                                                try {
+                                                    val processBackgroundUseCase = com.ai.vis.domain.usecase.ProcessBackgroundUseCase(context)
+                                                    processBackgroundUseCase.initialize()
+                                                    val result = processBackgroundUseCase(
+                                                        bitmap = original,
+                                                        option = com.ai.vis.ui.components.BackgroundOption.REPLACE,
+                                                        backgroundImage = selectedBackgroundImage
+                                                    )
+                                                    withContext(Dispatchers.Main) {
+                                                        previewBitmap = result
+                                                        isProcessingBackground = false
+                                                    }
+                                                    processBackgroundUseCase.release()
+                                                } catch (e: Exception) {
+                                                    withContext(Dispatchers.Main) {
+                                                        isProcessingBackground = false
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             R.string.ai_styles -> {
                                 com.ai.vis.ui.components.AIStylesPanel(
