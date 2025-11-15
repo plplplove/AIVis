@@ -74,6 +74,7 @@
     
     <string name="remove_background">Remove Background</string>
     <string name="replace_background">Replace Background</string>
+    <string name="blur_background">Blur Background</string>
     <string name="enhance_resolution">Enhance Resolution</string>
     <string name="denoise">Denoise</string>
     <string name="retouch_face">Retouch Face</string>

@@ -74,6 +74,7 @@
     
     <string name="remove_background">Usuń tło</string>
     <string name="replace_background">Zamień tło</string>
+    <string name="blur_background">Rozmyj tło</string>
     <string name="enhance_resolution">Popraw rozdzielczość</string>
     <string name="denoise">Redukcja szumów</string>
     <string name="retouch_face">Retusz twarzy</string>

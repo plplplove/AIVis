@@ -678,6 +678,7 @@ fun PhotoEditorScreen(
         EditorTool(R.string.stickers, R.drawable.ic_sticker),
         EditorTool(R.string.ai_tools, R.drawable.ic_ai),
         EditorTool(R.string.ai_styles, R.drawable.ic_filters),
+        EditorTool(R.string.background, R.drawable.ic_background),
         EditorTool(R.string.text_tool, R.drawable.ic_text),
         EditorTool(R.string.draw_tool, R.drawable.ic_paint)
     )
@@ -1897,6 +1898,31 @@ fun PhotoEditorScreen(
                                     }
                                 )
                             }
+                            R.string.background -> {
+                                // Background panel - UI only. Hook up selection handling here.
+                                com.ai.vis.ui.components.BackgroundPanel(
+                                    selectedOption = if (committedAIStyle != com.ai.vis.domain.model.AIStyle.NONE && selectedAIStyle == committedAIStyle) com.ai.vis.ui.components.BackgroundOption.REPLACE else com.ai.vis.ui.components.BackgroundOption.REMOVE,
+                                    onOptionSelected = { option ->
+                                        // UI-only: mark editing state and save an undo state placeholder
+                                        saveStateToUndo()
+                                        isEditing = true
+                                        // For now only set preview/flags; actual processing to be implemented separately
+                                        when (option) {
+                                            com.ai.vis.ui.components.BackgroundOption.REMOVE -> {
+                                                // trigger remove background UI state: clear preview and show appropriate UI
+                                                previewBitmap = null
+                                            }
+                                            com.ai.vis.ui.components.BackgroundOption.BLUR -> {
+                                                // Blur selected: show original as placeholder preview (processing to be implemented)
+                                                previewBitmap = originalBitmap
+                                            }
+                                            com.ai.vis.ui.components.BackgroundOption.REPLACE -> {
+                                                // Open replace picker or show placeholder (noop here)
+                                            }
+                                        }
+                                    }
+                                )
+                            }
                             R.string.ai_styles -> {
                                 com.ai.vis.ui.components.AIStylesPanel(
                                     selectedStyle = selectedAIStyle,
@@ -1958,7 +1984,7 @@ fun PhotoEditorScreen(
                         )
                 ) {
                     when (selectedTool?.nameRes) {
-                        R.string.text_tool, R.string.adjust, R.string.draw_tool, R.string.filters, R.string.stickers, R.string.ai_styles -> {
+                        R.string.text_tool, R.string.adjust, R.string.draw_tool, R.string.filters, R.string.stickers, R.string.ai_styles, R.string.background -> {
                             // Режим редагування з прихованим меню - показуємо кнопку згортання та назву
                             Row(
                                 modifier = Modifier
