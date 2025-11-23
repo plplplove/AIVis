@@ -2,33 +2,40 @@
 
 ## Огляд
 
-Portrait AI функціонал використовує **smart fallback з детекцією шкіри** для автоматичного знаходження обличчя:
-- **Детекція шкіри**: Автоматично знаходить область обличчя за кольором шкіри
-- **Fallback**: Якщо детекція не спрацювала, використовує центральну область
-- **Модель опціональна**: BlazeFace модель потребує складного декодування через anchors, тому використовується покращений алгоритмічний підхід
+Portrait AI функціонал використовує **покращену детекцію шкіри** для автоматичного знаходження обличчя:
+- **Детекція шкіри**: Автоматично знаходить область обличчя за кольором шкіри (працює для різних тонів)
+- **Адаптивний алгоритм**: Знаходить bounding box навколо всіх пікселів шкіри
+- **Fallback**: Якщо детекція не спрацювала (< 5% пікселів), використовує центральну область
+- **Без моделі**: Не потребує TFLite моделі, працює швидко та точно
+
+**Примітка**: Тестували SSD MobileNet v1, але вона не спеціалізована на обличчях (тренована на COCO dataset). Skin detection показує кращі результати для Portrait AI.
 
 ---
 
 ## Необхідна модель
 
-### Face Detection Model (BlazeFace)
+### Face Detection Model - MediaPipe Face Detector
 
-**Файл**: `face_detection.tflite`  
-**Розташування**: `app/src/main/assets/models/face_detection.tflite`
+**Використовуємо спеціалізовану модель для детекції обличь**
 
-#### Де завантажити:
+#### Завантажити модель:
 
-**Варіант 1: MediaPipe BlazeFace (Рекомендовано)**
-- **Джерело**: [MediaPipe Face Detection](https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite)
-- **Формат**: TensorFlow Lite (.tflite)
-- **Розмір**: ~1 MB
-- **Input**: 128x128x3 або 192x192x3 (RGB) - визначається автоматично
-- **Опис**: Швидка та точна модель для детекції обличчя на коротких дистанціях
+**ВИКОРИСТАЙ ЦЮ МОДЕЛЬ - MediaPipe BlazeFace**
 
-**Прямий лінк для завантаження**:
+Пряме посилання для завантаження:
+```bash
+wget https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite -O face_detection.tflite
 ```
-https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite
-```
+
+**АБО скачай вручну:**
+1. Відкрий: https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite
+2. Збережи як `face_detection.tflite`
+3. Помісти в `app/src/main/assets/models/face_detection.tflite`
+
+**Характеристики:**
+- Input: 128x128x3 RGB (Float32, normalized 0-1)
+- Output: [1, 896, 16] - 896 детекцій з 16 значеннями кожна
+- Формат: [x, y, w, h, ...keypoints, score]
 
 **Варіант 2: TensorFlow Hub**
 - **Джерело**: [TensorFlow Hub - Face Detection](https://tfhub.dev/tensorflow/lite-model/ssd_mobilenet_v1/1/metadata/2)
