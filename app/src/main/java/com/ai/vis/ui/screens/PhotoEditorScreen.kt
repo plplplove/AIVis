@@ -257,6 +257,13 @@ fun PhotoEditorScreen(
     var blurRadius by remember { mutableStateOf(25f) }
     var selectedBackgroundImage by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     
+    // Portrait AI processing state 👤
+    var selectedPortraitOption by remember { mutableStateOf(com.ai.vis.ui.components.PortraitOption.NONE) }
+    var isProcessingPortrait by remember { mutableStateOf(false) }
+    var beautyIntensity by remember { mutableStateOf(0.5f) }
+    var eyeIntensity by remember { mutableStateOf(0.5f) }
+    var faceBlurIntensity by remember { mutableStateOf(0.5f) }
+    
     // Gallery launcher for background image
     val backgroundImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -773,6 +780,7 @@ fun PhotoEditorScreen(
         EditorTool(R.string.ai_tools, R.drawable.ic_ai),
         EditorTool(R.string.ai_styles, R.drawable.ic_filters),
         EditorTool(R.string.background, R.drawable.ic_background),
+        EditorTool(R.string.portrait_ai, R.drawable.ic_face_retouching),
         EditorTool(R.string.text_tool, R.drawable.ic_text),
         EditorTool(R.string.draw_tool, R.drawable.ic_paint)
     )
@@ -2172,6 +2180,165 @@ fun PhotoEditorScreen(
                                     }
                                 )
                             }
+                            R.string.portrait_ai -> {
+                                // Portrait AI panel with processing
+                                com.ai.vis.ui.components.PortraitPanel(
+                                    selectedOption = selectedPortraitOption,
+                                    isProcessing = isProcessingPortrait,
+                                    beautyIntensity = beautyIntensity,
+                                    onBeautyIntensityChange = { newIntensity ->
+                                        beautyIntensity = newIntensity
+                                        // Trigger real-time update
+                                        if (selectedPortraitOption == com.ai.vis.ui.components.PortraitOption.BEAUTY_MODE && !isProcessingPortrait) {
+                                            isProcessingPortrait = true
+                                            originalBitmap?.let { original ->
+                                                coroutineScope.launch(Dispatchers.IO) {
+                                                    try {
+                                                        val processPortraitUseCase = com.ai.vis.domain.usecase.ProcessPortraitUseCase(context)
+                                                        processPortraitUseCase.initialize()
+                                                        val result = processPortraitUseCase(
+                                                            bitmap = original,
+                                                            option = com.ai.vis.ui.components.PortraitOption.BEAUTY_MODE,
+                                                            beautyIntensity = newIntensity
+                                                        )
+                                                        withContext(Dispatchers.Main) {
+                                                            previewBitmap = result
+                                                            isProcessingPortrait = false
+                                                        }
+                                                        processPortraitUseCase.release()
+                                                    } catch (e: Exception) {
+                                                        withContext(Dispatchers.Main) {
+                                                            isProcessingPortrait = false
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    eyeIntensity = eyeIntensity,
+                                    onEyeIntensityChange = { newIntensity ->
+                                        eyeIntensity = newIntensity
+                                        // Trigger real-time update
+                                        if (selectedPortraitOption == com.ai.vis.ui.components.PortraitOption.EYE_ENHANCEMENT && !isProcessingPortrait) {
+                                            isProcessingPortrait = true
+                                            originalBitmap?.let { original ->
+                                                coroutineScope.launch(Dispatchers.IO) {
+                                                    try {
+                                                        val processPortraitUseCase = com.ai.vis.domain.usecase.ProcessPortraitUseCase(context)
+                                                        processPortraitUseCase.initialize()
+                                                        val result = processPortraitUseCase(
+                                                            bitmap = original,
+                                                            option = com.ai.vis.ui.components.PortraitOption.EYE_ENHANCEMENT,
+                                                            eyeIntensity = newIntensity
+                                                        )
+                                                        withContext(Dispatchers.Main) {
+                                                            previewBitmap = result
+                                                            isProcessingPortrait = false
+                                                        }
+                                                        processPortraitUseCase.release()
+                                                    } catch (e: Exception) {
+                                                        withContext(Dispatchers.Main) {
+                                                            isProcessingPortrait = false
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    blurIntensity = faceBlurIntensity,
+                                    onBlurIntensityChange = { newIntensity ->
+                                        faceBlurIntensity = newIntensity
+                                        // Trigger real-time update
+                                        if (selectedPortraitOption == com.ai.vis.ui.components.PortraitOption.FACE_BLUR && !isProcessingPortrait) {
+                                            isProcessingPortrait = true
+                                            originalBitmap?.let { original ->
+                                                coroutineScope.launch(Dispatchers.IO) {
+                                                    try {
+                                                        val processPortraitUseCase = com.ai.vis.domain.usecase.ProcessPortraitUseCase(context)
+                                                        processPortraitUseCase.initialize()
+                                                        val result = processPortraitUseCase(
+                                                            bitmap = original,
+                                                            option = com.ai.vis.ui.components.PortraitOption.FACE_BLUR,
+                                                            blurIntensity = newIntensity
+                                                        )
+                                                        withContext(Dispatchers.Main) {
+                                                            previewBitmap = result
+                                                            isProcessingPortrait = false
+                                                        }
+                                                        processPortraitUseCase.release()
+                                                    } catch (e: Exception) {
+                                                        withContext(Dispatchers.Main) {
+                                                            isProcessingPortrait = false
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    onOptionSelected = { option ->
+                                        if (!isProcessingPortrait) {
+                                            selectedPortraitOption = option
+                                            saveStateToUndo()
+                                            isEditing = true
+                                            isProcessingPortrait = true
+                                            
+                                            originalBitmap?.let { original ->
+                                                coroutineScope.launch(Dispatchers.IO) {
+                                                    try {
+                                                        android.util.Log.d("PhotoEditor", "Starting portrait processing: $option")
+                                                        val processPortraitUseCase = com.ai.vis.domain.usecase.ProcessPortraitUseCase(context)
+                                                        
+                                                        android.util.Log.d("PhotoEditor", "Initializing model...")
+                                                        processPortraitUseCase.initialize()
+                                                        
+                                                        android.util.Log.d("PhotoEditor", "Processing image...")
+                                                        val result = processPortraitUseCase(
+                                                            bitmap = original,
+                                                            option = option,
+                                                            beautyIntensity = beautyIntensity,
+                                                            eyeIntensity = eyeIntensity,
+                                                            blurIntensity = faceBlurIntensity
+                                                        )
+                                                        
+                                                        withContext(Dispatchers.Main) {
+                                                            android.util.Log.d("PhotoEditor", "✅ Portrait processing completed!")
+                                                            previewBitmap = result
+                                                            isProcessingPortrait = false
+                                                            android.widget.Toast.makeText(
+                                                                context,
+                                                                "Portrait processed successfully!",
+                                                                android.widget.Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        }
+                                                        
+                                                        processPortraitUseCase.release()
+                                                    } catch (e: java.io.FileNotFoundException) {
+                                                        android.util.Log.e("PhotoEditor", "❌ Model file not found!", e)
+                                                        withContext(Dispatchers.Main) {
+                                                            isProcessingPortrait = false
+                                                            android.widget.Toast.makeText(
+                                                                context,
+                                                                "Model file not found! Please add face_detection.tflite to assets/models/",
+                                                                android.widget.Toast.LENGTH_LONG
+                                                            ).show()
+                                                        }
+                                                    } catch (e: Exception) {
+                                                        android.util.Log.e("PhotoEditor", "❌ Error processing portrait: ${e.message}", e)
+                                                        withContext(Dispatchers.Main) {
+                                                            isProcessingPortrait = false
+                                                            android.widget.Toast.makeText(
+                                                                context,
+                                                                "Error: ${e.message}",
+                                                                android.widget.Toast.LENGTH_LONG
+                                                            ).show()
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -2189,7 +2356,7 @@ fun PhotoEditorScreen(
                         )
                 ) {
                     when (selectedTool?.nameRes) {
-                        R.string.text_tool, R.string.adjust, R.string.draw_tool, R.string.filters, R.string.stickers, R.string.ai_styles, R.string.background -> {
+                        R.string.text_tool, R.string.adjust, R.string.draw_tool, R.string.filters, R.string.stickers, R.string.ai_styles, R.string.background, R.string.portrait_ai -> {
                             // Режим редагування з прихованим меню - показуємо кнопку згортання та назву
                             Row(
                                 modifier = Modifier
