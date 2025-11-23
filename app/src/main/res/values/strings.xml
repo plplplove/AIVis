@@ -81,8 +81,8 @@
     
     <string name="portrait_ai">Portrait AI</string>
     <string name="beauty_mode">Beauty Mode</string>
-    <string name="eye_enhancement">Eye Enhancement</string>
-    <string name="face_blur">Face Blur</string>
+    <string name="eye_enhancement">Remove Dark Circles</string>
+    <string name="face_blur">Skin Blur</string>
     
     <string name="cartoonize">Cartoonize</string>
     <string name="sketch">Sketch</string>
