@@ -196,13 +196,16 @@ class PortraitProcessor(private val context: Context) {
             min(bitmap.height, faceRect.bottom + (faceRect.height() * 0.05f).toInt())
         )
         
-        // Step 1: Remove blemishes and dark spots
+        // Step 1: Remove blemishes and dark spots (now more aggressive)
         result = removeBlemishes(result, expandedRect, intensity)
         
         // Step 2: Apply skin smoothing to face region
         result = applySkinSmoothingToRegion(result, expandedRect, intensity)
         
-        // Step 3: Add subtle makeup (blush, slight contrast boost)
+        // Step 3: Brighten and enhance eyes for more vibrant look
+        result = brightenEyes(result, faceRect, intensity * 0.6f)
+        
+        // Step 4: Add makeup (blush and lips) - now more visible
         result = applySubtleMakeup(result, faceRect, intensity)
         
         Log.d(TAG, "Beauty mode applied successfully")
@@ -611,16 +614,32 @@ class PortraitProcessor(private val context: Context) {
                         
                         // If pixel is significantly darker than average (blemish/dark spot)
                         val darknessDiff = avgLuminance - luminance
-                        if (darknessDiff > 20) { // Lower threshold - catch more blemishes
+                        if (darknessDiff > 15) { // More sensitive threshold - catch more imperfections
                             // Blend with surrounding pixels to hide blemish
-                            val correctedPixel = getAverageSurroundingPixel(pixels, bitmap.width, bitmap.height, x, y, 3)
+                            val correctedPixel = getAverageSurroundingPixel(pixels, bitmap.width, bitmap.height, x, y, 4)
                             val corrR = (correctedPixel shr 16) and 0xFF
                             val corrG = (correctedPixel shr 8) and 0xFF
                             val corrB = correctedPixel and 0xFF
                             
                             // Apply feathering to blend factor
-                            // Stronger correction for blemishes
-                            val baseBlend = (intensity * min(darknessDiff / 60f, 0.6f)).coerceIn(0f, 0.6f)
+                            // MUCH stronger correction for blemishes
+                            val baseBlend = (intensity * min(darknessDiff / 40f, 0.85f)).coerceIn(0f, 0.85f)
+                            val blendFactor = baseBlend * feather
+                            val finalR = (r * (1 - blendFactor) + corrR * blendFactor).toInt().coerceIn(0, 255)
+                            val finalG = (g * (1 - blendFactor) + corrG * blendFactor).toInt().coerceIn(0, 255)
+                            val finalB = (b * (1 - blendFactor) + corrB * blendFactor).toInt().coerceIn(0, 255)
+                            
+                            pixels[idx] = (0xFF shl 24) or (finalR shl 16) or (finalG shl 8) or finalB
+                        }
+                        // Also catch lighter spots (whiteheads, scars)
+                        else if (luminance - avgLuminance > 15) {
+                            val correctedPixel = getAverageSurroundingPixel(pixels, bitmap.width, bitmap.height, x, y, 4)
+                            val corrR = (correctedPixel shr 16) and 0xFF
+                            val corrG = (correctedPixel shr 8) and 0xFF
+                            val corrB = correctedPixel and 0xFF
+                            
+                            val lightnessDiff = luminance - avgLuminance
+                            val baseBlend = (intensity * min(lightnessDiff / 40f, 0.7f)).coerceIn(0f, 0.7f)
                             val blendFactor = baseBlend * feather
                             val finalR = (r * (1 - blendFactor) + corrR * blendFactor).toInt().coerceIn(0, 255)
                             val finalG = (g * (1 - blendFactor) + corrG * blendFactor).toInt().coerceIn(0, 255)
@@ -756,31 +775,108 @@ class PortraitProcessor(private val context: Context) {
                         
                         if (distToLeftCheek < cheekRadius || distToRightCheek < cheekRadius) {
                             val dist = min(distToLeftCheek, distToRightCheek)
-                            val blushStrength = (1f - (dist / cheekRadius)) * intensity * 0.15f // Very subtle
+                            val blushStrength = (1f - (dist / cheekRadius)) * intensity * 0.35f // Much stronger blush
                             
-                            // Add rosy tint
-                            val newR = (r + 15 * blushStrength).toInt().coerceIn(0, 255)
-                            val newG = (g - 5 * blushStrength).toInt().coerceIn(0, 255)
+                            // Add rosy/peachy tint (more natural makeup look)
+                            val newR = (r + 30 * blushStrength).toInt().coerceIn(0, 255)
+                            val newG = (g + 5 * blushStrength).toInt().coerceIn(0, 255)
                             val newB = (b - 5 * blushStrength).toInt().coerceIn(0, 255)
                             
                             pixels[idx] = (0xFF shl 24) or (newR shl 16) or (newG shl 8) or newB
                         }
                     }
                     
-                    // Check if in lip area (enhance color slightly)
+                    // Check if in lip area (enhance color significantly)
                     val distToLips = sqrt((x - centerX) * (x - centerX) + (y - lipY) * (y - lipY))
                     if (distToLips < lipRadius) {
-                        val lipStrength = (1f - (distToLips / lipRadius)) * intensity * 0.1f // Very subtle
+                        val lipStrength = (1f - (distToLips / lipRadius)) * intensity * 0.25f // Stronger lip color
                         val r = (pixel shr 16) and 0xFF
                         val g = (pixel shr 8) and 0xFF
                         val b = pixel and 0xFF
                         
-                        // Enhance red in lips
-                        val newR = (r + 10 * lipStrength).toInt().coerceIn(0, 255)
-                        val newG = (g * (1f - 0.05f * lipStrength)).toInt().coerceIn(0, 255)
-                        val newB = (b * (1f - 0.05f * lipStrength)).toInt().coerceIn(0, 255)
+                        // Detect if already lip color (reddish/pinkish)
+                        val isLipColor = r > g && r > b && (r - g) > 10
                         
-                        pixels[idx] = (0xFF shl 24) or (newR shl 16) or (newG shl 8) or newB
+                        if (isLipColor) {
+                            // Enhance existing lip color more dramatically
+                            val newR = (r + 25 * lipStrength).toInt().coerceIn(0, 255)
+                            val newG = (g * (1f - 0.1f * lipStrength)).toInt().coerceIn(0, 255)
+                            val newB = (b * (1f - 0.1f * lipStrength)).toInt().coerceIn(0, 255)
+                            
+                            pixels[idx] = (0xFF shl 24) or (newR shl 16) or (newG shl 8) or newB
+                        } else {
+                            // Add subtle reddish tint to non-lip pixels in lip area
+                            val newR = (r + 15 * lipStrength).toInt().coerceIn(0, 255)
+                            val newG = (g * (1f - 0.05f * lipStrength)).toInt().coerceIn(0, 255)
+                            val newB = (b * (1f - 0.05f * lipStrength)).toInt().coerceIn(0, 255)
+                            
+                            pixels[idx] = (0xFF shl 24) or (newR shl 16) or (newG shl 8) or newB
+                        }
+                    }
+                }
+            }
+        }
+        
+        result.setPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+        return result
+    }
+    
+    /**
+     * Brighten and enhance eyes for more vibrant, awake look
+     */
+    private fun brightenEyes(bitmap: Bitmap, faceRect: Rect, intensity: Float): Bitmap {
+        val result = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+        val pixels = IntArray(bitmap.width * bitmap.height)
+        result.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+        
+        // Eye regions (estimate based on face proportions)
+        val leftEyeX = faceRect.left + (faceRect.width() * 0.3f)
+        val rightEyeX = faceRect.left + (faceRect.width() * 0.7f)
+        val eyeY = faceRect.top + (faceRect.height() * 0.35f)
+        val eyeRadius = faceRect.width() * 0.08f
+        
+        for (y in faceRect.top until faceRect.bottom) {
+            for (x in faceRect.left until faceRect.right) {
+                if (x >= 0 && x < bitmap.width && y >= 0 && y < bitmap.height) {
+                    val idx = y * bitmap.width + x
+                    val pixel = pixels[idx]
+                    
+                    // Check if in eye area
+                    val distToLeftEye = sqrt((x - leftEyeX) * (x - leftEyeX) + (y - eyeY) * (y - eyeY))
+                    val distToRightEye = sqrt((x - rightEyeX) * (x - rightEyeX) + (y - eyeY) * (y - eyeY))
+                    
+                    if (distToLeftEye < eyeRadius || distToRightEye < eyeRadius) {
+                        val dist = min(distToLeftEye, distToRightEye)
+                        val eyeStrength = (1f - (dist / eyeRadius)) * intensity
+                        
+                        val r = (pixel shr 16) and 0xFF
+                        val g = (pixel shr 8) and 0xFF
+                        val b = pixel and 0xFF
+                        
+                        // Brighten and add slight contrast to make eyes pop
+                        val brightnessBoost = 1f + (0.15f * eyeStrength)
+                        val contrastBoost = 1.1f + (0.1f * eyeStrength)
+                        
+                        // Apply to lighter pixels (whites of eyes) more than darker (iris/pupil)
+                        val luminance = 0.299f * r + 0.587f * g + 0.114f * b
+                        val isLight = luminance > 100
+                        
+                        if (isLight) {
+                            // Brighten whites of eyes significantly
+                            val newR = (r * brightnessBoost * contrastBoost).toInt().coerceIn(0, 255)
+                            val newG = (g * brightnessBoost * contrastBoost).toInt().coerceIn(0, 255)
+                            val newB = (b * brightnessBoost * contrastBoost).toInt().coerceIn(0, 255)
+                            
+                            pixels[idx] = (0xFF shl 24) or (newR shl 16) or (newG shl 8) or newB
+                        } else {
+                            // Enhance contrast for iris (make colors more vivid)
+                            val center = 128f
+                            val newR = (center + (r - center) * contrastBoost).toInt().coerceIn(0, 255)
+                            val newG = (center + (g - center) * contrastBoost).toInt().coerceIn(0, 255)
+                            val newB = (center + (b - center) * contrastBoost).toInt().coerceIn(0, 255)
+                            
+                            pixels[idx] = (0xFF shl 24) or (newR shl 16) or (newG shl 8) or newB
+                        }
                     }
                 }
             }
