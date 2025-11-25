@@ -131,7 +131,8 @@ data class EditorState(
     val currentFilter: com.ai.vis.ui.components.FilterType = com.ai.vis.ui.components.FilterType.NONE,
     val filterIntensity: Float = 1f,
     val selectedAIStyle: com.ai.vis.domain.model.AIStyle = com.ai.vis.domain.model.AIStyle.NONE,
-    val selectedBackgroundOption: com.ai.vis.ui.components.BackgroundOption = com.ai.vis.ui.components.BackgroundOption.NONE
+    val selectedBackgroundOption: com.ai.vis.ui.components.BackgroundOption = com.ai.vis.ui.components.BackgroundOption.NONE,
+    val selectedPortraitOption: com.ai.vis.ui.components.PortraitOption = com.ai.vis.ui.components.PortraitOption.NONE
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -257,12 +258,12 @@ fun PhotoEditorScreen(
     var blurRadius by remember { mutableStateOf(25f) }
     var selectedBackgroundImage by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     
-    // Portrait AI processing state 👤
+    // Portrait/Retouch processing state 👤
     var selectedPortraitOption by remember { mutableStateOf(com.ai.vis.ui.components.PortraitOption.NONE) }
     var isProcessingPortrait by remember { mutableStateOf(false) }
-    var beautyIntensity by remember { mutableStateOf(0.5f) }
-    var eyeIntensity by remember { mutableStateOf(0.5f) }
-    var faceBlurIntensity by remember { mutableStateOf(0.5f) }
+    var beautyIntensity by remember { mutableFloatStateOf(0.5f) }
+    var eyeIntensity by remember { mutableFloatStateOf(0.5f) }
+    var blurFaceIntensity by remember { mutableFloatStateOf(0.5f) }
     
     // Gallery launcher for background image
     val backgroundImageLauncher = rememberLauncherForActivityResult(
@@ -295,7 +296,8 @@ fun PhotoEditorScreen(
                 currentFilter = currentFilter,
                 filterIntensity = filterIntensity,
                 selectedAIStyle = selectedAIStyle,
-                selectedBackgroundOption = selectedBackgroundOption
+                selectedBackgroundOption = selectedBackgroundOption,
+                selectedPortraitOption = selectedPortraitOption
             )
             undoStack = undoStack + currentState
             redoStack = emptyList() // Clear redo stack when new action is performed
@@ -315,7 +317,8 @@ fun PhotoEditorScreen(
                     currentFilter = currentFilter,
                     filterIntensity = filterIntensity,
                     selectedAIStyle = selectedAIStyle,
-                    selectedBackgroundOption = selectedBackgroundOption
+                    selectedBackgroundOption = selectedBackgroundOption,
+                    selectedPortraitOption = selectedPortraitOption
                 )
             }
             
@@ -333,6 +336,7 @@ fun PhotoEditorScreen(
             filterIntensity = previousState.filterIntensity
             selectedAIStyle = previousState.selectedAIStyle
             selectedBackgroundOption = previousState.selectedBackgroundOption
+            selectedPortraitOption = previousState.selectedPortraitOption
             // Update committed style as well to reflect the restored (baked) state
             committedAIStyle = previousState.selectedAIStyle
             
@@ -404,7 +408,7 @@ fun PhotoEditorScreen(
                         }
                     }
                 }
-            } else if (selectedTool?.nameRes == R.string.background) {
+            } else if (selectedTool?.nameRes == R.string.ai_background) {
                 // Re-apply background processing for preview
                 if (selectedBackgroundOption != com.ai.vis.ui.components.BackgroundOption.NONE) {
                     isProcessingBackground = true
@@ -435,6 +439,38 @@ fun PhotoEditorScreen(
                 } else {
                     previewBitmap = null
                 }
+            } else if (selectedTool?.nameRes == R.string.portrait) {
+                // Re-apply portrait processing for preview
+                if (selectedPortraitOption != com.ai.vis.ui.components.PortraitOption.NONE) {
+                    isProcessingPortrait = true
+                    coroutineScope.launch(Dispatchers.IO) {
+                        originalBitmap?.let { original ->
+                            try {
+                                val processPortraitUseCase = com.ai.vis.domain.usecase.ProcessPortraitUseCase(context)
+                                processPortraitUseCase.initialize()
+                                val result = processPortraitUseCase(
+                                    bitmap = original,
+                                    option = selectedPortraitOption,
+                                    beautyIntensity = beautyIntensity,
+                                    eyeIntensity = eyeIntensity,
+                                    blurIntensity = blurFaceIntensity
+                                )
+                                withContext(Dispatchers.Main) {
+                                    previewBitmap = result
+                                    isProcessingPortrait = false
+                                }
+                                processPortraitUseCase.release()
+                            } catch (e: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    previewBitmap = originalBitmap
+                                    isProcessingPortrait = false
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    previewBitmap = null
+                }
             } else {
                 previewBitmap = null
             }
@@ -454,7 +490,8 @@ fun PhotoEditorScreen(
                     currentFilter = currentFilter,
                     filterIntensity = filterIntensity,
                     selectedAIStyle = selectedAIStyle,
-                    selectedBackgroundOption = selectedBackgroundOption
+                    selectedBackgroundOption = selectedBackgroundOption,
+                    selectedPortraitOption = selectedPortraitOption
                 )
             }
             
@@ -472,6 +509,7 @@ fun PhotoEditorScreen(
             filterIntensity = nextState.filterIntensity
             selectedAIStyle = nextState.selectedAIStyle
             selectedBackgroundOption = nextState.selectedBackgroundOption
+            selectedPortraitOption = nextState.selectedPortraitOption
             // Update committed style as well to reflect the restored (baked) state
             committedAIStyle = nextState.selectedAIStyle
             
@@ -543,7 +581,7 @@ fun PhotoEditorScreen(
                         }
                     }
                 }
-            } else if (selectedTool?.nameRes == R.string.background) {
+            } else if (selectedTool?.nameRes == R.string.ai_background) {
                 // Re-apply background processing for preview
                 if (selectedBackgroundOption != com.ai.vis.ui.components.BackgroundOption.NONE) {
                     isProcessingBackground = true
@@ -567,6 +605,38 @@ fun PhotoEditorScreen(
                                 withContext(Dispatchers.Main) {
                                     previewBitmap = originalBitmap
                                     isProcessingBackground = false
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    previewBitmap = null
+                }
+            } else if (selectedTool?.nameRes == R.string.portrait) {
+                // Re-apply portrait processing for preview
+                if (selectedPortraitOption != com.ai.vis.ui.components.PortraitOption.NONE) {
+                    isProcessingPortrait = true
+                    coroutineScope.launch(Dispatchers.IO) {
+                        originalBitmap?.let { original ->
+                            try {
+                                val processPortraitUseCase = com.ai.vis.domain.usecase.ProcessPortraitUseCase(context)
+                                processPortraitUseCase.initialize()
+                                val result = processPortraitUseCase(
+                                    bitmap = original,
+                                    option = selectedPortraitOption,
+                                    beautyIntensity = beautyIntensity,
+                                    eyeIntensity = eyeIntensity,
+                                    blurIntensity = blurFaceIntensity
+                                )
+                                withContext(Dispatchers.Main) {
+                                    previewBitmap = result
+                                    isProcessingPortrait = false
+                                }
+                                processPortraitUseCase.release()
+                            } catch (e: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    previewBitmap = originalBitmap
+                                    isProcessingPortrait = false
                                 }
                             }
                         }
@@ -624,6 +694,12 @@ fun PhotoEditorScreen(
             dialogInputText = ""
         }
         
+        // Reset Portrait selection when opening Portrait tool
+        if (selectedTool?.nameRes == R.string.portrait) {
+            selectedPortraitOption = com.ai.vis.ui.components.PortraitOption.NONE
+            previewBitmap = null
+        }
+        
         // Save state before entering any tool menu (except when deselecting)
         if (selectedTool != null && !isEditing) {
             originalBitmap?.let { bitmap ->
@@ -666,6 +742,8 @@ fun PhotoEditorScreen(
                 // Reset background option when closing Background tool
                 selectedBackgroundOption = com.ai.vis.ui.components.BackgroundOption.NONE
                 selectedBackgroundImage = null
+                // Reset portrait option when closing Portrait tool
+                selectedPortraitOption = com.ai.vis.ui.components.PortraitOption.NONE
             }
             else -> {
                 // Show exit confirmation if there are any changes
@@ -777,10 +855,9 @@ fun PhotoEditorScreen(
         EditorTool(R.string.adjust, R.drawable.ic_brightness),
         EditorTool(R.string.filters, R.drawable.ic_filters_main),
         EditorTool(R.string.stickers, R.drawable.ic_sticker),
-        EditorTool(R.string.ai_tools, R.drawable.ic_ai),
+        EditorTool(R.string.portrait, R.drawable.ic_ai),
         EditorTool(R.string.ai_styles, R.drawable.ic_filters),
-        EditorTool(R.string.background, R.drawable.ic_background),
-        EditorTool(R.string.portrait_ai, R.drawable.ic_face_retouching),
+        EditorTool(R.string.ai_background, R.drawable.ic_background),
         EditorTool(R.string.text_tool, R.drawable.ic_text),
         EditorTool(R.string.draw_tool, R.drawable.ic_paint)
     )
@@ -879,6 +956,8 @@ fun PhotoEditorScreen(
                             // Reset background option when closing
                             selectedBackgroundOption = com.ai.vis.ui.components.BackgroundOption.NONE
                             selectedBackgroundImage = null
+                            // Reset portrait option when closing
+                            selectedPortraitOption = com.ai.vis.ui.components.PortraitOption.NONE
                             cropFieldModified = false
                             straightenModified = false
                             isToolPanelCollapsed = false
@@ -2003,7 +2082,7 @@ fun PhotoEditorScreen(
                                     }
                                 )
                             }
-                            R.string.background -> {
+                            R.string.ai_background -> {
                                 // Background panel with actual processing
                                 com.ai.vis.ui.components.BackgroundPanel(
                                     selectedOption = selectedBackgroundOption,
@@ -2180,15 +2259,14 @@ fun PhotoEditorScreen(
                                     }
                                 )
                             }
-                            R.string.portrait_ai -> {
-                                // Portrait AI panel with processing
+                            R.string.portrait -> {
                                 com.ai.vis.ui.components.PortraitPanel(
                                     selectedOption = selectedPortraitOption,
                                     isProcessing = isProcessingPortrait,
                                     beautyIntensity = beautyIntensity,
-                                    onBeautyIntensityChange = { newIntensity ->
-                                        beautyIntensity = newIntensity
-                                        // Trigger real-time update
+                                    onBeautyIntensityChange = { intensity ->
+                                        beautyIntensity = intensity
+                                        // Real-time update when intensity changes
                                         if (selectedPortraitOption == com.ai.vis.ui.components.PortraitOption.BEAUTY_MODE && !isProcessingPortrait) {
                                             isProcessingPortrait = true
                                             originalBitmap?.let { original ->
@@ -2199,7 +2277,7 @@ fun PhotoEditorScreen(
                                                         val result = processPortraitUseCase(
                                                             bitmap = original,
                                                             option = com.ai.vis.ui.components.PortraitOption.BEAUTY_MODE,
-                                                            beautyIntensity = newIntensity
+                                                            beautyIntensity = intensity
                                                         )
                                                         withContext(Dispatchers.Main) {
                                                             previewBitmap = result
@@ -2216,9 +2294,9 @@ fun PhotoEditorScreen(
                                         }
                                     },
                                     eyeIntensity = eyeIntensity,
-                                    onEyeIntensityChange = { newIntensity ->
-                                        eyeIntensity = newIntensity
-                                        // Trigger real-time update
+                                    onEyeIntensityChange = { intensity ->
+                                        eyeIntensity = intensity
+                                        // Real-time update when intensity changes
                                         if (selectedPortraitOption == com.ai.vis.ui.components.PortraitOption.EYE_ENHANCEMENT && !isProcessingPortrait) {
                                             isProcessingPortrait = true
                                             originalBitmap?.let { original ->
@@ -2229,7 +2307,7 @@ fun PhotoEditorScreen(
                                                         val result = processPortraitUseCase(
                                                             bitmap = original,
                                                             option = com.ai.vis.ui.components.PortraitOption.EYE_ENHANCEMENT,
-                                                            eyeIntensity = newIntensity
+                                                            eyeIntensity = intensity
                                                         )
                                                         withContext(Dispatchers.Main) {
                                                             previewBitmap = result
@@ -2245,10 +2323,10 @@ fun PhotoEditorScreen(
                                             }
                                         }
                                     },
-                                    blurIntensity = faceBlurIntensity,
-                                    onBlurIntensityChange = { newIntensity ->
-                                        faceBlurIntensity = newIntensity
-                                        // Trigger real-time update
+                                    blurIntensity = blurFaceIntensity,
+                                    onBlurIntensityChange = { intensity ->
+                                        blurFaceIntensity = intensity
+                                        // Real-time update when intensity changes
                                         if (selectedPortraitOption == com.ai.vis.ui.components.PortraitOption.FACE_BLUR && !isProcessingPortrait) {
                                             isProcessingPortrait = true
                                             originalBitmap?.let { original ->
@@ -2259,7 +2337,7 @@ fun PhotoEditorScreen(
                                                         val result = processPortraitUseCase(
                                                             bitmap = original,
                                                             option = com.ai.vis.ui.components.PortraitOption.FACE_BLUR,
-                                                            blurIntensity = newIntensity
+                                                            blurIntensity = intensity
                                                         )
                                                         withContext(Dispatchers.Main) {
                                                             previewBitmap = result
@@ -2278,62 +2356,50 @@ fun PhotoEditorScreen(
                                     onOptionSelected = { option ->
                                         if (!isProcessingPortrait) {
                                             selectedPortraitOption = option
-                                            saveStateToUndo()
-                                            isEditing = true
-                                            isProcessingPortrait = true
-                                            
-                                            originalBitmap?.let { original ->
-                                                coroutineScope.launch(Dispatchers.IO) {
-                                                    try {
-                                                        android.util.Log.d("PhotoEditor", "Starting portrait processing: $option")
-                                                        val processPortraitUseCase = com.ai.vis.domain.usecase.ProcessPortraitUseCase(context)
-                                                        
-                                                        android.util.Log.d("PhotoEditor", "Initializing model...")
-                                                        processPortraitUseCase.initialize()
-                                                        
-                                                        android.util.Log.d("PhotoEditor", "Processing image...")
-                                                        val result = processPortraitUseCase(
-                                                            bitmap = original,
-                                                            option = option,
-                                                            beautyIntensity = beautyIntensity,
-                                                            eyeIntensity = eyeIntensity,
-                                                            blurIntensity = faceBlurIntensity
-                                                        )
-                                                        
-                                                        withContext(Dispatchers.Main) {
-                                                            android.util.Log.d("PhotoEditor", "✅ Portrait processing completed!")
-                                                            previewBitmap = result
-                                                            isProcessingPortrait = false
-                                                            android.widget.Toast.makeText(
-                                                                context,
-                                                                "Portrait processed successfully!",
-                                                                android.widget.Toast.LENGTH_SHORT
-                                                            ).show()
-                                                        }
-                                                        
-                                                        processPortraitUseCase.release()
-                                                    } catch (e: java.io.FileNotFoundException) {
-                                                        android.util.Log.e("PhotoEditor", "❌ Model file not found!", e)
-                                                        withContext(Dispatchers.Main) {
-                                                            isProcessingPortrait = false
-                                                            android.widget.Toast.makeText(
-                                                                context,
-                                                                "Model file not found! Please add face_detection.tflite to assets/models/",
-                                                                android.widget.Toast.LENGTH_LONG
-                                                            ).show()
-                                                        }
-                                                    } catch (e: Exception) {
-                                                        android.util.Log.e("PhotoEditor", "❌ Error processing portrait: ${e.message}", e)
-                                                        withContext(Dispatchers.Main) {
-                                                            isProcessingPortrait = false
-                                                            android.widget.Toast.makeText(
-                                                                context,
-                                                                "Error: ${e.message}",
-                                                                android.widget.Toast.LENGTH_LONG
-                                                            ).show()
+                                            if (option != com.ai.vis.ui.components.PortraitOption.NONE) {
+                                                saveStateToUndo()
+                                                isEditing = true
+                                                isProcessingPortrait = true
+                                                
+                                                originalBitmap?.let { original ->
+                                                    coroutineScope.launch(Dispatchers.IO) {
+                                                        try {
+                                                            val processPortraitUseCase = com.ai.vis.domain.usecase.ProcessPortraitUseCase(context)
+                                                            processPortraitUseCase.initialize()
+                                                            val result = processPortraitUseCase(
+                                                                bitmap = original,
+                                                                option = option,
+                                                                beautyIntensity = beautyIntensity,
+                                                                eyeIntensity = eyeIntensity,
+                                                                blurIntensity = blurFaceIntensity
+                                                            )
+                                                            withContext(Dispatchers.Main) {
+                                                                previewBitmap = result
+                                                                isProcessingPortrait = false
+                                                                android.widget.Toast.makeText(
+                                                                    context,
+                                                                    "Portrait effect applied!",
+                                                                    android.widget.Toast.LENGTH_SHORT
+                                                                ).show()
+                                                            }
+                                                            processPortraitUseCase.release()
+                                                        } catch (e: Exception) {
+                                                            android.util.Log.e("PhotoEditor", "Error processing portrait: ${e.message}", e)
+                                                            withContext(Dispatchers.Main) {
+                                                                isProcessingPortrait = false
+                                                                android.widget.Toast.makeText(
+                                                                    context,
+                                                                    "Error: ${e.message}",
+                                                                    android.widget.Toast.LENGTH_LONG
+                                                                ).show()
+                                                            }
                                                         }
                                                     }
                                                 }
+                                            } else {
+                                                // Clear preview when selecting NONE
+                                                previewBitmap = null
+                                                isEditing = false
                                             }
                                         }
                                     }
@@ -2356,7 +2422,7 @@ fun PhotoEditorScreen(
                         )
                 ) {
                     when (selectedTool?.nameRes) {
-                        R.string.text_tool, R.string.adjust, R.string.draw_tool, R.string.filters, R.string.stickers, R.string.ai_styles, R.string.background, R.string.portrait_ai -> {
+                        R.string.text_tool, R.string.adjust, R.string.draw_tool, R.string.filters, R.string.stickers, R.string.ai_styles, R.string.ai_background, R.string.portrait -> {
                             // Режим редагування з прихованим меню - показуємо кнопку згортання та назву
                             Row(
                                 modifier = Modifier

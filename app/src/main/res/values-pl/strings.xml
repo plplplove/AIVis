@@ -44,8 +44,9 @@
     <string name="adjust">Dostosuj</string>
     <string name="filters">Filtry</string>
     <string name="stickers">Naklejki</string>
-    <string name="ai_tools">Narzędzia AI</string>
+    <string name="portrait">Portret</string>
     <string name="ai_styles">Style AI</string>
+    <string name="ai_background">Tło AI</string>
     <string name="text_tool">Tekst</string>
     <string name="draw_tool">Rysuj</string>
     
