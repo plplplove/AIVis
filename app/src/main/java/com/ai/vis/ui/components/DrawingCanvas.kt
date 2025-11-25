@@ -25,9 +25,8 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.input.pointer.pointerInput
 
-// Shape types for drawing
 enum class ShapeType {
-    FREE_DRAW,  // Normal drawing
+    FREE_DRAW,  
     LINE,
     ARROW,
     RECTANGLE,
@@ -36,21 +35,19 @@ enum class ShapeType {
     STAR
 }
 
-// Data class to store a drawing path with its properties
 data class DrawPath(
     val path: Path,
     val color: Color,
     val strokeWidth: Float,
     val opacity: Float,
-    val softness: Float = 0f, // 0 = sharp, higher = blurry edges
-    val isEraser: Boolean = false, // true = eraser mode
+    val softness: Float = 0f, 
+    val isEraser: Boolean = false, 
     val shapeType: ShapeType = ShapeType.FREE_DRAW,
-    val isFilled: Boolean = false, // true = filled shape, false = stroke only
-    val startPoint: Offset? = null, // For shapes
-    val endPoint: Offset? = null // For shapes
+    val isFilled: Boolean = false, 
+    val startPoint: Offset? = null, 
+    val endPoint: Offset? = null 
 )
 
-// Helper function to create shape paths
 fun createShapePath(shapeType: ShapeType, start: Offset, end: Offset): Path {
     val path = Path()
     
@@ -60,14 +57,12 @@ fun createShapePath(shapeType: ShapeType, start: Offset, end: Offset): Path {
             path.lineTo(end.x, end.y)
         }
         ShapeType.ARROW -> {
-            // Draw line
             path.moveTo(start.x, start.y)
             path.lineTo(end.x, end.y)
             
-            // Draw arrowhead
             val angle = kotlin.math.atan2((end.y - start.y).toDouble(), (end.x - start.x).toDouble())
             val arrowLength = 30f
-            val arrowAngle = Math.PI / 6 // 30 degrees
+            val arrowAngle = Math.PI / 6 
             
             val arrow1X = end.x - arrowLength * kotlin.math.cos(angle - arrowAngle).toFloat()
             val arrow1Y = end.y - arrowLength * kotlin.math.sin(angle - arrowAngle).toFloat()
@@ -120,7 +115,6 @@ fun createShapePath(shapeType: ShapeType, start: Offset, end: Offset): Path {
             )
         }
         ShapeType.STAR -> {
-            // Draw 5-pointed star
             val centerX = (start.x + end.x) / 2f
             val centerY = (start.y + end.y) / 2f
             val radius = kotlin.math.sqrt(
@@ -144,7 +138,6 @@ fun createShapePath(shapeType: ShapeType, start: Offset, end: Offset): Path {
             path.close()
         }
         ShapeType.FREE_DRAW -> {
-            // Should not happen, but handle gracefully
         }
     }
     
@@ -177,21 +170,18 @@ fun DrawingCanvas(
             .pointerInput(currentColor, currentStrokeWidth, currentOpacity, currentSoftness, isEraserMode, currentShapeType, isShapeFilled) {
                 detectDragGestures(
                     onDragStart = { offset ->
-                        // Only allow drawing within image bounds
                         if (imageBounds?.contains(offset) == true) {
                             onDrawingStarted()
                             
                             if (currentShapeType == ShapeType.FREE_DRAW) {
-                                // Normal free drawing
                                 currentPath = Path().apply {
                                     moveTo(offset.x, offset.y)
                                     lineTo(offset.x + 0.1f, offset.y + 0.1f)
                                 }
                             } else {
-                                // Shape drawing - remember start point
                                 shapeStartPoint = offset
                                 shapeEndPoint = offset
-                                currentPath = Path() // Empty path for now
+                                currentPath = Path() 
                             }
                             pathUpdateTrigger++
                         }
@@ -200,13 +190,11 @@ fun DrawingCanvas(
                         val position = change.position
                         if (imageBounds?.contains(position) == true) {
                             if (currentShapeType == ShapeType.FREE_DRAW) {
-                                // Normal free drawing
                                 currentPath?.let { path ->
                                     path.lineTo(position.x, position.y)
                                     pathUpdateTrigger++
                                 }
                             } else {
-                                // Update shape end point for preview
                                 shapeEndPoint = position
                                 pathUpdateTrigger++
                             }
@@ -214,7 +202,6 @@ fun DrawingCanvas(
                     },
                     onDragEnd = {
                         if (currentShapeType == ShapeType.FREE_DRAW) {
-                            // Save normal path
                             currentPath?.let { path ->
                                 onPathAdded(
                                     DrawPath(
@@ -228,7 +215,6 @@ fun DrawingCanvas(
                                 )
                             }
                         } else {
-                            // Save shape
                             if (shapeStartPoint != null && shapeEndPoint != null) {
                                 val shapePath = createShapePath(
                                     shapeType = currentShapeType,
@@ -259,16 +245,12 @@ fun DrawingCanvas(
                 )
             }
     ) {
-        // Use pathUpdateTrigger to force recomposition when path changes
         pathUpdateTrigger.let { _ ->
-            // Малюємо всі шляхи на окремому layer, щоб eraser стирав тільки малюнок
             drawIntoCanvas { canvas ->
-                // Створюємо окремий layer для малювання
                 val layerPaint = android.graphics.Paint()
                 val layerBounds = android.graphics.RectF(0f, 0f, size.width, size.height)
                 canvas.nativeCanvas.saveLayer(layerBounds, layerPaint)
                 
-                // Draw all saved paths on the layer
                 drawPaths.forEach { drawPath ->
                     val paint = Paint().apply {
                         strokeWidth = drawPath.strokeWidth
@@ -282,16 +264,12 @@ fun DrawingCanvas(
                         isAntiAlias = true
                         
                         if (drawPath.isEraser) {
-                            // Eraser - використовуємо DST_OUT для стирання тільки малюнка
                             asFrameworkPaint().xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
-                            // Для eraser використовуємо повну непрозорість щоб добре стирало
                             color = Color.Black
                         } else {
-                            // Normal drawing
                             color = drawPath.color.copy(alpha = drawPath.opacity)
                         }
                         
-                        // Apply blur/softness if needed
                         if (drawPath.softness > 0f) {
                             val blurRadius = drawPath.softness * (drawPath.strokeWidth / 2f)
                             if (blurRadius > 0f) {
@@ -309,7 +287,6 @@ fun DrawingCanvas(
                     )
                 }
                 
-                // Draw shape preview while dragging
                 if (currentShapeType != ShapeType.FREE_DRAW && shapeStartPoint != null && shapeEndPoint != null) {
                     val previewPath = createShapePath(currentShapeType, shapeStartPoint!!, shapeEndPoint!!)
                     val previewPaint = Paint().apply {
@@ -322,7 +299,7 @@ fun DrawingCanvas(
                             androidx.compose.ui.graphics.PaintingStyle.Stroke
                         }
                         isAntiAlias = true
-                        color = currentColor.copy(alpha = currentOpacity * 0.7f) // Semi-transparent preview
+                        color = currentColor.copy(alpha = currentOpacity * 0.7f) 
                         
                         if (currentSoftness > 0f) {
                             val blurRadius = currentSoftness * (currentStrokeWidth / 2f)
@@ -341,7 +318,6 @@ fun DrawingCanvas(
                     )
                 }
                 
-                // Draw current free-draw path being drawn
                 if (currentShapeType == ShapeType.FREE_DRAW) {
                     currentPath?.let { path ->
                         val paint = Paint().apply {
@@ -352,15 +328,12 @@ fun DrawingCanvas(
                             isAntiAlias = true
                             
                             if (isEraserMode) {
-                                // Eraser - використовуємо DST_OUT для стирання
                                 asFrameworkPaint().xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
                                 color = Color.Black
                             } else {
-                                // Normal drawing
                                 color = currentColor.copy(alpha = currentOpacity)
                             }
                             
-                            // Apply blur/softness if needed
                             if (currentSoftness > 0f) {
                                 val blurRadius = currentSoftness * (currentStrokeWidth / 2f)
                                 if (blurRadius > 0f) {
@@ -379,7 +352,6 @@ fun DrawingCanvas(
                     }
                 }
                 
-                // Restore canvas
                 canvas.nativeCanvas.restore()
             }
         }

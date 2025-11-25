@@ -38,7 +38,6 @@ fun SplashScreen(
     val alpha = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        // Animate logo: scale up and fade in
         scale.animateTo(
             targetValue = 1f,
             animationSpec = tween(durationMillis = 800)
@@ -48,10 +47,8 @@ fun SplashScreen(
             animationSpec = tween(durationMillis = 800)
         )
         
-        // Wait for total 2.5 seconds
         delay(1700)
         
-        // Call timeout callback
         onTimeout()
     }
 
@@ -64,7 +61,6 @@ fun SplashScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Animated Logo
             Image(
                 painter = painterResource(id = R.drawable.ic_logo),
                 contentDescription = "AIVis Logo",
@@ -76,7 +72,6 @@ fun SplashScreen(
             
             Spacer(modifier = Modifier.height(48.dp))
             
-            // Horizontal loading indicator
             LinearProgressIndicator(
                 modifier = Modifier.width(200.dp),
                 color = AccentBlue,

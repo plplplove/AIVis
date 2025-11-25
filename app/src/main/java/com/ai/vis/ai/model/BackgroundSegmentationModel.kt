@@ -12,21 +12,14 @@ import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 
-/**
- * Background segmentation model using TensorFlow Lite.
- * Uses a segmentation model (e.g., DeepLab, MediaPipe) to create a mask
- * that separates foreground (person) from background.
- */
 class BackgroundSegmentationModel(private val context: Context) {
     
     private var interpreter: Interpreter? = null
     private var isInitialized = false
     
-    // Model input/output dimensions - will be adjusted based on actual model
     private var inputSize = 256
     
     companion object {
-        private const val TAG = "BackgroundSegmentation"
         private const val MODEL_PATH = "models/selfie_segmentation.tflite"
     }
     
@@ -36,7 +29,6 @@ class BackgroundSegmentationModel(private val context: Context) {
         }
         
         try {
-            Log.d(TAG, "Loading segmentation model from: $MODEL_PATH")
             val model = loadModelFromAssets(MODEL_PATH)
             val options = Interpreter.Options().apply {
                 setNumThreads(Runtime.getRuntime().availableProcessors())
@@ -46,31 +38,16 @@ class BackgroundSegmentationModel(private val context: Context) {
             isInitialized = true
             
             interpreter?.let { interp ->
-                Log.d(TAG, "✅ Model loaded successfully!")
-                Log.d(TAG, "Input count: ${interp.inputTensorCount}")
-                Log.d(TAG, "Output count: ${interp.outputTensorCount}")
                 
-                // Get actual input size from model
                 val inputShape = interp.getInputTensor(0).shape()
-                val modelInputSize = inputShape[1] // [1, height, width, 3]
+                val modelInputSize = inputShape[1] 
                 inputSize = modelInputSize
                 
-                Log.d(TAG, "Input shape: ${inputShape.contentToString()}")
-                Log.d(TAG, "Output shape: ${interp.getOutputTensor(0).shape().contentToString()}")
-                Log.d(TAG, "Adjusted inputSize to: $inputSize")
             }
         } catch (e: java.io.FileNotFoundException) {
-            Log.e(TAG, "❌ MODEL FILE NOT FOUND: $MODEL_PATH")
-            Log.e(TAG, "Please place 'selfie_segmentation.tflite' in app/src/main/assets/models/")
-            Log.e(TAG, "See BACKGROUND_MODEL_SETUP.md for instructions")
-            Log.w(TAG, "⚠️ Will use algorithmic fallback instead")
             isInitialized = false
-            // Don't throw - allow fallback to work
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error initializing model: ${e.message}", e)
-            Log.w(TAG, "⚠️ Will use algorithmic fallback instead")
             isInitialized = false
-            // Don't throw - allow fallback to work
         }
     }
     
@@ -86,57 +63,36 @@ class BackgroundSegmentationModel(private val context: Context) {
         }
     }
     
-    /**
-     * Segments the image and returns a mask where:
-     * - 1.0 = foreground (person)
-     * - 0.0 = background
-     * 
-     * The mask is the same size as the input bitmap.
-     */
     suspend fun segmentImage(bitmap: Bitmap): Array<FloatArray>? = withContext(Dispatchers.IO) {
         if (!isInitialized || interpreter == null) {
-            Log.w(TAG, "Model not initialized, using algorithmic fallback")
             return@withContext createAlgorithmicMask(bitmap)
         }
         
         try {
-            Log.d(TAG, "Segmenting image ${bitmap.width}x${bitmap.height}")
             
-            // Resize bitmap to model input size
             val resizedBitmap = Bitmap.createScaledBitmap(bitmap, inputSize, inputSize, true)
             
-            // Convert to input buffer
             val inputBuffer = bitmapToByteBuffer(resizedBitmap)
             
-            // Check output shape to determine model type
             val outputTensor = interpreter?.getOutputTensor(0)
             val outputShape = outputTensor?.shape()
             val numClasses = outputShape?.get(3) ?: 1
             
-            Log.d(TAG, "Output has $numClasses classes")
             
-            // Prepare output based on number of classes
             val outputArray = Array(1) { Array(inputSize) { Array(inputSize) { FloatArray(numClasses) } } }
             
-            // Run inference
             interpreter?.run(inputBuffer, outputArray)
             
-            // Extract mask and resize to original bitmap size
             val mask = Array(bitmap.height) { FloatArray(bitmap.width) }
             
             for (y in 0 until bitmap.height) {
                 for (x in 0 until bitmap.width) {
-                    // Map coordinates from original size to model output size
                     val srcY = (y.toFloat() / bitmap.height * inputSize).toInt().coerceIn(0, inputSize - 1)
                     val srcX = (x.toFloat() / bitmap.width * inputSize).toInt().coerceIn(0, inputSize - 1)
                     
-                    // Get mask value based on model type
                     val maskValue = if (numClasses == 1) {
-                        // Simple segmentation model (MediaPipe)
                         outputArray[0][srcY][srcX][0]
                     } else {
-                        // Multi-class segmentation (DeepLab)
-                        // Find the class with highest probability
                         val classProbs = outputArray[0][srcY][srcX]
                         var maxProb = 0f
                         var maxClass = 0
@@ -148,8 +104,6 @@ class BackgroundSegmentationModel(private val context: Context) {
                             }
                         }
                         
-                        // Class 15 is "person" in PASCAL VOC (DeepLab)
-                        // If max class is person, use high confidence, otherwise low
                         if (maxClass == 15) maxProb else 0f
                     }
                     
@@ -161,7 +115,6 @@ class BackgroundSegmentationModel(private val context: Context) {
                 resizedBitmap.recycle()
             }
             
-            // Log mask statistics for debugging
             var minVal = 1f
             var maxVal = 0f
             var avgVal = 0f
@@ -176,18 +129,12 @@ class BackgroundSegmentationModel(private val context: Context) {
             }
             avgVal /= count
             
-            Log.d(TAG, "Segmentation complete - Mask stats: min=$minVal, max=$maxVal, avg=$avgVal")
             mask
         } catch (e: Exception) {
-            Log.e(TAG, "Error during segmentation: ${e.message}", e)
-            Log.w(TAG, "Falling back to algorithmic mask")
             createAlgorithmicMask(bitmap)
         }
     }
     
-    /**
-     * Refines the mask using edge-aware smoothing to reduce jagged edges.
-     */
     fun refineMask(mask: Array<FloatArray>, radius: Int = 2): Array<FloatArray> {
         val height = mask.size
         val width = mask[0].size
@@ -235,12 +182,7 @@ class BackgroundSegmentationModel(private val context: Context) {
         return byteBuffer
     }
     
-    /**
-     * Algorithmic fallback: Creates a simple mask based on center focus
-     * Assumes subject is in the center of the image
-     */
     private fun createAlgorithmicMask(bitmap: Bitmap): Array<FloatArray> {
-        Log.d(TAG, "Creating algorithmic mask (center-weighted)")
         val width = bitmap.width
         val height = bitmap.height
         val mask = Array(height) { FloatArray(width) }
@@ -251,16 +193,12 @@ class BackgroundSegmentationModel(private val context: Context) {
         
         for (y in 0 until height) {
             for (x in 0 until width) {
-                // Distance from center
                 val dx = x - centerX
                 val dy = y - centerY
                 val dist = kotlin.math.sqrt((dx * dx + dy * dy).toDouble()).toFloat()
                 
-                // Normalized distance (0 at center, 1 at corners)
                 val normDist = (dist / maxDist).coerceIn(0f, 1f)
                 
-                // Inverse: 1 at center (foreground), 0 at edges (background)
-                // Using smooth falloff
                 mask[y][x] = (1f - normDist * normDist).coerceIn(0f, 1f)
             }
         }
@@ -272,6 +210,5 @@ class BackgroundSegmentationModel(private val context: Context) {
         interpreter?.close()
         interpreter = null
         isInitialized = false
-        Log.d(TAG, "Model released")
     }
 }

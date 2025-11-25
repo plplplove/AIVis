@@ -27,20 +27,19 @@ enum class DragHandle {
 
 @Composable
 fun CropOverlay(
-    cropRatio: Float?, // null for free, 1f for 1:1, etc.
-    imageBounds: Rect?, // Bounds of the actual image on screen
-    scale: Float = 1f, // Current zoom scale (not used since we reset zoom in crop mode)
-    offset: Offset = Offset.Zero, // Current pan offset (not used since we reset pan in crop mode)
+    cropRatio: Float?, 
+    imageBounds: Rect?, 
+    scale: Float = 1f, 
+    offset: Offset = Offset.Zero, 
     onCropAreaChange: (Rect) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
-    val handleSize = with(density) { 44.dp.toPx() } // Touch target size
-    val handleVisualSize = with(density) { 24.dp.toPx() } // Visual size
+    val handleSize = with(density) { 44.dp.toPx() } 
+    val handleVisualSize = with(density) { 24.dp.toPx() } 
     
     var activeHandle by remember { mutableStateOf(DragHandle.NONE) }
     
-    // Initialize crop rect based on ratio
     var cropRect by remember(cropRatio, imageBounds) {
         mutableStateOf<Rect?>(null)
     }
@@ -53,7 +52,6 @@ fun CropOverlay(
                     onDragStart = { offset ->
                         val rect = cropRect ?: return@detectDragGestures
                         
-                        // Determine which handle was touched
                         activeHandle = when {
                             isNearPoint(offset, Offset(rect.left, rect.top), handleSize) -> DragHandle.TOP_LEFT
                             isNearPoint(offset, Offset(rect.right, rect.top), handleSize) -> DragHandle.TOP_RIGHT
@@ -71,7 +69,6 @@ fun CropOverlay(
                         cropRect = when (activeHandle) {
                             DragHandle.TOP_LEFT -> {
                                 if (cropRatio != null) {
-                                    // Maintain aspect ratio
                                     val newWidth = (rect.right - (rect.left + dragAmount.x)).coerceAtLeast(100f)
                                     val newHeight = newWidth / cropRatio
                                     Rect(
@@ -139,7 +136,6 @@ fun CropOverlay(
                                 }
                             }
                             DragHandle.CENTER -> {
-                                // Move entire rect within bounds
                                 val newLeft = (rect.left + dragAmount.x).coerceIn(bounds.left, bounds.right - rect.width)
                                 val newTop = (rect.top + dragAmount.y).coerceIn(bounds.top, bounds.bottom - rect.height)
                                 Rect(
@@ -152,7 +148,6 @@ fun CropOverlay(
                             DragHandle.NONE -> rect
                         }
                         
-                        // Constrain crop rect to image bounds
                         cropRect = cropRect?.let { r ->
                             Rect(
                                 left = r.left.coerceIn(bounds.left, bounds.right),
@@ -169,21 +164,17 @@ fun CropOverlay(
                 )
             }
     ) {
-        // Use imageBounds if available (real image position), otherwise use full canvas
         val bounds = imageBounds ?: Rect(0f, 0f, size.width, size.height)
         
-        // Initialize crop rect if not set - center it on the actual image
         if (cropRect == null && imageBounds != null) {
             val centerX = bounds.center.x
             val centerY = bounds.center.y
             
-            // Use image bounds as maximum
             val maxWidth = bounds.width
             val maxHeight = bounds.height
             
             val (width, height) = if (cropRatio != null) {
-                // Calculate dimensions maintaining aspect ratio
-                val ratioWidth = maxWidth * 0.8f  // 80% of image width by default
+                val ratioWidth = maxWidth * 0.8f  
                 val ratioHeight = ratioWidth / cropRatio
                 
                 if (ratioHeight <= maxHeight) {
@@ -194,7 +185,6 @@ fun CropOverlay(
                     newWidth to newHeight
                 }
             } else {
-                // Free crop - use 80% of image size
                 maxWidth * 0.8f to maxHeight * 0.8f
             }
             
@@ -208,11 +198,8 @@ fun CropOverlay(
         
         val rect = cropRect ?: return@Canvas
         
-        // Draw semi-transparent overlay (darkened areas)
         val overlayPath = Path().apply {
-            // Outer rectangle (full canvas)
             addRect(Rect(0f, 0f, size.width, size.height))
-            // Inner rectangle (crop area) - subtract it
             addRect(rect)
         }
         
@@ -222,7 +209,6 @@ fun CropOverlay(
             style = Fill
         )
         
-        // Draw crop border
         drawRect(
             color = Color.White,
             topLeft = Offset(rect.left, rect.top),
@@ -230,11 +216,9 @@ fun CropOverlay(
             style = Stroke(width = 2.dp.toPx())
         )
         
-        // Draw grid lines (rule of thirds)
         val gridColor = Color.White.copy(alpha = 0.5f)
         val gridStroke = Stroke(width = 1.dp.toPx())
         
-        // Vertical lines
         drawLine(
             color = gridColor,
             start = Offset(rect.left + rect.width / 3, rect.top),
@@ -248,7 +232,6 @@ fun CropOverlay(
             strokeWidth = gridStroke.width
         )
         
-        // Horizontal lines
         drawLine(
             color = gridColor,
             start = Offset(rect.left, rect.top + rect.height / 3),
@@ -262,7 +245,6 @@ fun CropOverlay(
             strokeWidth = gridStroke.width
         )
         
-        // Draw corner handles
         val handleColor = Color.White
         val cornerHandles = listOf(
             Offset(rect.left, rect.top),
@@ -272,14 +254,12 @@ fun CropOverlay(
         )
         
         cornerHandles.forEach { corner ->
-            // Draw L-shaped corner handle
             val lineLength = handleVisualSize
             val thickness = 4.dp.toPx()
             
             val isLeft = corner.x == rect.left
             val isTop = corner.y == rect.top
             
-            // Horizontal line
             drawLine(
                 color = handleColor,
                 start = Offset(
@@ -293,7 +273,6 @@ fun CropOverlay(
                 strokeWidth = thickness
             )
             
-            // Vertical line
             drawLine(
                 color = handleColor,
                 start = Offset(

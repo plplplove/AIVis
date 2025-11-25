@@ -50,6 +50,12 @@
     <string name="text_tool">Tekst</string>
     <string name="draw_tool">Rysuj</string>
     
+    <string name="portrait_ai">Portret AI</string>
+    <string name="beauty_mode">Tryb piękności</string>
+    <string name="eye_enhancement">Usuń cienie pod oczami</string>
+    <string name="face_blur">Rozmycie skóry</string>
+    <string name="straighten">Wyprostuj</string>
+    
     <string name="crop">Przytnij</string>
     <string name="rotate">Obróć</string>
     <string name="flip">Odbij</string>
@@ -98,14 +104,38 @@
     
     <string name="text_input">Wprowadź tekst</string>
     <string name="text_size">Rozmiar tekstu</string>
+    <string name="text_font">Czcionka</string>
     <string name="text_color">Kolor</string>
     <string name="text_opacity">Przezroczystość</string>
     <string name="alignment">Wyrównanie</string>
     <string name="font_weight">Grubość</string>
+    <string name="letter_spacing">Odstęp między literami</string>
+    <string name="text_italic">Kursywa</string>
+    <string name="text_underline">Podkreślenie</string>
+    <string name="text_strikethrough">Przekreślenie</string>
     <string name="stroke">Obramowanie</string>
     <string name="background">Tło</string>
     <string name="shadow">Cień</string>
+    <string name="shadow_radius">Promień cienia</string>
+    <string name="shadow_offset_x">Przesunięcie cienia X</string>
+    <string name="shadow_offset_y">Przesunięcie cienia Y</string>
     <string name="edit_text">Edytuj tekst</string>
+    
+    <string name="font_abite">Abite</string>
+    <string name="font_american_captain">American Captain</string>
+    <string name="font_bear_days">Bear Days</string>
+    <string name="font_cool_vetica">Cool Vetica</string>
+    <string name="font_cute_notes">Cute Notes</string>
+    <string name="font_jmh_typewriter">JMH Typewriter</string>
+    <string name="font_karina">Karina</string>
+    <string name="font_keep_on_truckin">Keep On Truckin</string>
+    <string name="font_komicax">Komicax</string>
+    <string name="font_lemon_milk">Lemon Milk</string>
+    <string name="font_porkys">Porkys</string>
+    <string name="font_riffic_free">Riffic Free</string>
+    <string name="font_rossten">Rossten</string>
+    <string name="font_sweety_rasty">Sweety Rasty</string>
+    <string name="font_varsity_team">Varsity Team</string>
     
     <string name="draw_color">Kolor</string>
     <string name="draw_size">Rozmiar pędzla</string>
@@ -155,7 +185,9 @@
     <string name="re_edit">Edytuj ponownie</string>
     <string name="share">Udostępnij</string>
     <string name="delete_photo">Usuń zdjęcie</string>
+    <string name="delete_photos">Usuń zdjęcia</string>
     <string name="delete_confirmation_message">Czy na pewno chcesz usunąć to zdjęcie? Ta operacja jest nieodwracalna.</string>
+    <string name="delete_multiple_confirmation">Czy na pewno chcesz usunąć %1$d zdjęć? Ta operacja jest nieodwracalna.</string>
     <string name="selected">Wybrane</string>
     <string name="edit_filename">Edytuj nazwę pliku</string>
     <string name="enter_new_filename">Wprowadź nową nazwę pliku</string>

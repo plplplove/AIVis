@@ -91,7 +91,6 @@ fun FullImageViewerScreen(
     var showEditNameDialog by remember { mutableStateOf(false) }
     var currentFileName by remember { mutableStateOf(photo.fileName) }
     
-    // Zoom and pan state
     var scale by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
@@ -156,7 +155,6 @@ fun FullImageViewerScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                    // Re-Edit Card
                     Card(
                         onClick = onReEditClick,
                         modifier = Modifier.weight(1f).height(80.dp),
@@ -192,7 +190,6 @@ fun FullImageViewerScreen(
                         }
                     }
                     
-                    // Export Card
                     Card(
                         onClick = { sharePhoto(context, photo, currentFileName) },
                         modifier = Modifier.weight(1f).height(80.dp),
@@ -239,7 +236,6 @@ fun FullImageViewerScreen(
                 .background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
-            // Full screen image with zoom and pan
             Image(
                 painter = rememberAsyncImagePainter(
                     model = File(photo.filePath)
@@ -273,7 +269,6 @@ fun FullImageViewerScreen(
         }
     }
     
-    // Edit Filename Dialog
     if (showEditNameDialog) {
         EditFilenameDialog(
             currentName = currentFileName,
@@ -293,7 +288,6 @@ fun FullImageViewerScreen(
         )
     }
     
-    // Delete Confirmation Dialog
     if (showDeleteDialog) {
         ConfirmationDialog(
             title = stringResource(id = R.string.delete_photo),
@@ -344,7 +338,6 @@ private fun EditFilenameDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Title
                 Text(
                     text = stringResource(id = R.string.edit_filename),
                     fontSize = 24.sp,
@@ -354,7 +347,6 @@ private fun EditFilenameDialog(
                     textAlign = TextAlign.Center
                 )
                 
-                // Text input
                 BasicTextField(
                     value = newName,
                     onValueChange = { newName = it },
@@ -382,7 +374,6 @@ private fun EditFilenameDialog(
                     )
                 }
                 
-                // Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -452,7 +443,6 @@ private fun DeleteConfirmationDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Title
                 Text(
                     text = stringResource(id = R.string.delete_photo),
                     fontSize = 24.sp,
@@ -462,7 +452,6 @@ private fun DeleteConfirmationDialog(
                     textAlign = TextAlign.Center
                 )
                 
-                // Message
                 Text(
                     text = stringResource(id = R.string.delete_confirmation_message),
                     fontSize = 16.sp,
@@ -472,7 +461,6 @@ private fun DeleteConfirmationDialog(
                     lineHeight = 22.sp
                 )
                 
-                // Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -525,7 +513,6 @@ private fun sharePhoto(context: Context, photo: EditedPhoto, fileName: String) {
             return
         }
         
-        // Load bitmap from file
         val bitmap = android.graphics.BitmapFactory.decodeFile(file.absolutePath)
         if (bitmap == null) {
             Toast.makeText(
@@ -536,7 +523,6 @@ private fun sharePhoto(context: Context, photo: EditedPhoto, fileName: String) {
             return
         }
         
-        // Save to gallery using the same method as PhotoEditor
         val uri = com.ai.vis.utils.PhotoSaver.saveToGallery(
             context = context,
             bitmap = bitmap,

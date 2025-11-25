@@ -273,12 +273,10 @@ object ImageProcessor {
         val result = Bitmap.createBitmap(bitmap.width, bitmap.height, bitmap.config ?: Bitmap.Config.ARGB_8888)
         val canvas = Canvas(result)
         
-        // Draw original if intensity < 1
         if (intensity < 1f) {
             canvas.drawBitmap(bitmap, 0f, 0f, null)
         }
         
-        // Draw filtered version with alpha based on intensity
         val paint = Paint().apply {
             colorFilter = ColorMatrixColorFilter(colorMatrix)
             alpha = (intensity * 255).toInt()
@@ -288,15 +286,9 @@ object ImageProcessor {
         return result
     }
     
-    /**
-     * Apply sharpness (simplified version, -1.0 to 1.0)
-     * Note: Real sharpness requires convolution matrix, this is a simplified version
-     */
     fun adjustSharpness(bitmap: Bitmap, value: Float): Bitmap {
         if (value == 0f) return bitmap
         
-        // For simplicity, we'll adjust contrast as a proxy for sharpness
-        // A proper implementation would use convolution kernels
         val sharpness = 1f + (value * 0.5f)
         val translate = (-.5f * sharpness + .5f) * 255f
         
@@ -321,18 +313,6 @@ object ImageProcessor {
         return result
     }
     
-    /**
-     * Draw text on bitmap
-     * @param textContent: Text to draw
-     * @param textSize: Text size in sp
-     * @param textColor: Text color
-     * @param textPosition: Position in screen coordinates
-     * @param imageBounds: Image bounds in screen coordinates
-     * @param textAlign: Text alignment
-     * @param isBold: Whether text is bold
-     * @param hasStroke: Whether text has stroke/shadow
-     * @param hasBackground: Whether text has background
-     */
     fun drawTextOnBitmap(
         bitmap: Bitmap,
         context: android.content.Context,
@@ -362,30 +342,24 @@ object ImageProcessor {
         val result = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(result)
         
-        // Convert screen coordinates to bitmap coordinates
         val scaleX = bitmap.width / imageBounds.width
         val scaleY = bitmap.height / imageBounds.height
         
-        // Calculate bitmap position - TextField shows text from top-left
         val bitmapX = (textPosition.x - imageBounds.left) * scaleX
         val bitmapTextSize = textSize * scaleY
         
         val paint = Paint().apply {
-            // Apply text opacity to the color
             val alpha = (textOpacity * 255).toInt().coerceIn(0, 255)
             color = (textColor and 0x00FFFFFF) or (alpha shl 24)
             this.textSize = bitmapTextSize
             this.textAlign = textAlign
             isAntiAlias = true
             
-            // Apply font typeface
             typeface = when {
                 fontResourceId != null -> {
-                    // Load custom font from resources using androidx.core
                     try {
                         androidx.core.content.res.ResourcesCompat.getFont(context, fontResourceId)
                     } catch (e: Exception) {
-                        // Fallback to default with style
                         var style = android.graphics.Typeface.NORMAL
                         if (isBold) style = style or android.graphics.Typeface.BOLD
                         if (isItalic) style = style or android.graphics.Typeface.ITALIC
@@ -398,12 +372,10 @@ object ImageProcessor {
                 else -> android.graphics.Typeface.DEFAULT
             }
             
-            // Apply letter spacing
             if (letterSpacing != 0f) {
                 this.letterSpacing = letterSpacing * 0.1f
             }
             
-            // Apply text decorations
             if (isUnderline) {
                 flags = flags or Paint.UNDERLINE_TEXT_FLAG
             }
@@ -411,7 +383,6 @@ object ImageProcessor {
                 flags = flags or Paint.STRIKE_THRU_TEXT_FLAG
             }
             
-            // Apply shadow if configured
             if (shadowRadius > 0f) {
                 setShadowLayer(
                     shadowRadius * scaleY,
@@ -422,26 +393,19 @@ object ImageProcessor {
             }
         }
         
-        // Get text bounds to calculate proper positioning
         val textBounds = android.graphics.Rect()
         paint.getTextBounds(textContent, 0, textContent.length, textBounds)
         
-        // Adjust Y to draw text baseline (drawText draws from baseline, not top)
-        // TextField position is top-left, so we need to add text height
         val bitmapY = (textPosition.y - imageBounds.top) * scaleY - textBounds.top
         
-        // Clip canvas to bitmap bounds to prevent text from going outside
         canvas.save()
         canvas.clipRect(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
         
-        // Apply rotation if needed
         if (rotation != 0f) {
             canvas.rotate(rotation, bitmapX, bitmapY)
         }
         
-        // Draw background if needed
         if (hasBackground) {
-            // Calculate padding: 4.dp horizontal, 2.dp vertical
             val horizontalPaddingPx = 4f * scaleX
             val verticalPaddingPx = 2f * scaleY
             
@@ -459,7 +423,6 @@ object ImageProcessor {
             canvas.drawRect(bgLeft, bgTop, bgRight, bgBottom, bgPaint)
         }
         
-        // Draw stroke/shadow if needed
         if (hasStroke) {
             val strokePaint = Paint(paint).apply {
                 style = Paint.Style.STROKE
@@ -469,7 +432,6 @@ object ImageProcessor {
             canvas.drawText(textContent, bitmapX, bitmapY, strokePaint)
         }
         
-        // Draw main text (will be clipped if outside bounds)
         canvas.drawText(textContent, bitmapX, bitmapY, paint)
         
         canvas.restore()
@@ -487,11 +449,9 @@ object ImageProcessor {
         val result = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(result)
         
-        // Convert screen coordinates to bitmap coordinates
         val scaleX = bitmap.width / imageBounds.width
         val scaleY = bitmap.height / imageBounds.height
         
-        // Створюємо окремий layer для малювання, щоб eraser стирав тільки малюнок
         val layerPaint = Paint()
         val layerBounds = android.graphics.RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
         canvas.saveLayer(layerBounds, layerPaint)
@@ -505,12 +465,9 @@ object ImageProcessor {
                 isAntiAlias = true
                 
                 if (drawPath.isEraser) {
-                    // Eraser mode - використовуємо DST_OUT для стирання тільки малюнка на layer
                     xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.DST_OUT)
-                    // Для eraser використовуємо чорний колір з повною непрозорістю
                     color = android.graphics.Color.BLACK
                 } else {
-                    // Normal drawing - встановлюємо колір
                     val alpha = (drawPath.opacity * 255).toInt().coerceIn(0, 255)
                     val r = (drawPath.color.red * 255).toInt()
                     val g = (drawPath.color.green * 255).toInt()
@@ -518,10 +475,7 @@ object ImageProcessor {
                     color = android.graphics.Color.argb(alpha, r, g, b)
                 }
                 
-                // Apply blur/softness if needed
                 if (drawPath.softness > 0f) {
-                    // Softness from 0 to 1, convert to blur radius
-                    // Max blur radius = strokeWidth / 2 for smooth edges
                     val blurRadius = drawPath.softness * (drawPath.strokeWidth * scaleY / 2)
                     if (blurRadius > 0f) {
                         maskFilter = BlurMaskFilter(blurRadius, BlurMaskFilter.Blur.NORMAL)
@@ -529,16 +483,13 @@ object ImageProcessor {
                 }
             }
             
-            // Convert Compose Path to Android Path with coordinate scaling
             val composePath = drawPath.path
             val androidPath = android.graphics.Path()
             
-            // Apply transformation matrix to scale and translate the path
             val matrix = android.graphics.Matrix()
             matrix.postTranslate(-imageBounds.left, -imageBounds.top)
             matrix.postScale(scaleX, scaleY)
             
-            // Get the underlying Android path and transform it
             try {
                 val srcPath = composePath.asAndroidPath()
                 srcPath.transform(matrix, androidPath)
@@ -566,38 +517,29 @@ object ImageProcessor {
         val result = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(result)
         
-        // Convert screen coordinates to bitmap coordinates
         val scaleX = bitmap.width / imageBounds.width
         val scaleY = bitmap.height / imageBounds.height
         
-        // Scale emoji size to bitmap
         val bitmapEmojiSize = emojiSizePx * scaleY
         
         val paint = Paint().apply {
             textSize = bitmapEmojiSize
-            textAlign = Paint.Align.LEFT  // Changed to LEFT to match UI offset behavior
+            textAlign = Paint.Align.LEFT  
             isAntiAlias = true
             color = android.graphics.Color.BLACK
             alpha = (opacity * 255).toInt()
         }
         
-        // Get text bounds to calculate proper positioning
         val textBounds = android.graphics.Rect()
         paint.getTextBounds(emoji, 0, emoji.length, textBounds)
         
-        // Calculate bitmap position - offset is top-left like in UI
         val bitmapX = (position.x - imageBounds.left) * scaleX
-        // Adjust Y to draw text baseline (drawText draws from baseline, not top)
-        // UI position is top-left with padding(4.dp), so we need to subtract textBounds.top
         val bitmapY = (position.y - imageBounds.top) * scaleY - textBounds.top + (4f * scaleY)
         
-        // Clip canvas to bitmap bounds
         canvas.save()
         canvas.clipRect(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
         
-        // Apply rotation around the sticker position if needed
         if (rotation != 0f) {
-            // Calculate rotation center (middle of the emoji)
             val centerX = bitmapX + textBounds.width() / 2f
             val centerY = bitmapY + textBounds.height() / 2f
             canvas.rotate(rotation, centerX, centerY)

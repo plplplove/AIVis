@@ -54,7 +54,6 @@ fun ImageSourceBottomSheet(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Gallery option
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -86,7 +85,6 @@ fun ImageSourceBottomSheet(
                 }
             }
 
-            // Camera option
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

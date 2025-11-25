@@ -28,12 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ai.vis.R
 
-/**
- * Portrait AI panel with three options:
- * - Beauty Mode (general retouching)
- * - Eye Enhancement (brighten/enhance eyes)
- * - Face Blur (blur face area)
- */
 enum class PortraitOption {
     NONE,
     BEAUTY_MODE,
@@ -67,7 +61,6 @@ fun PortraitPanel(
     )
 
     Column(modifier = modifier.fillMaxWidth()) {
-        // Slider for Beauty Mode intensity
         AnimatedVisibility(
             visible = selectedOption == PortraitOption.BEAUTY_MODE,
             enter = expandVertically() + fadeIn(),
@@ -114,7 +107,6 @@ fun PortraitPanel(
             }
         }
         
-        // Slider for Eye Enhancement intensity
         AnimatedVisibility(
             visible = selectedOption == PortraitOption.EYE_ENHANCEMENT,
             enter = expandVertically() + fadeIn(),
@@ -161,7 +153,6 @@ fun PortraitPanel(
             }
         }
         
-        // Slider for Face Blur intensity
         AnimatedVisibility(
             visible = selectedOption == PortraitOption.FACE_BLUR,
             enter = expandVertically() + fadeIn(),
@@ -208,7 +199,6 @@ fun PortraitPanel(
             }
         }
         
-        // Options Row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -239,7 +229,6 @@ fun PortraitPanel(
                             contentAlignment = Alignment.Center
                         ) {
                             if (isProcessing && isSelected) {
-                                // Show loading indicator when processing
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(32.dp),
                                     color = MaterialTheme.colorScheme.primary,

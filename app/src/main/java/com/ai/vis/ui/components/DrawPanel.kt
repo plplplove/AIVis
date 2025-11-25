@@ -83,25 +83,24 @@ fun DrawPanel(
         DrawParameter(R.string.softness, R.drawable.ic_blur)
     )
     
-    var selectedParameterIndex by remember { mutableIntStateOf(0) } // Start with color selected
+    var selectedParameterIndex by remember { mutableIntStateOf(0) } 
     
     val colors = listOf(
         Color.Black,
         Color.White,
         Color.Red,
-        Color(0xFFFF6B35), // Orange
-        Color(0xFFFFD700), // Gold
+        Color(0xFFFF6B35), 
+        Color(0xFFFFD700), 
         Color.Green,
-        Color(0xFF00CED1), // Turquoise
+        Color(0xFF00CED1), 
         Color.Blue,
-        Color(0xFF9370DB), // Purple
-        Color(0xFFFF1493)  // Pink
+        Color(0xFF9370DB), 
+        Color(0xFFFF1493)  
     )
     
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        // Parameter content (shown based on selection)
         AnimatedVisibility(
             visible = true,
             enter = expandVertically() + fadeIn(),
@@ -111,11 +110,10 @@ fun DrawPanel(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp, vertical = 12.dp)
-                    .height(100.dp) // Стандартна висота для всіх секцій
+                    .height(100.dp) 
             ) {
                 when (selectedParameterIndex) {
                     0 -> {
-                        // Brush/Eraser toggle
                         Text(
                             text = if (isEraserMode) stringResource(id = R.string.eraser) else stringResource(id = R.string.brush),
                             fontSize = 14.sp,
@@ -130,7 +128,6 @@ fun DrawPanel(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            // Brush button
                             Card(
                                 modifier = Modifier
                                     .weight(1f)
@@ -171,7 +168,6 @@ fun DrawPanel(
                                 }
                             }
                             
-                            // Eraser button
                             Card(
                                 modifier = Modifier
                                     .weight(1f)
@@ -214,7 +210,6 @@ fun DrawPanel(
                         }
                     }
                     1 -> {
-                        // Shapes selector
                         Text(
                             text = stringResource(id = R.string.shapes),
                             fontSize = 14.sp,
@@ -253,7 +248,6 @@ fun DrawPanel(
                             }
                         }
                         
-                        // Fill/Stroke toggle (only for closed shapes, not for lines/arrows)
                         if (currentShapeType != ShapeType.FREE_DRAW && currentShapeType != ShapeType.LINE && currentShapeType != ShapeType.ARROW) {
                             Spacer(modifier = Modifier.height(12.dp))
                             
@@ -270,7 +264,6 @@ fun DrawPanel(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                // Fill button
                                 Card(
                                     modifier = Modifier
                                         .weight(1f)
@@ -301,7 +294,6 @@ fun DrawPanel(
                                     }
                                 }
                                 
-                                // Stroke button
                                 Card(
                                     modifier = Modifier
                                         .weight(1f)
@@ -335,7 +327,6 @@ fun DrawPanel(
                         }
                     }
                     2 -> {
-                        // Color picker
                         Text(
                             text = stringResource(id = R.string.draw_color),
                             fontSize = 14.sp,
@@ -346,7 +337,6 @@ fun DrawPanel(
                         
                         Spacer(modifier = Modifier.height(12.dp))
                         
-                        // Color grid
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
@@ -370,7 +360,6 @@ fun DrawPanel(
                         }
                     }
                     3 -> {
-                        // Brush size slider
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -406,7 +395,6 @@ fun DrawPanel(
                         )
                     }
                     4 -> {
-                        // Opacity slider
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -442,7 +430,6 @@ fun DrawPanel(
                         )
                     }
                     5 -> {
-                        // Softness slider
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -481,7 +468,6 @@ fun DrawPanel(
             }
         }
         
-        // Horizontal list of parameters
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()

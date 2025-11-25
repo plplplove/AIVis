@@ -31,9 +31,8 @@ fun StickerPanel(
     onStickerSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedParameter by remember { mutableIntStateOf(0) } // 0=Stickers, 1=Size, 2=Opacity
+    var selectedParameter by remember { mutableIntStateOf(0) } 
     
-    // Popular emoji stickers organized by category
     val emojiCategories = mapOf(
         "Smileys" to listOf(
             "😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃",
@@ -81,10 +80,8 @@ fun StickerPanel(
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
     ) {
-        // Content based on selected parameter
         when (selectedParameter) {
             0 -> {
-                // Category tabs for emojis
                 ScrollableTabRow(
                     selectedTabIndex = emojiCategories.keys.indexOf(selectedCategory),
                     modifier = Modifier.fillMaxWidth(),
@@ -109,7 +106,6 @@ fun StickerPanel(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Emoji grid
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(6),
                     contentPadding = PaddingValues(8.dp),
@@ -138,7 +134,6 @@ fun StickerPanel(
                 }
             }
             1 -> {
-                // Size slider
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -179,7 +174,6 @@ fun StickerPanel(
                 }
             }
             2 -> {
-                // Opacity slider
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -221,14 +215,12 @@ fun StickerPanel(
             }
         }
         
-        // Parameter selector cards at bottom (matching TextPanel style)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Stickers card
             Card(
                 modifier = Modifier
                     .weight(1f)
@@ -276,7 +268,6 @@ fun StickerPanel(
                     }
                 }
             
-            // Size card
             Card(
                 modifier = Modifier
                     .weight(1f)
@@ -324,7 +315,6 @@ fun StickerPanel(
                     }
                 }
             
-            // Opacity card
             Card(
                 modifier = Modifier
                     .weight(1f)

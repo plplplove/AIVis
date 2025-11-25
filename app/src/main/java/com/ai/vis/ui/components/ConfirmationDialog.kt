@@ -26,7 +26,7 @@ fun ConfirmationDialog(
     cancelText: String,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
-    confirmIsDestructive: Boolean = false // when true, render confirm as outlined destructive button
+    confirmIsDestructive: Boolean = false 
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -52,7 +52,6 @@ fun ConfirmationDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Title
                 Text(
                     text = title,
                     fontSize = 24.sp,
@@ -62,7 +61,6 @@ fun ConfirmationDialog(
                     textAlign = TextAlign.Center
                 )
                 
-                // Message
                 Text(
                     text = message,
                     fontSize = 16.sp,
@@ -72,12 +70,10 @@ fun ConfirmationDialog(
                     lineHeight = 22.sp
                 )
                 
-                // Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Cancel button (outlined)
                     OutlinedButton(
                         onClick = onDismiss,
                         modifier = Modifier
@@ -92,8 +88,6 @@ fun ConfirmationDialog(
                         )
                     }
 
-                    // Confirm button: either destructive outlined (red text, transparent bg, gray border)
-                    // or filled error button (legacy)
                     if (confirmIsDestructive) {
                         OutlinedButton(
                             onClick = onConfirm,

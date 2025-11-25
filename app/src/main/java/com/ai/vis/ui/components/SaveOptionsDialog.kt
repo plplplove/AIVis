@@ -79,7 +79,6 @@ fun SaveOptionsDialog(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
-                        // Title
                         Text(
                             text = stringResource(id = R.string.save_photo),
                             fontSize = 24.sp,
@@ -89,7 +88,6 @@ fun SaveOptionsDialog(
                             textAlign = TextAlign.Center
                         )
                         
-                        // Message
                         Text(
                             text = stringResource(id = R.string.save_options_message),
                             fontSize = 16.sp,
@@ -99,12 +97,10 @@ fun SaveOptionsDialog(
                             lineHeight = 22.sp
                         )
                         
-                        // Save options
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            // Save to Gallery
                             SaveOptionCard(
                                 icon = R.drawable.ic_photo_collection,
                                 title = stringResource(id = R.string.save_to_gallery),
@@ -114,7 +110,6 @@ fun SaveOptionsDialog(
                                 }
                             )
                             
-                            // Save to App
                             SaveOptionCard(
                                 icon = R.drawable.ic_gallery,
                                 title = stringResource(id = R.string.save_to_app),
@@ -124,7 +119,6 @@ fun SaveOptionsDialog(
                                 }
                             )
                             
-                            // Save to Both
                             SaveOptionCard(
                                 icon = R.drawable.ic_save,
                                 title = stringResource(id = R.string.save_to_both),
@@ -136,7 +130,6 @@ fun SaveOptionsDialog(
                             )
                         }
                         
-                        // Cancel button
                         OutlinedButton(
                             onClick = onDismiss,
                             modifier = Modifier

@@ -45,12 +45,10 @@ fun AIStylesPanel(
     onStyleSelected: (AIStyle) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Keep the outer container minimal to match FilterPanel (no extra background/padding)
     Column(
         modifier = modifier
             .fillMaxWidth()
     ) {
-        // Horizontal list of style cards, matching FilterPanel spacing and padding
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -71,9 +69,6 @@ fun AIStylesPanel(
 
 @Composable
 private fun getStyleDrawableRes(style: AIStyle): Int {
-    // Return 0 for the NONE style so the caller can render a neutral placeholder
-    // (the project doesn't include an explicit img_none drawable). All other
-    // styles use the provided drawable assets.
     return when (style) {
         AIStyle.NONE -> 0
         AIStyle.OIL_PAINTING -> com.ai.vis.R.drawable.img_oil_painting

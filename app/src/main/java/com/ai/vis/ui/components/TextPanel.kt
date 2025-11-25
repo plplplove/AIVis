@@ -77,22 +77,22 @@ enum class TextFontFamily(val fontRes: Int, val nameRes: Int) {
 
 data class TextStyle(
     var text: String = "",
-    var size: Float = 24f, // 16-72
+    var size: Float = 24f, 
     var fontFamily: TextFontFamily = TextFontFamily.LEMON_MILK,
     var color: Color = Color.White,
-    var opacity: Float = 1f, // 0-1 прозорість тексту
+    var opacity: Float = 1f, 
     var alignment: TextAlignment = TextAlignment.CENTER,
     var weight: TextWeight = TextWeight.NORMAL,
-    var letterSpacing: Float = 0f, // -5 to 10
+    var letterSpacing: Float = 0f, 
     var isItalic: Boolean = false,
     var isUnderline: Boolean = false,
     var isStrikethrough: Boolean = false,
     var hasStroke: Boolean = false,
     var hasBackground: Boolean = false,
-    var backgroundOpacity: Float = 0.7f, // 0-1 прозорість фону
-    var shadowRadius: Float = 0f, // 0-10 радіус тіні
-    var shadowOffsetX: Float = 0f, // -10 до 10
-    var shadowOffsetY: Float = 0f // -10 до 10
+    var backgroundOpacity: Float = 0.7f, 
+    var shadowRadius: Float = 0f, 
+    var shadowOffsetX: Float = 0f, 
+    var shadowOffsetY: Float = 0f 
 )
 
 data class TextOption(
@@ -122,10 +122,9 @@ fun TextPanel(
     onStrokeToggle: (Boolean) -> Unit = {},
     onBackgroundToggle: (Boolean) -> Unit = {},
     onBackgroundOpacityChange: (Float) -> Unit = {},
-    onShadowChange: (Float, Float, Float) -> Unit = { _, _, _ -> }, // radius, offsetX, offsetY
+    onShadowChange: (Float, Float, Float) -> Unit = { _, _, _ -> }, 
     modifier: Modifier = Modifier
 ) {
-    // Порядок: Size, Font, Color, Opacity, Weight, Letter Spacing, Decorations, Background, Shadow, Alignment
     val textOptions = listOf(
         TextOption(R.string.text_size, R.drawable.ic_text, TextOptionType.SIZE),
         TextOption(R.string.text_font, R.drawable.ic_text, TextOptionType.FONT),
@@ -144,7 +143,6 @@ fun TextPanel(
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        // Expandable options based on selected option
         AnimatedVisibility(
             visible = selectedOption != null,
             enter = expandVertically() + fadeIn(),
@@ -156,7 +154,7 @@ fun TextPanel(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp, vertical = 12.dp)
-                            .height(100.dp) // Стандартна висота
+                            .height(100.dp) 
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -194,7 +192,6 @@ fun TextPanel(
                     }
                 }
                 TextOptionType.FONT -> {
-                    // Font picker with scrollable list
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -228,7 +225,7 @@ fun TextPanel(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp, vertical = 12.dp)
-                            .height(100.dp) // Стандартна висота
+                            .height(100.dp) 
                     ) {
                         Text(
                             text = stringResource(id = R.string.text_color),
@@ -297,7 +294,7 @@ fun TextPanel(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp, vertical = 12.dp)
-                            .height(100.dp) // Стандартна висота
+                            .height(100.dp) 
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -335,13 +332,12 @@ fun TextPanel(
                     }
                 }
                 TextOptionType.BACKGROUND -> {
-                    // Only show opacity slider if background is enabled
                     if (textStyle.hasBackground) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 8.dp, vertical = 12.dp)
-                                .height(100.dp) // Стандартна висота
+                                .height(100.dp) 
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -385,7 +381,6 @@ fun TextPanel(
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp, vertical = 12.dp)
                     ) {
-                        // Shadow Radius
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -420,7 +415,6 @@ fun TextPanel(
                         
                         Spacer(modifier = Modifier.height(8.dp))
                         
-                        // Shadow Offset X
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -455,7 +449,6 @@ fun TextPanel(
                         
                         Spacer(modifier = Modifier.height(8.dp))
                         
-                        // Shadow Offset Y
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -532,7 +525,6 @@ fun TextPanel(
                     }
                 }
                 TextOptionType.DECORATIONS -> {
-                    // Показуємо 3 toggle кнопки для italic, underline, strikethrough
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -563,13 +555,11 @@ fun TextPanel(
                     }
                 }
                 TextOptionType.WEIGHT -> {
-                    // НІЧОГО НЕ ВІДОБРАЖАЄМО - циклічна кнопка працює без розгортання
                 }
                 else -> {}
             }
         }
         
-        // Horizontal list of text options (like Adjust panel)
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -578,7 +568,6 @@ fun TextPanel(
         ) {
             items(textOptions.size) { index ->
                 val option = textOptions[index]
-                // Для Weight та Background показуємо поточний стан
                 when (option.type) {
                     TextOptionType.WEIGHT -> {
                         WeightCard(
@@ -595,15 +584,12 @@ fun TextPanel(
                             textStyle = textStyle,
                             isSelected = selectedOption == TextOptionType.BACKGROUND,
                             onClick = {
-                                // Toggle background on/off
                                 val newBackgroundState = !textStyle.hasBackground
                                 onBackgroundToggle(newBackgroundState)
                                 
-                                // If enabling, show the opacity slider
                                 if (newBackgroundState) {
                                     selectedOption = TextOptionType.BACKGROUND
                                 } else {
-                                    // If disabling, hide the slider
                                     selectedOption = null
                                 }
                             }
@@ -656,7 +642,6 @@ fun WeightCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Велика "A" з поточною жирністю
                 Text(
                     text = "A",
                     fontSize = 28.sp,
@@ -718,13 +703,11 @@ fun BackgroundCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-            // Checkbox icon - filled if enabled, empty if disabled
             Box(
                 modifier = Modifier.size(28.dp),
                 contentAlignment = Alignment.Center
             ) {
                 if (textStyle.hasBackground) {
-                    // Filled checkbox
                     Icon(
                         painter = painterResource(id = R.drawable.ic_background),
                         contentDescription = null,
@@ -741,7 +724,6 @@ fun BackgroundCard(
                             .padding(4.dp)
                     )
                 } else {
-                    // Empty checkbox (just border)
                     Box(
                         modifier = Modifier
                             .size(28.dp)
@@ -954,7 +936,6 @@ fun FontCard(
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Show "Aa" in the font style
             Text(
                 text = "Aa",
                 fontSize = 28.sp,

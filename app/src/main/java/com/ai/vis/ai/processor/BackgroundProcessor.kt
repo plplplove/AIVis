@@ -11,41 +11,26 @@ import com.ai.vis.ai.model.BackgroundSegmentationModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/**
- * Processor for background manipulation operations:
- * - Remove background (make transparent)
- * - Blur background
- * - Replace background (with solid color or another image)
- */
 class BackgroundProcessor(context: Context) {
     
     private val segmentationModel = BackgroundSegmentationModel(context)
     
     companion object {
-        private const val TAG = "BackgroundProcessor"
     }
     
     suspend fun initialize() {
         segmentationModel.initialize()
     }
     
-    /**
-     * Removes the background, making it transparent.
-     * Returns a bitmap with ARGB_8888 config where background pixels have alpha = 0.
-     */
     suspend fun removeBackground(bitmap: Bitmap): Bitmap = withContext(Dispatchers.IO) {
-        Log.d(TAG, "Removing background...")
         
         val mask = segmentationModel.segmentImage(bitmap)
         if (mask == null) {
-            Log.w(TAG, "Segmentation failed, returning original")
             return@withContext bitmap.copy(Bitmap.Config.ARGB_8888, true)
         }
         
-        // Refine mask for smoother edges
         val refinedMask = segmentationModel.refineMask(mask, radius = 3)
         
-        // Create result bitmap with transparency
         val result = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
         val pixels = IntArray(bitmap.width * bitmap.height)
         bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
@@ -56,7 +41,6 @@ class BackgroundProcessor(context: Context) {
                 val pixel = pixels[idx]
                 val maskValue = refinedMask[y][x]
                 
-                // Apply mask as alpha channel
                 val r = (pixel shr 16) and 0xFF
                 val g = (pixel shr 8) and 0xFF
                 val b = pixel and 0xFF
@@ -67,29 +51,20 @@ class BackgroundProcessor(context: Context) {
         }
         
         result.setPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-        Log.d(TAG, "Background removed successfully")
         result
     }
     
-    /**
-     * Blurs the background while keeping the foreground sharp.
-     */
     suspend fun blurBackground(bitmap: Bitmap, blurRadius: Int = 25): Bitmap = withContext(Dispatchers.IO) {
-        Log.d(TAG, "Blurring background...")
         
         val mask = segmentationModel.segmentImage(bitmap)
         if (mask == null) {
-            Log.w(TAG, "Segmentation failed, returning original")
             return@withContext bitmap.copy(Bitmap.Config.ARGB_8888, true)
         }
         
-        // Refine mask
         val refinedMask = segmentationModel.refineMask(mask, radius = 3)
         
-        // Create blurred version of the entire image
         val blurred = applyFastBlur(bitmap, blurRadius)
         
-        // Blend original and blurred based on mask
         val result = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
         val originalPixels = IntArray(bitmap.width * bitmap.height)
         val blurredPixels = IntArray(bitmap.width * bitmap.height)
@@ -104,8 +79,6 @@ class BackgroundProcessor(context: Context) {
                 val idx = y * bitmap.width + x
                 val maskValue = refinedMask[y][x]
                 
-                // maskValue close to 1.0 = foreground (use original)
-                // maskValue close to 0.0 = background (use blurred)
                 val orig = originalPixels[idx]
                 val blur = blurredPixels[idx]
                 
@@ -117,7 +90,6 @@ class BackgroundProcessor(context: Context) {
                 val bg = (blur shr 8) and 0xFF
                 val bb = blur and 0xFF
                 
-                // Blend: foreground gets original, background gets blurred
                 val r = (or * maskValue + br * (1f - maskValue)).toInt().coerceIn(0, 255)
                 val g = (og * maskValue + bg * (1f - maskValue)).toInt().coerceIn(0, 255)
                 val b = (ob * maskValue + bb * (1f - maskValue)).toInt().coerceIn(0, 255)
@@ -129,30 +101,22 @@ class BackgroundProcessor(context: Context) {
         result.setPixels(resultPixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
         blurred.recycle()
         
-        Log.d(TAG, "Background blurred successfully")
         result
     }
     
-    /**
-     * Replaces the background with a solid color or custom image.
-     */
     suspend fun replaceBackground(
         bitmap: Bitmap, 
         backgroundColor: Int = 0xFFFFFFFF.toInt(),
         backgroundImage: Bitmap? = null
     ): Bitmap = withContext(Dispatchers.IO) {
-        Log.d(TAG, "Replacing background...")
         
         val mask = segmentationModel.segmentImage(bitmap)
         if (mask == null) {
-            Log.w(TAG, "Segmentation failed, returning original")
             return@withContext bitmap.copy(Bitmap.Config.ARGB_8888, true)
         }
         
-        // Refine mask
         val refinedMask = segmentationModel.refineMask(mask, radius = 3)
         
-        // Create result with background color
         val result = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
         val pixels = IntArray(bitmap.width * bitmap.height)
         bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
@@ -167,7 +131,6 @@ class BackgroundProcessor(context: Context) {
                 val pixel = pixels[idx]
                 val maskValue = refinedMask[y][x]
                 
-                // Blend original pixel with background color based on mask
                 val r = (pixel shr 16) and 0xFF
                 val g = (pixel shr 8) and 0xFF
                 val b = pixel and 0xFF
@@ -181,29 +144,21 @@ class BackgroundProcessor(context: Context) {
         }
         
         result.setPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-        Log.d(TAG, "Background replaced successfully")
         result
     }
     
-    /**
-     * Replaces the background with another image.
-     */
     suspend fun replaceBackgroundWithImage(
         foreground: Bitmap,
         backgroundImage: Bitmap
     ): Bitmap = withContext(Dispatchers.IO) {
-        Log.d(TAG, "Replacing background with image...")
         
         val mask = segmentationModel.segmentImage(foreground)
         if (mask == null) {
-            Log.w(TAG, "Segmentation failed, returning original")
             return@withContext foreground.copy(Bitmap.Config.ARGB_8888, true)
         }
         
-        // Refine mask
         val refinedMask = segmentationModel.refineMask(mask, radius = 3)
         
-        // Scale background image to match foreground size
         val scaledBackground = Bitmap.createScaledBitmap(
             backgroundImage,
             foreground.width,
@@ -211,7 +166,6 @@ class BackgroundProcessor(context: Context) {
             true
         )
         
-        // Blend foreground and background based on mask
         val result = Bitmap.createBitmap(foreground.width, foreground.height, Bitmap.Config.ARGB_8888)
         val fgPixels = IntArray(foreground.width * foreground.height)
         val bgPixels = IntArray(foreground.width * foreground.height)
@@ -251,22 +205,16 @@ class BackgroundProcessor(context: Context) {
             scaledBackground.recycle()
         }
         
-        Log.d(TAG, "Background replaced with image successfully")
         result
     }
     
-    /**
-     * Fast blur implementation using downscale-upscale technique.
-     */
     private fun applyFastBlur(bitmap: Bitmap, radius: Int): Bitmap {
         val factor = radius.coerceAtLeast(2)
         val downW = (bitmap.width / factor).coerceAtLeast(1)
         val downH = (bitmap.height / factor).coerceAtLeast(1)
         
-        // Downscale
         val down = Bitmap.createScaledBitmap(bitmap, downW, downH, true)
         
-        // Upscale back to create blur effect
         val blurred = Bitmap.createScaledBitmap(down, bitmap.width, bitmap.height, true)
         
         if (down != bitmap) {

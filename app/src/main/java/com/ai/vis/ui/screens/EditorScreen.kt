@@ -50,7 +50,6 @@ fun EditorScreen(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.padding(32.dp)
         ) {
-            // Gradient button "Start Editing"
             Box(
                 modifier = Modifier
                     .size(width = 280.dp, height = 64.dp)
@@ -93,7 +92,6 @@ fun EditorScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Hint text
             Text(
                 text = stringResource(id = R.string.edit_photos_hint),
                 fontSize = 16.sp,

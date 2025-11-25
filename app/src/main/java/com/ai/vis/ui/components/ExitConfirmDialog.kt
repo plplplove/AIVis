@@ -71,7 +71,6 @@ fun ExitConfirmDialog(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
-                        // Title
                         Text(
                             text = stringResource(id = R.string.exit_without_saving),
                             fontSize = 24.sp,
@@ -81,7 +80,6 @@ fun ExitConfirmDialog(
                             textAlign = TextAlign.Center
                         )
                         
-                        // Message
                         Text(
                             text = stringResource(id = R.string.exit_confirmation_message),
                             fontSize = 16.sp,
@@ -91,7 +89,6 @@ fun ExitConfirmDialog(
                             lineHeight = 22.sp
                         )
                         
-                        // Buttons - horizontal layout with outlined buttons
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)

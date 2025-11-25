@@ -38,13 +38,10 @@ class StyleTransferModel(private val context: Context) {
         
         try {
             if (stylePredictInterpreter == null) {
-                android.util.Log.d("StyleTransfer", "Loading style_predict model...")
                 val predictModelPath = try {
                     context.assets.openFd("models/style_predict_v2.tflite")
-                    android.util.Log.d("StyleTransfer", "Using v2 prediction model")
                     "models/style_predict_v2.tflite"
                 } catch (e: Exception) {
-                    android.util.Log.d("StyleTransfer", "v2 not found, using v1 prediction model")
                     "models/style_predict.tflite"
                 }
                 val predictModel = loadModelFromAssets(predictModelPath)
@@ -53,24 +50,16 @@ class StyleTransferModel(private val context: Context) {
                     setUseXNNPACK(true)
                 }
                 stylePredictInterpreter = Interpreter(predictModel, predictOptions)
-                android.util.Log.d("StyleTransfer", "style_predict model loaded successfully")
                 
                 stylePredictInterpreter?.let { interpreter ->
-                    android.util.Log.d("StyleTransfer", "Predict input count: ${interpreter.inputTensorCount}")
-                    android.util.Log.d("StyleTransfer", "Predict output count: ${interpreter.outputTensorCount}")
-                    android.util.Log.d("StyleTransfer", "Predict input shape: ${interpreter.getInputTensor(0).shape().contentToString()}")
-                    android.util.Log.d("StyleTransfer", "Predict output shape: ${interpreter.getOutputTensor(0).shape().contentToString()}")
                 }
             }
             
             if (styleTransferInterpreter == null) {
-                android.util.Log.d("StyleTransfer", "Loading style_transfer model...")
                 val transferModelPath = try {
                     context.assets.openFd("models/style_transfer_v2.tflite")
-                    android.util.Log.d("StyleTransfer", "Using v2 transfer model")
                     "models/style_transfer_v2.tflite"
                 } catch (e: Exception) {
-                    android.util.Log.d("StyleTransfer", "v2 not found, using v1 transfer model")
                     "models/style_transfer.tflite"
                 }
                 val transferModel = loadModelFromAssets(transferModelPath)
@@ -79,28 +68,19 @@ class StyleTransferModel(private val context: Context) {
                     setUseXNNPACK(true)
                 }
                 styleTransferInterpreter = Interpreter(transferModel, transferOptions)
-                android.util.Log.d("StyleTransfer", "style_transfer model loaded successfully")
                 
                 styleTransferInterpreter?.let { interpreter ->
-                    android.util.Log.d("StyleTransfer", "Transfer input count: ${interpreter.inputTensorCount}")
-                    android.util.Log.d("StyleTransfer", "Transfer output count: ${interpreter.outputTensorCount}")
                     for (i in 0 until interpreter.inputTensorCount) {
-                        android.util.Log.d("StyleTransfer", "Transfer input[$i] shape: ${interpreter.getInputTensor(i).shape().contentToString()}")
                     }
-                    android.util.Log.d("StyleTransfer", "Transfer output shape: ${interpreter.getOutputTensor(0).shape().contentToString()}")
                 }
             }
             
             style.styleImagePath?.let { path ->
-                android.util.Log.d("StyleTransfer", "Loading style image from: $path")
                 val styleImage = loadStyleImageFromAssets(path)
-                android.util.Log.d("StyleTransfer", "Style image size: ${styleImage.width}x${styleImage.height}")
                 cachedStyleBottleneck = predictStyleBottleneck(styleImage)
-                android.util.Log.d("StyleTransfer", "Style bottleneck computed, size: ${cachedStyleBottleneck?.size}")
                 styleImage.recycle()
             }
         } catch (e: Exception) {
-            android.util.Log.e("StyleTransfer", "Error initializing model", e)
             cachedStyleBottleneck = null
         }
     }
@@ -130,9 +110,6 @@ class StyleTransferModel(private val context: Context) {
     }
     
     private fun calculateOptimalSize(width: Int, height: Int, maxSize: Int): Int {
-        // Avoid always forcing the image to the maximum model size.
-        // If the image is already smaller than the model max, keep the original largest dimension
-        // to prevent unnecessary upscaling which causes blurring and artifacts.
         val maxDim = maxOf(width, height)
         return if (maxDim <= maxSize) maxDim else maxSize
     }
@@ -140,8 +117,6 @@ class StyleTransferModel(private val context: Context) {
     private fun applyPostProcessing(bitmap: Bitmap): Bitmap {
         var result = bitmap
 
-        // Apply a gentle unsharp mask first (better than naive convolution for avoiding haloing),
-        // then moderate contrast and a small saturation boost.
         result = enhanceSharpness(result, 0.25f)
         result = enhanceContrast(result, 0.12f)
         result = enhanceSaturation(result, 0.08f)
@@ -176,9 +151,6 @@ class StyleTransferModel(private val context: Context) {
     private fun enhanceSharpness(bitmap: Bitmap, amount: Float): Bitmap {
         if (amount <= 0f) return bitmap
 
-        // Unsharp mask implementation (fast approximation):
-        // 1) Create a blurred version by scaling down then back up (fast box-like blur)
-        // 2) new = orig + amount * (orig - blurred)
 
         val smallW = (bitmap.width / 2).coerceAtLeast(1)
         val smallH = (bitmap.height / 2).coerceAtLeast(1)
@@ -261,46 +233,34 @@ class StyleTransferModel(private val context: Context) {
     }
     
     private fun predictStyleBottleneck(styleImage: Bitmap): FloatArray {
-        android.util.Log.d("StyleTransfer", "predictStyleBottleneck: Converting bitmap to buffer...")
         val inputBuffer = bitmapToByteBuffer(styleImage, styleImageSize)
-        android.util.Log.d("StyleTransfer", "predictStyleBottleneck: Input buffer size: ${inputBuffer.capacity()}")
         
         val outputArray = Array(1) { Array(1) { Array(1) { FloatArray(100) } } }
         
-        android.util.Log.d("StyleTransfer", "predictStyleBottleneck: Running inference...")
         stylePredictInterpreter?.run(inputBuffer, outputArray)
-        android.util.Log.d("StyleTransfer", "predictStyleBottleneck: Inference complete")
         
         val result = outputArray[0][0][0]
-        android.util.Log.d("StyleTransfer", "predictStyleBottleneck: Result array size: ${result.size}, first values: [${result.take(5).joinToString()}]")
         return result
     }
     
     suspend fun applyStyle(bitmap: Bitmap): Bitmap = withContext(Dispatchers.IO) {
-        android.util.Log.d("StyleTransfer", "applyStyle: Starting for style $currentStyle")
         val styleBottleneck = cachedStyleBottleneck
         val transferInterpreter = styleTransferInterpreter
         
         if (styleBottleneck == null || transferInterpreter == null) {
-            android.util.Log.w("StyleTransfer", "applyStyle: Using fallback - bottleneck=${styleBottleneck != null}, interpreter=${transferInterpreter != null}")
             return@withContext applyFallbackStyle(bitmap, currentStyle)
         }
         
         try {
-            // If image is large, perform tiled inference with overlap and blending
             val maxDim = maxOf(bitmap.width, bitmap.height)
-            val tileThreshold = contentImageSize * 2 // if larger than two model sizes, use tiling
+            val tileThreshold = contentImageSize * 2 
 
-            // Pre-denoise to reduce noise amplification
             val preDenoised = if (maxDim > contentImageSize) applyFastEdgePreserveDenoise(bitmap, 6, 0.9f) else bitmap
 
             val styled = if (maxDim > tileThreshold) {
-                android.util.Log.d("StyleTransfer", "applyStyle: Using tiled inference for large image ${bitmap.width}x${bitmap.height}")
                 applyStyleTiled(preDenoised, styleBottleneck)
             } else {
-                // small/medium image: run single-shot
                 val targetSize = calculateOptimalSize(preDenoised.width, preDenoised.height, contentImageSize)
-                android.util.Log.d("StyleTransfer", "applyStyle: Scaling bitmap from ${preDenoised.width}x${preDenoised.height} to ${targetSize}x${targetSize}")
 
                 val scaledBitmap = if (preDenoised.width == targetSize && preDenoised.height == targetSize) {
                     preDenoised
@@ -327,15 +287,12 @@ class StyleTransferModel(private val context: Context) {
                 resultBitmap
             }
 
-            // Post-denoise to reduce any remaining tile seams/noise before returning
             val post = if (styled != bitmap) applyFastEdgePreserveDenoise(styled, 4, 0.6f) else styled
 
             if (preDenoised != bitmap && preDenoised != styled) preDenoised.recycle()
 
-            android.util.Log.d("StyleTransfer", "applyStyle: SUCCESS!")
             post
         } catch (e: Exception) {
-            android.util.Log.e("StyleTransfer", "applyStyle: ERROR - falling back", e)
             applyFallbackStyle(bitmap, currentStyle)
         }
     }
@@ -379,14 +336,11 @@ class StyleTransferModel(private val context: Context) {
                 val tileRect = android.graphics.Rect(x, y, x + tileW, y + tileH)
                 val tileBitmap = Bitmap.createBitmap(bitmap, tileRect.left, tileRect.top, tileRect.width(), tileRect.height())
 
-                // Scale tile to model input size
                 val scaledTile = createHighQualityScaledBitmap(tileBitmap, tileSize, tileSize)
                 val outTile = runStyleTransferOnBitmap(scaledTile, styleBottleneck)
 
-                // Scale output back to tile size
                 val backTile = createHighQualityScaledBitmap(outTile, tileW, tileH)
 
-                // Blend into accumulators with triangular weight (feather)
                 for (ty in 0 until tileH) {
                     val gy = tileRect.top + ty
                     for (tx in 0 until tileW) {
@@ -396,7 +350,6 @@ class StyleTransferModel(private val context: Context) {
                         val dx = if (tileW == 1) 0f else (tx.toFloat() / (tileW - 1))
                         val dy = if (tileH == 1) 0f else (ty.toFloat() / (tileH - 1))
 
-                        // triangular weight: product of 1 - distance to edge
                         val wx = 1f - Math.abs(2f * dx - 1f)
                         val wy = 1f - Math.abs(2f * dy - 1f)
                         val weight = (wx * wy).coerceIn(0f, 1f)
@@ -423,7 +376,6 @@ class StyleTransferModel(private val context: Context) {
             y += (tileSize - overlap)
         }
 
-        // Compose final image
         val result = Bitmap.createBitmap(width, height, bitmap.config ?: Bitmap.Config.ARGB_8888)
         val pixels = IntArray(width * height)
 
@@ -443,12 +395,6 @@ class StyleTransferModel(private val context: Context) {
         return result
     }
 
-    /**
-     * Fast edge-preserving denoise: creates blurred base by downscaling/upscaling and blends
-     * with original using a gradient-based edge mask so edges are preserved while flat areas are smoothed.
-     * radius: controls blur amount (downscale factor)
-     * strength: 0..1 how strong denoising is
-     */
     private fun applyFastEdgePreserveDenoise(bitmap: Bitmap, radius: Int = 4, strength: Float = 0.7f): Bitmap {
         if (radius <= 0 || strength <= 0f) return bitmap
 
@@ -467,7 +413,6 @@ class StyleTransferModel(private val context: Context) {
         bitmap.getPixels(origPixels, 0, width, 0, 0, width, height)
         blurred.getPixels(blurPixels, 0, width, 0, 0, width, height)
 
-        // compute luminance and gradient magnitude via simple Sobel
         val lum = FloatArray(width * height)
         for (i in origPixels.indices) {
             val p = origPixels[i]
@@ -487,7 +432,6 @@ class StyleTransferModel(private val context: Context) {
             }
         }
 
-        // find max gradient for normalization
         var maxGrad = 1f
         for (v in grad) if (v > maxGrad) maxGrad = v
 
@@ -495,7 +439,6 @@ class StyleTransferModel(private val context: Context) {
         val keepFactor = strength.coerceIn(0f, 1f)
         for (i in origPixels.indices) {
             val g = (grad[i] / maxGrad).coerceIn(0f, 1f)
-            // mask: near edges keep original (g ~ 1), in flat areas use blurred (g ~ 0)
             val mask = g
 
             val p = origPixels[i]
@@ -509,7 +452,6 @@ class StyleTransferModel(private val context: Context) {
             val bgg = (bp shr 8) and 0xFF
             val bbb = bp and 0xFF
 
-            // first blend blurred and original based on mask, then interpolate by keepFactor
             val blendedR = (orr * mask + brr * (1f - mask)).toInt()
             val blendedG = (ogg * mask + bgg * (1f - mask)).toInt()
             val blendedB = (obb * mask + bbb * (1f - mask)).toInt()

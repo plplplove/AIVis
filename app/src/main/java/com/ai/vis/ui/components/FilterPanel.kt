@@ -40,7 +40,7 @@ enum class FilterType {
 data class Filter(
     val type: FilterType,
     val nameRes: Int,
-    val color: Color // Preview color for the button
+    val color: Color 
 )
 
 @Composable
@@ -68,7 +68,6 @@ fun FilterPanel(
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        // Intensity slider (shown when filter is not NONE)
         AnimatedVisibility(
             visible = currentFilter != FilterType.NONE,
             enter = expandVertically() + fadeIn(),
@@ -124,7 +123,6 @@ fun FilterPanel(
             }
         }
         
-        // Horizontal list of filters
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -177,7 +175,6 @@ fun FilterItem(
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.padding(8.dp)
             ) {
-                // Preview box with gradient or solid color
                 Box(
                     modifier = Modifier
                         .size(40.dp)

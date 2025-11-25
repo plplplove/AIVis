@@ -74,7 +74,6 @@ fun AdjustPanel(
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        // Slider (shown when parameter is selected)
         AnimatedVisibility(
             visible = selectedParameterIndex != null,
             enter = expandVertically() + fadeIn(),
@@ -125,7 +124,7 @@ fun AdjustPanel(
                             isAdjusting = false
                             onValueChangeFinished(index)
                         },
-                        valueRange = if (index == 6) 0f..1f else -1f..1f, // Vignette 0-1, others -1 to 1
+                        valueRange = if (index == 6) 0f..1f else -1f..1f, 
                         colors = SliderDefaults.colors(
                             thumbColor = MaterialTheme.colorScheme.primary,
                             activeTrackColor = MaterialTheme.colorScheme.primary,

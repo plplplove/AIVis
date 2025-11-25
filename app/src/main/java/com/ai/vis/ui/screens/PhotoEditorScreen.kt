@@ -99,7 +99,6 @@ data class EditorTool(
     val iconRes: Int
 )
 
-// Text item data class for undo/redo support
 data class TextItem(
     val id: Int,
     var position: Offset,
@@ -108,7 +107,6 @@ data class TextItem(
     var style: com.ai.vis.ui.components.TextStyle
 )
 
-// Sticker item data class
 data class StickerItem(
     val id: Int,
     var emoji: String,
@@ -118,7 +116,6 @@ data class StickerItem(
     var opacity: Float = 1f
 )
 
-// Data class to store editor state for undo/redo
 data class EditorState(
     val bitmap: Bitmap,
     val textItems: List<TextItem> = emptyList(),
@@ -146,29 +143,23 @@ fun PhotoEditorScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     
-    // Dialog states
     var showExitDialog by remember { mutableStateOf(false) }
     var showSaveDialog by remember { mutableStateOf(false) }
     var showSaveSuccess by remember { mutableStateOf(false) }
     var saveSuccessMessage by remember { mutableStateOf("") }
     
-    // Image states - originalBitmap is the current saved state
     var originalBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var previewBitmap by remember { mutableStateOf<Bitmap?>(null) } // For preview during editing
-    var displayBitmap = previewBitmap ?: originalBitmap // What to show
+    var previewBitmap by remember { mutableStateOf<Bitmap?>(null) } 
+    var displayBitmap = previewBitmap ?: originalBitmap 
     
-    // Undo/Redo stacks for editing session
     var undoStack by remember { mutableStateOf<List<EditorState>>(emptyList()) }
     var redoStack by remember { mutableStateOf<List<EditorState>>(emptyList()) }
     
-    // Undo/Redo stacks for main screen (saved states after OK)
     var savedStatesUndoStack by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
     var savedStatesRedoStack by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
     
-    // Store state before entering a tool menu (to save as group later)
     var stateBeforeEditing by remember { mutableStateOf<Bitmap?>(null) }
     
-    // Transform state for zoom and pan
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     val state = rememberTransformableState { zoomChange, offsetChange, _ ->
@@ -176,45 +167,35 @@ fun PhotoEditorScreen(
         offset += offsetChange
     }
     
-    // Selected tool state
     var selectedTool by remember { mutableStateOf<EditorTool?>(null) }
     
-    // Track if user is editing (to show Apply/Cancel buttons)
     var isEditing by remember { mutableStateOf(false) }
     
-    // Tool panel collapse state
     var isToolPanelCollapsed by remember { mutableStateOf(false) }
     
-    // Crop state - don't select any ratio by default
     var selectedCropRatio by remember { mutableStateOf<CropRatio?>(null) }
     var showCropOverlay by remember { mutableStateOf(false) }
     var cropRect by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
-    var straightenAngle by remember { mutableFloatStateOf(0f) } // -10 to +10 degrees
+    var straightenAngle by remember { mutableFloatStateOf(0f) } 
     
-    // Track if crop/straighten has been modified (for showing checkmark vs gallery icon)
     var cropFieldModified by remember { mutableStateOf(false) }
     var straightenModified by remember { mutableStateOf(false) }
     
-    // Image bounds for crop overlay - recalculate only when bitmap changes
     var imageBounds by remember(originalBitmap) { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     
-    // Density for sp<->px conversions (capture once in composable scope)
     val density = LocalDensity.current
     
-    // Track bottom panels height for padding
     var bottomPanelsHeight by remember { mutableFloatStateOf(0f) }
     
-    // Adjustment values state - need to be mutableState for slider sync
     var adjustmentValues by remember { mutableStateOf(mapOf(
-        0 to 0f, // brightness
-        1 to 0f, // contrast
-        2 to 0f, // saturation
-        3 to 0f, // sharpness
-        4 to 0f, // temperature
-        5 to 0f  // tint
+        0 to 0f, 
+        1 to 0f, 
+        2 to 0f, 
+        3 to 0f, 
+        4 to 0f, 
+        5 to 0f  
     )) }
     
-    // Текстові елементи з масштабуванням 📝
     var textItems by remember { mutableStateOf<List<TextItem>>(emptyList()) }
     var selectedTextId by remember { mutableStateOf<Int?>(null) }
     var nextTextId by remember { mutableStateOf(0) }
@@ -222,17 +203,14 @@ fun PhotoEditorScreen(
     var dialogInputText by remember { mutableStateOf("") }
     var textStyle by remember { mutableStateOf(com.ai.vis.ui.components.TextStyle()) }
     
-    // Sticker elements 🎨
     var stickerItems by remember { mutableStateOf<List<StickerItem>>(emptyList()) }
     var selectedStickerId by remember { mutableStateOf<Int?>(null) }
     var nextStickerId by remember { mutableStateOf(0) }
-    var stickerSize by remember { mutableFloatStateOf(1.5f) } // Default scale 1.5
-    var stickerOpacity by remember { mutableFloatStateOf(1f) } // Default opacity 1.0
+    var stickerSize by remember { mutableFloatStateOf(1.5f) } 
+    var stickerOpacity by remember { mutableFloatStateOf(1f) } 
     
-    // Track if we saved state for current text transformation
     var savedStateForTransform by remember { mutableStateOf(false) }
     
-    // Drawing state 🎨
     var drawPaths by remember { mutableStateOf<List<com.ai.vis.ui.components.DrawPath>>(emptyList()) }
     var drawColor by remember { mutableStateOf(Color.Black) }
     var drawStrokeWidth by remember { mutableFloatStateOf(10f) }
@@ -242,30 +220,24 @@ fun PhotoEditorScreen(
     var currentShapeType by remember { mutableStateOf(com.ai.vis.ui.components.ShapeType.FREE_DRAW) }
     var isShapeFilled by remember { mutableStateOf(false) }
     
-    // Filter state 🎨
     var currentFilter by remember { mutableStateOf(com.ai.vis.ui.components.FilterType.NONE) }
     var filterIntensity by remember { mutableFloatStateOf(1f) }
     
-    // AI Styles state 🤖
     var selectedAIStyle by remember { mutableStateOf(com.ai.vis.domain.model.AIStyle.NONE) }
     var isApplyingAIStyle by remember { mutableStateOf(false) }
-    // Committed/applied AI style (represents current style baked into originalBitmap)
     var committedAIStyle by remember { mutableStateOf(com.ai.vis.domain.model.AIStyle.NONE) }
     
-    // Background processing state 🖼️
     var selectedBackgroundOption by remember { mutableStateOf(com.ai.vis.ui.components.BackgroundOption.NONE) }
     var isProcessingBackground by remember { mutableStateOf(false) }
     var blurRadius by remember { mutableStateOf(25f) }
     var selectedBackgroundImage by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     
-    // Portrait/Retouch processing state 👤
     var selectedPortraitOption by remember { mutableStateOf(com.ai.vis.ui.components.PortraitOption.NONE) }
     var isProcessingPortrait by remember { mutableStateOf(false) }
     var beautyIntensity by remember { mutableFloatStateOf(0.5f) }
     var eyeIntensity by remember { mutableFloatStateOf(0.5f) }
     var blurFaceIntensity by remember { mutableFloatStateOf(0.5f) }
     
-    // Gallery launcher for background image
     val backgroundImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -276,15 +248,12 @@ fun PhotoEditorScreen(
                 selectedBackgroundImage = bitmap
                 inputStream?.close()
             } catch (e: Exception) {
-                android.util.Log.e("PhotoEditor", "Error loading background image", e)
             }
         }
     }
     
-    // Розмір і позиція Image в Box (для збереження тексту на bitmap)
     var imageRectInBox by remember { mutableStateOf<Rect?>(null) }
     
-    // Helper function to save current state to undo stack
     fun saveStateToUndo() {
         originalBitmap?.let { bitmap ->
             val currentState = EditorState(
@@ -300,11 +269,10 @@ fun PhotoEditorScreen(
                 selectedPortraitOption = selectedPortraitOption
             )
             undoStack = undoStack + currentState
-            redoStack = emptyList() // Clear redo stack when new action is performed
+            redoStack = emptyList() 
         }
     }
     
-    // Helper function to perform undo
     fun performUndo() {
         if (undoStack.isNotEmpty()) {
             val currentState = originalBitmap?.let { bitmap ->
@@ -337,16 +305,13 @@ fun PhotoEditorScreen(
             selectedAIStyle = previousState.selectedAIStyle
             selectedBackgroundOption = previousState.selectedBackgroundOption
             selectedPortraitOption = previousState.selectedPortraitOption
-            // Update committed style as well to reflect the restored (baked) state
             committedAIStyle = previousState.selectedAIStyle
             
-            // If we're in adjustment mode, re-apply the restored adjustment values to preview
             if (selectedTool?.nameRes == R.string.adjust) {
                 coroutineScope.launch(Dispatchers.IO) {
                     originalBitmap?.let { original ->
                         var result = original
                         
-                        // Apply all adjustments in order
                         adjustmentValues[0]?.let { brightness ->
                             if (brightness != 0f) result = ImageProcessor.adjustBrightness(result, brightness)
                         }
@@ -370,7 +335,6 @@ fun PhotoEditorScreen(
                     }
                 }
             } else if (selectedTool?.nameRes == R.string.filters) {
-                // Re-apply filter for preview
                 coroutineScope.launch(Dispatchers.IO) {
                     originalBitmap?.let { original ->
                         val result = when (currentFilter) {
@@ -387,7 +351,6 @@ fun PhotoEditorScreen(
                     }
                 }
             } else if (selectedTool?.nameRes == R.string.ai_styles) {
-                // Re-apply AI style for preview
                 coroutineScope.launch(Dispatchers.IO) {
                     originalBitmap?.let { original ->
                         if (selectedAIStyle == com.ai.vis.domain.model.AIStyle.NONE) {
@@ -409,7 +372,6 @@ fun PhotoEditorScreen(
                     }
                 }
             } else if (selectedTool?.nameRes == R.string.ai_background) {
-                // Re-apply background processing for preview
                 if (selectedBackgroundOption != com.ai.vis.ui.components.BackgroundOption.NONE) {
                     isProcessingBackground = true
                     coroutineScope.launch(Dispatchers.IO) {
@@ -440,7 +402,6 @@ fun PhotoEditorScreen(
                     previewBitmap = null
                 }
             } else if (selectedTool?.nameRes == R.string.portrait) {
-                // Re-apply portrait processing for preview
                 if (selectedPortraitOption != com.ai.vis.ui.components.PortraitOption.NONE) {
                     isProcessingPortrait = true
                     coroutineScope.launch(Dispatchers.IO) {
@@ -477,7 +438,6 @@ fun PhotoEditorScreen(
         }
     }
     
-    // Helper function to perform redo
     fun performRedo() {
         if (redoStack.isNotEmpty()) {
             val currentState = originalBitmap?.let { bitmap ->
@@ -510,16 +470,13 @@ fun PhotoEditorScreen(
             selectedAIStyle = nextState.selectedAIStyle
             selectedBackgroundOption = nextState.selectedBackgroundOption
             selectedPortraitOption = nextState.selectedPortraitOption
-            // Update committed style as well to reflect the restored (baked) state
             committedAIStyle = nextState.selectedAIStyle
             
-            // If we're in adjustment mode, re-apply the restored adjustment values to preview
             if (selectedTool?.nameRes == R.string.adjust) {
                 coroutineScope.launch(Dispatchers.IO) {
                     originalBitmap?.let { original ->
                         var result = original
                         
-                        // Apply all adjustments in order
                         adjustmentValues[0]?.let { brightness ->
                             if (brightness != 0f) result = ImageProcessor.adjustBrightness(result, brightness)
                         }
@@ -543,7 +500,6 @@ fun PhotoEditorScreen(
                     }
                 }
             } else if (selectedTool?.nameRes == R.string.filters) {
-                // Re-apply filter for preview
                 coroutineScope.launch(Dispatchers.IO) {
                     originalBitmap?.let { original ->
                         val result = when (currentFilter) {
@@ -560,7 +516,6 @@ fun PhotoEditorScreen(
                     }
                 }
             } else if (selectedTool?.nameRes == R.string.ai_styles) {
-                // Re-apply AI style for preview
                 coroutineScope.launch(Dispatchers.IO) {
                     originalBitmap?.let { original ->
                         if (selectedAIStyle == com.ai.vis.domain.model.AIStyle.NONE) {
@@ -582,7 +537,6 @@ fun PhotoEditorScreen(
                     }
                 }
             } else if (selectedTool?.nameRes == R.string.ai_background) {
-                // Re-apply background processing for preview
                 if (selectedBackgroundOption != com.ai.vis.ui.components.BackgroundOption.NONE) {
                     isProcessingBackground = true
                     coroutineScope.launch(Dispatchers.IO) {
@@ -613,7 +567,6 @@ fun PhotoEditorScreen(
                     previewBitmap = null
                 }
             } else if (selectedTool?.nameRes == R.string.portrait) {
-                // Re-apply portrait processing for preview
                 if (selectedPortraitOption != com.ai.vis.ui.components.PortraitOption.NONE) {
                     isProcessingPortrait = true
                     coroutineScope.launch(Dispatchers.IO) {
@@ -650,7 +603,6 @@ fun PhotoEditorScreen(
         }
     }
     
-    // Helper function to undo saved state (main screen)
     fun performSavedStateUndo() {
         if (savedStatesUndoStack.isNotEmpty()) {
             originalBitmap?.let { current ->
@@ -664,7 +616,6 @@ fun PhotoEditorScreen(
         }
     }
     
-    // Helper function to redo saved state (main screen)
     fun performSavedStateRedo() {
         if (savedStatesRedoStack.isNotEmpty()) {
             originalBitmap?.let { current ->
@@ -678,7 +629,6 @@ fun PhotoEditorScreen(
         }
     }
     
-    // Load original bitmap from URI
     LaunchedEffect(imageUri) {
         if (imageUri != null) {
             withContext(Dispatchers.IO) {
@@ -687,20 +637,17 @@ fun PhotoEditorScreen(
         }
     }
     
-    // Показуємо діалог при виборі Text Tool
     LaunchedEffect(selectedTool) {
         if (selectedTool?.nameRes == R.string.text_tool) {
             showTextDialog = true
             dialogInputText = ""
         }
         
-        // Reset Portrait selection when opening Portrait tool
         if (selectedTool?.nameRes == R.string.portrait) {
             selectedPortraitOption = com.ai.vis.ui.components.PortraitOption.NONE
             previewBitmap = null
         }
         
-        // Save state before entering any tool menu (except when deselecting)
         if (selectedTool != null && !isEditing) {
             originalBitmap?.let { bitmap ->
                 stateBeforeEditing = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
@@ -708,11 +655,9 @@ fun PhotoEditorScreen(
         }
     }
     
-    // Handle system back button
     BackHandler(enabled = true) {
         when {
             isEditing -> {
-                // Cancel editing
                 textItems = emptyList()
                 drawPaths = emptyList()
                 previewBitmap = null
@@ -727,26 +672,21 @@ fun PhotoEditorScreen(
                 selectedTextId = null
                 isEditing = false
                 selectedTool = null
-                // Clear editing session state
                 undoStack = emptyList()
                 redoStack = emptyList()
                 stateBeforeEditing = null
             }
             selectedTool != null -> {
-                // Close tool panel
                 selectedTool = null
                 showCropOverlay = false
                 selectedCropRatio = null
                 straightenAngle = 0f
                 showTextDialog = false
-                // Reset background option when closing Background tool
                 selectedBackgroundOption = com.ai.vis.ui.components.BackgroundOption.NONE
                 selectedBackgroundImage = null
-                // Reset portrait option when closing Portrait tool
                 selectedPortraitOption = com.ai.vis.ui.components.PortraitOption.NONE
             }
             else -> {
-                // Show exit confirmation if there are any changes
                 if (savedStatesUndoStack.isNotEmpty() || originalBitmap != null) {
                     showExitDialog = true
                 } else {
@@ -756,7 +696,6 @@ fun PhotoEditorScreen(
         }
     }
     
-    // Save photo function
     fun savePhoto(location: com.ai.vis.ui.components.SaveLocation) {
         coroutineScope.launch(Dispatchers.IO) {
             try {
@@ -771,7 +710,6 @@ fun PhotoEditorScreen(
                                 saveSuccessMessage = context.getString(R.string.photo_saved_to_gallery)
                                 showSaveSuccess = true
                                 android.widget.Toast.makeText(context, saveSuccessMessage, android.widget.Toast.LENGTH_SHORT).show()
-                                // Return to main screen after short delay
                                 kotlinx.coroutines.delay(500)
                                 onBackClick()
                             } else {
@@ -799,7 +737,6 @@ fun PhotoEditorScreen(
                                 saveSuccessMessage = context.getString(R.string.photo_saved_to_app)
                                 showSaveSuccess = true
                                 android.widget.Toast.makeText(context, saveSuccessMessage, android.widget.Toast.LENGTH_SHORT).show()
-                                // Return to main screen after short delay
                                 kotlinx.coroutines.delay(500)
                                 onBackClick()
                             }
@@ -832,7 +769,6 @@ fun PhotoEditorScreen(
                                 saveSuccessMessage = context.getString(R.string.photo_saved_to_both)
                                 showSaveSuccess = true
                                 android.widget.Toast.makeText(context, saveSuccessMessage, android.widget.Toast.LENGTH_SHORT).show()
-                                // Return to main screen after short delay
                                 kotlinx.coroutines.delay(500)
                                 onBackClick()
                             } else {
@@ -849,7 +785,6 @@ fun PhotoEditorScreen(
         }
     }
     
-    // Editor tools list
     val editorTools = listOf(
         EditorTool(R.string.crop_rotate, R.drawable.ic_crop),
         EditorTool(R.string.adjust, R.drawable.ic_brightness),
@@ -867,9 +802,7 @@ fun PhotoEditorScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    // Показуємо Undo/Redo завжди, крім режиму crop
                     if (showCropOverlay) {
-                        // In crop mode - show only title, no Undo/Redo
                         Text(
                             text = stringResource(id = R.string.crop_rotate),
                             fontSize = 20.sp,
@@ -877,7 +810,6 @@ fun PhotoEditorScreen(
                             fontWeight = FontWeight.Bold
                         )
                     } else {
-                        // Show Undo/Redo buttons always (both in editing mode and main menu)
                         Row(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
@@ -919,7 +851,6 @@ fun PhotoEditorScreen(
                 navigationIcon = {
                     IconButton(onClick = {
                         if (isEditing) {
-                            // Cancel editing - скасувати всі зміни і закрити меню
                             previewBitmap = null
                             adjustmentValues = mapOf(
                                 0 to 0f, 1 to 0f, 2 to 0f,
@@ -935,34 +866,26 @@ fun PhotoEditorScreen(
                             drawPaths = emptyList()
                             stickerItems = emptyList()
                             isEditing = false
-                            selectedTool = null  // Закрити меню інструменту
-                            // Revert selection to committed (applied) style when cancelling
+                            selectedTool = null  
                             selectedAIStyle = committedAIStyle
                             isToolPanelCollapsed = false
-                            // Clear undo/redo stacks for editing session and state before editing
                             undoStack = emptyList()
                             redoStack = emptyList()
                             stateBeforeEditing = null
                         } else if (selectedTool != null) {
-                            // Якщо вибрано інструмент (але не редагування) - закриваємо інструмент
                             selectedTool = null
-                            // When simply closing the tool panel without applying, ensure
-                            // AI Styles selection reverts to the committed style and preview is cleared
                             selectedAIStyle = committedAIStyle
                             previewBitmap = null
                             selectedTextId = null
                             showCropOverlay = false
                             selectedCropRatio = null
-                            // Reset background option when closing
                             selectedBackgroundOption = com.ai.vis.ui.components.BackgroundOption.NONE
                             selectedBackgroundImage = null
-                            // Reset portrait option when closing
                             selectedPortraitOption = com.ai.vis.ui.components.PortraitOption.NONE
                             cropFieldModified = false
                             straightenModified = false
                             isToolPanelCollapsed = false
                         } else {
-                            // Show exit confirmation if there are any changes
                             if (savedStatesUndoStack.isNotEmpty() || originalBitmap != null) {
                                 showExitDialog = true
                             } else {
@@ -977,26 +900,18 @@ fun PhotoEditorScreen(
                     }
                 },
                 actions = {
-                    // Save/Apply button logic:
-                    // Show checkmark (apply) only when:
-                    // - Crop field has been modified OR straighten has been modified
-                    // - OR user is editing other tools (text, draw, adjust, filter, sticker)
-                    // Do NOT show checkmark for rotate/flip (they save immediately)
                     val isCropModified = selectedTool?.nameRes == R.string.crop_rotate && (cropFieldModified || straightenModified)
                     val isOtherToolEditing = selectedTool != null && selectedTool?.nameRes != R.string.crop_rotate && isEditing
                     val showCheckmark = isCropModified || isOtherToolEditing
                     
                     IconButton(onClick = {
                         if (isEditing) {
-                            // Save state before editing as one group to main undo stack
                             stateBeforeEditing?.let { beforeState ->
                                 savedStatesUndoStack = savedStatesUndoStack + beforeState.copy(beforeState.config ?: Bitmap.Config.ARGB_8888, true)
-                                savedStatesRedoStack = emptyList() // Clear redo when new change is saved
+                                savedStatesRedoStack = emptyList() 
                             }
                             
-                            // Apply changes
                             if (showCropOverlay && cropRect != null && imageBounds != null) {
-                                // Apply crop with exact coordinates
                                 coroutineScope.launch(Dispatchers.IO) {
                                     originalBitmap?.let { bitmap ->
                                         originalBitmap = ImageProcessor.cropBitmapWithRect(
@@ -1008,12 +923,10 @@ fun PhotoEditorScreen(
                                 }
                             }
                             
-                            // Зберігаємо ВСІ текстові елементи на bitmap 📝
                             if (textItems.isNotEmpty() && selectedTool?.nameRes == R.string.text_tool && imageRectInBox != null && imageBounds != null) {
                                 coroutineScope.launch(Dispatchers.IO) {
                                     var resultBitmap = originalBitmap
                                     textItems.forEach { textItem ->
-                                        // Враховуємо scale при збереженні
                                         val finalTextSize = textItem.style.size * textItem.scale
                                         val textSizePx = density.run { finalTextSize.sp.toPx() }
                                         val androidColor = android.graphics.Color.argb(
@@ -1062,16 +975,13 @@ fun PhotoEditorScreen(
                                 }
                             }
                             
-                            // Зберігаємо ВСІ стікери на bitmap 🎨
                             if (stickerItems.isNotEmpty() && selectedTool?.nameRes == R.string.stickers && imageRectInBox != null && imageBounds != null) {
                                 coroutineScope.launch(Dispatchers.IO) {
                                     var resultBitmap = originalBitmap
                                     stickerItems.forEach { stickerItem ->
-                                        // Конвертуємо розмір sp в px з врахуванням density
                                         val finalEmojiSize = 60f * stickerItem.scale
                                         val emojiSizePx = density.run { finalEmojiSize.sp.toPx() }
                                         
-                                        // Коректуємо позицію відносно imageRectInBox (як для тексту)
                                         val drawAbs = Offset(
                                             imageBounds!!.left + (stickerItem.position.x - imageRectInBox!!.left),
                                             imageBounds!!.top + (stickerItem.position.y - imageRectInBox!!.top)
@@ -1095,7 +1005,6 @@ fun PhotoEditorScreen(
                                 }
                             }
                             
-                            // Зберігаємо ВСІ малюнки на bitmap 🎨
                             if (drawPaths.isNotEmpty() && selectedTool?.nameRes == R.string.draw_tool && imageBounds != null) {
                                 coroutineScope.launch(Dispatchers.IO) {
                                     originalBitmap = originalBitmap?.let { bitmap ->
@@ -1113,7 +1022,6 @@ fun PhotoEditorScreen(
                                 originalBitmap = it
                                 previewBitmap = null
                             }
-                            // If we applied an AI style, commit it so reopening the menu shows the applied style
                             if (selectedTool?.nameRes == R.string.ai_styles) {
                                 committedAIStyle = selectedAIStyle
                             }
@@ -1128,13 +1036,11 @@ fun PhotoEditorScreen(
                             straightenModified = false
                             showTextDialog = false
                             isEditing = false
-                            selectedTool = null  // Close bottom panel after applying
-                            // Clear editing session undo/redo and state before editing
+                            selectedTool = null  
                             undoStack = emptyList()
                             redoStack = emptyList()
                             stateBeforeEditing = null
                         } else {
-                            // Show save dialog
                             showSaveDialog = true
                         }
                     }) {
@@ -1164,7 +1070,6 @@ fun PhotoEditorScreen(
                     .pointerInput(selectedTool, textItems, isEditing) {
                         detectTapGestures(
                             onTap = { tapOffset ->
-                                // Одинарний тап для вибору тексту
                                 if (selectedTool?.nameRes == R.string.text_tool && textItems.isNotEmpty()) {
                                     val tappedText = textItems.find { item ->
                                         val textSize = item.style.size * item.scale
@@ -1180,19 +1085,16 @@ fun PhotoEditorScreen(
                                     if (tappedText != null) {
                                         selectedTextId = if (selectedTextId == tappedText.id) null else tappedText.id
                                         if (selectedTextId != null) {
-                                            // Оновлюємо textStyle для панелі
                                             textStyle = textItems.find { it.id == selectedTextId }?.style ?: textStyle
                                         }
                                     }
                                 } else if (selectedTool != null && selectedTool?.nameRes != R.string.text_tool) {
-                                    // Ховаємо/показуємо меню (як стрілка вниз)
                                     if (!isToolPanelCollapsed) {
                                         isToolPanelCollapsed = true
                                     }
                                 }
                             },
                             onDoubleTap = { tapOffset ->
-                                // Подвійний тап для редагування тексту
                                 if (selectedTool?.nameRes == R.string.text_tool && textItems.isNotEmpty()) {
                                     val tappedText = textItems.find { item ->
                                         val textSize = item.style.size * item.scale
@@ -1213,7 +1115,6 @@ fun PhotoEditorScreen(
                                 }
                             },
                             onLongPress = { tapOffset ->
-                                // Довге натискання для редагування тексту (альтернатива подвійному тапу)
                                 if (selectedTool?.nameRes == R.string.text_tool && textItems.isNotEmpty()) {
                                     val tappedText = textItems.find { item ->
                                         val textSize = item.style.size * item.scale
@@ -1238,7 +1139,6 @@ fun PhotoEditorScreen(
                 contentAlignment = Alignment.Center
             ) {
                 if (displayBitmap != null) {
-                    // Show current image (preview or saved)
                     Image(
                         bitmap = displayBitmap!!.asImageBitmap(),
                         contentDescription = null,
@@ -1249,7 +1149,6 @@ fun PhotoEditorScreen(
                                 val size = coordinates.size.toSize()
                                 val bitmap = displayBitmap ?: return@onGloballyPositioned
                                 
-                                // Обчислюємо реальний розмір Image з ContentScale.Fit
                                 val imageAspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
                                 val containerAspectRatio = size.width / size.height
                                 
@@ -1263,12 +1162,9 @@ fun PhotoEditorScreen(
                                     w to h
                                 }
                                 
-                                // Центруємо image в контейнері
                                 val leftInContainer = (size.width - imageWidth) / 2f
                                 val topInContainer = (size.height - imageHeight) / 2f
                                 
-                                // Зберігаємо локальні координати відносно контейнера (Box з padding)
-                                // Ці координати використовуються для crop overlay і text positioning
                                 imageRectInBox = Rect(
                                     left = leftInContainer,
                                     top = topInContainer,
@@ -1276,7 +1172,6 @@ fun PhotoEditorScreen(
                                     bottom = topInContainer + imageHeight
                                 )
                                 
-                                // Для crop та text збереження - використовуємо ті ж локальні координати
                                 imageBounds = imageRectInBox
                             }
                             .graphicsLayer(
@@ -1292,7 +1187,6 @@ fun PhotoEditorScreen(
                         contentScale = ContentScale.Fit
                     )
                 } else if (imageUri != null) {
-                    // Fallback to original URI while loading
                     Image(
                         painter = rememberAsyncImagePainter(imageUri),
                         contentDescription = null,
@@ -1305,14 +1199,12 @@ fun PhotoEditorScreen(
                                 translationY = offset.y
                             )
                             .then(
-                                // Disable zoom/pan in crop mode to keep coordinates consistent
                                 if (!showCropOverlay) Modifier.transformable(state = state)
                                 else Modifier
                             ),
                         contentScale = ContentScale.Fit
                     )
                 } else {
-                    // Hint text when no image
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
@@ -1335,7 +1227,6 @@ fun PhotoEditorScreen(
                     }
                 }
                 
-                // Show crop overlay when in crop mode
                 if (showCropOverlay && selectedCropRatio != null && displayBitmap != null && imageBounds != null) {
                     val cropRatioValue = when (selectedCropRatio) {
                         CropRatio.FREE -> null
@@ -1352,12 +1243,11 @@ fun PhotoEditorScreen(
                         offset = offset,
                         onCropAreaChange = { rect ->
                             cropRect = rect
-                            cropFieldModified = true  // Mark that crop field has been modified
+                            cropFieldModified = true  
                         }
                     )
                 }
                 
-                // Show drawing canvas when draw tool is selected
                 if (selectedTool?.nameRes == R.string.draw_tool && imageBounds != null) {
                     com.ai.vis.ui.components.DrawingCanvas(
                         imageBounds = imageBounds,
@@ -1373,14 +1263,12 @@ fun PhotoEditorScreen(
                             drawPaths = drawPaths + newPath
                         },
                         onDrawingStarted = {
-                            // Save state before starting to draw
                             saveStateToUndo()
                             isEditing = true
                         }
                     )
                 }
                 
-                // Відображення ВСіХ текстових елементів з pinch-to-zoom + drag + rotation 📝
                 textItems.forEach { textItem ->
                     Box(
                         modifier = Modifier
@@ -1388,7 +1276,6 @@ fun PhotoEditorScreen(
                             .pointerInput(textItem.id) {
                                 detectTapGestures(
                                     onDoubleTap = { tapOffset ->
-                                        // Подвійний тап для редагування
                                         selectedTextId = textItem.id
                                         dialogInputText = textItem.style.text
                                         showTextDialog = true
@@ -1398,7 +1285,6 @@ fun PhotoEditorScreen(
                             .pointerInput(textItem.id) {
                                 detectTransformGestures(
                                     onGesture = { _, pan, zoom, rotationChange ->
-                                        // Save state only at the start of transformation
                                         if (!savedStateForTransform) {
                                             saveStateToUndo()
                                             savedStateForTransform = true
@@ -1419,7 +1305,6 @@ fun PhotoEditorScreen(
                                 )
                             }
                             .pointerInput(textItem.id) {
-                                // Reset transform flag when touch is released
                                 detectTapGestures(
                                     onPress = {
                                         savedStateForTransform = false
@@ -1493,7 +1378,6 @@ fun PhotoEditorScreen(
                     }
                 }
                 
-                // Відображення стікерів з pinch-to-zoom + drag + rotation 🎨
                 stickerItems.forEach { stickerItem ->
                     Box(
                         modifier = Modifier
@@ -1501,7 +1385,6 @@ fun PhotoEditorScreen(
                             .pointerInput(stickerItem.id) {
                                 detectTapGestures(
                                     onDoubleTap = {
-                                        // Подвійний тап для видалення стікера
                                         saveStateToUndo()
                                         stickerItems = stickerItems.filter { it.id != stickerItem.id }
                                         if (selectedStickerId == stickerItem.id) {
@@ -1513,7 +1396,6 @@ fun PhotoEditorScreen(
                             .pointerInput(stickerItem.id) {
                                 detectTransformGestures(
                                     onGesture = { _, pan, zoom, rotationChange ->
-                                        // Save state only at the start of transformation
                                         if (!savedStateForTransform) {
                                             saveStateToUndo()
                                             savedStateForTransform = true
@@ -1534,7 +1416,6 @@ fun PhotoEditorScreen(
                                 )
                             }
                             .pointerInput(stickerItem.id) {
-                                // Reset transform flag when touch is released
                                 detectTapGestures(
                                     onPress = {
                                         savedStateForTransform = false
@@ -1569,7 +1450,6 @@ fun PhotoEditorScreen(
                 }
             }
 
-            // Діалог для введення тексту 💬
             com.ai.vis.ui.components.TextInputDialog(
                 visible = showTextDialog,
                 initialText = dialogInputText,
@@ -1585,16 +1465,13 @@ fun PhotoEditorScreen(
                     saveStateToUndo()
                     
                     if (selectedTextId != null && dialogInputText.isNotEmpty()) {
-                        // Редагуємо існуючий текст
                         textItems = textItems.map {
                             if (it.id == selectedTextId) {
                                 it.copy(style = it.style.copy(text = text))
                             } else it
                         }
-                        // Оновлюємо textStyle щоб він відображав актуальний текст
                         textStyle = textStyle.copy(text = text)
                     } else {
-                        // Створюємо новий текст по центру зображення
                         val centerPos = imageRectInBox?.let {
                             Offset(
                                 x = it.left + it.width / 2f,
@@ -1619,13 +1496,11 @@ fun PhotoEditorScreen(
                 }
             )
 
-            // Bottom panels with semi-transparent background
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
             ) {
-                // Tool-specific panel (shown when tool is selected with animation)
                 AnimatedVisibility(
                     visible = selectedTool != null && !isToolPanelCollapsed,
                     enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
@@ -1650,35 +1525,30 @@ fun PhotoEditorScreen(
                                         saveStateToUndo()
                                         selectedCropRatio = ratio
                                         showCropOverlay = true
-                                        cropFieldModified = false  // Reset - just selecting ratio doesn't count as modification
+                                        cropFieldModified = false  
                                         isEditing = true
-                                        // Reset zoom/pan to original position for consistent crop coordinates
                                         scale = 1f
                                         offset = Offset.Zero
                                     },
                                     onStraightenAngleChange = { angle ->
                                         if (straightenAngle == 0f) {
-                                            // Save state before first change
                                             originalBitmap?.let { bitmap ->
                                                 savedStatesUndoStack = savedStatesUndoStack + bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
                                                 savedStatesRedoStack = emptyList()
                                             }
                                         }
                                         straightenAngle = angle
-                                        straightenModified = true  // Mark that straighten has been modified
+                                        straightenModified = true  
                                         isEditing = true
                                         
-                                        // Apply straighten rotation
                                         coroutineScope.launch(Dispatchers.IO) {
                                             originalBitmap?.let { bitmap ->
-                                                // Restore from saved state if exists (to avoid cumulative rotation)
                                                 val basebitmap = savedStatesUndoStack.lastOrNull() ?: bitmap
                                                 previewBitmap = ImageProcessor.rotateBitmap(basebitmap, angle)
                                             }
                                         }
                                     },
                                     onRotateLeft = {
-                                        // Save current state to main undo stack (like crop)
                                         originalBitmap?.let { bitmap ->
                                             savedStatesUndoStack = savedStatesUndoStack + bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
                                             savedStatesRedoStack = emptyList()
@@ -1692,7 +1562,6 @@ fun PhotoEditorScreen(
                                         }
                                     },
                                     onRotateRight = {
-                                        // Save current state to main undo stack (like crop)
                                         originalBitmap?.let { bitmap ->
                                             savedStatesUndoStack = savedStatesUndoStack + bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
                                             savedStatesRedoStack = emptyList()
@@ -1706,7 +1575,6 @@ fun PhotoEditorScreen(
                                         }
                                     },
                                     onFlipHorizontal = {
-                                        // Save current state to main undo stack (like crop)
                                         originalBitmap?.let { bitmap ->
                                             savedStatesUndoStack = savedStatesUndoStack + bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
                                             savedStatesRedoStack = emptyList()
@@ -1720,7 +1588,6 @@ fun PhotoEditorScreen(
                                         }
                                     },
                                     onFlipVertical = {
-                                        // Save current state to main undo stack (like crop)
                                         originalBitmap?.let { bitmap ->
                                             savedStatesUndoStack = savedStatesUndoStack + bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
                                             savedStatesRedoStack = emptyList()
@@ -1739,7 +1606,6 @@ fun PhotoEditorScreen(
                                 com.ai.vis.ui.components.AdjustPanel(
                                     adjustmentValues = adjustmentValues,
                                     onValueChangeStarted = { index ->
-                                        // Save state before starting to adjust
                                         saveStateToUndo()
                                     },
                                     onValueChange = { index, value ->
@@ -1752,7 +1618,6 @@ fun PhotoEditorScreen(
                                             originalBitmap?.let { original ->
                                                 var result = original
                                                 
-                                                // Apply all adjustments in order
                                                 adjustmentValues[0]?.let { brightness ->
                                                     if (brightness != 0f) result = ImageProcessor.adjustBrightness(result, brightness)
                                                 }
@@ -1777,8 +1642,6 @@ fun PhotoEditorScreen(
                                         }
                                     },
                                     onValueChangeFinished = { index ->
-                                        // Save state after finishing adjustment for proper undo/redo
-                                        // This ensures each slider change is a separate undo step
                                     }
                                 )
                             }
@@ -1839,7 +1702,6 @@ fun PhotoEditorScreen(
                                     currentOpacity = stickerOpacity,
                                     onSizeChange = { size ->
                                         stickerSize = size
-                                        // Оновлюємо вибраний стікер
                                         if (selectedStickerId != null) {
                                             saveStateToUndo()
                                             stickerItems = stickerItems.map {
@@ -1888,7 +1750,6 @@ fun PhotoEditorScreen(
                                     onSizeChange = { size ->
                                         saveStateToUndo()
                                         textStyle = textStyle.copy(size = size)
-                                        // Оновлюємо вибраний текст
                                         if (selectedTextId != null) {
                                             textItems = textItems.map {
                                                 if (it.id == selectedTextId) it.copy(style = it.style.copy(size = size)) else it
@@ -1909,7 +1770,6 @@ fun PhotoEditorScreen(
                                     onColorChange = { color ->
                                         saveStateToUndo()
                                         textStyle = textStyle.copy(color = color)
-                                        // Оновлюємо вибраний текст
                                         if (selectedTextId != null) {
                                             textItems = textItems.map {
                                                 if (it.id == selectedTextId) it.copy(style = it.style.copy(color = color)) else it
@@ -1929,7 +1789,6 @@ fun PhotoEditorScreen(
                                     },
                                     onWeightChange = { weight ->
                                         saveStateToUndo()
-                                        // Циклічна зміна: Normal → Bold → Light → Normal
                                         val nextWeight = when (textStyle.weight) {
                                             com.ai.vis.ui.components.TextWeight.NORMAL -> com.ai.vis.ui.components.TextWeight.BOLD
                                             com.ai.vis.ui.components.TextWeight.BOLD -> com.ai.vis.ui.components.TextWeight.LIGHT
@@ -1994,7 +1853,6 @@ fun PhotoEditorScreen(
                                     },
                                     onBackgroundToggle = { hasBackground ->
                                         saveStateToUndo()
-                                        // Тоглова зміна фону
                                         val newBackground = !textStyle.hasBackground
                                         textStyle = textStyle.copy(hasBackground = newBackground)
                                         if (selectedTextId != null) {
@@ -2074,7 +1932,6 @@ fun PhotoEditorScreen(
                                         isShapeFilled = isFilled
                                     },
                                     onErase = {
-                                        // Remove last drawn path (Undo last stroke)
                                         if (drawPaths.isNotEmpty()) {
                                             saveStateToUndo()
                                             drawPaths = drawPaths.dropLast(1)
@@ -2083,14 +1940,12 @@ fun PhotoEditorScreen(
                                 )
                             }
                             R.string.ai_background -> {
-                                // Background panel with actual processing
                                 com.ai.vis.ui.components.BackgroundPanel(
                                     selectedOption = selectedBackgroundOption,
                                     isProcessing = isProcessingBackground,
                                     blurRadius = blurRadius,
                                     onBlurRadiusChange = { newRadius ->
                                         blurRadius = newRadius
-                                        // Trigger real-time blur update
                                         if (selectedBackgroundOption == com.ai.vis.ui.components.BackgroundOption.BLUR && !isProcessingBackground) {
                                             isProcessingBackground = true
                                             originalBitmap?.let { original ->
@@ -2131,13 +1986,10 @@ fun PhotoEditorScreen(
                                             originalBitmap?.let { original ->
                                                 coroutineScope.launch(Dispatchers.IO) {
                                                     try {
-                                                        android.util.Log.d("PhotoEditor", "Starting background processing: $option")
                                                         val processBackgroundUseCase = com.ai.vis.domain.usecase.ProcessBackgroundUseCase(context)
                                                         
-                                                        android.util.Log.d("PhotoEditor", "Initializing model...")
                                                         processBackgroundUseCase.initialize()
                                                         
-                                                        android.util.Log.d("PhotoEditor", "Processing image...")
                                                         val result = processBackgroundUseCase(
                                                             bitmap = original,
                                                             option = option,
@@ -2146,7 +1998,6 @@ fun PhotoEditorScreen(
                                                         )
                                                         
                                                         withContext(Dispatchers.Main) {
-                                                            android.util.Log.d("PhotoEditor", "✅ Background processing completed!")
                                                             previewBitmap = result
                                                             isProcessingBackground = false
                                                             android.widget.Toast.makeText(
@@ -2158,7 +2009,6 @@ fun PhotoEditorScreen(
                                                         
                                                         processBackgroundUseCase.release()
                                                     } catch (e: java.io.FileNotFoundException) {
-                                                        android.util.Log.e("PhotoEditor", "❌ Model file not found!", e)
                                                         withContext(Dispatchers.Main) {
                                                             isProcessingBackground = false
                                                             android.widget.Toast.makeText(
@@ -2168,7 +2018,6 @@ fun PhotoEditorScreen(
                                                             ).show()
                                                         }
                                                     } catch (e: Exception) {
-                                                        android.util.Log.e("PhotoEditor", "❌ Error processing background: ${e.message}", e)
                                                         withContext(Dispatchers.Main) {
                                                             isProcessingBackground = false
                                                             android.widget.Toast.makeText(
@@ -2184,7 +2033,6 @@ fun PhotoEditorScreen(
                                     }
                                 )
                                 
-                                // Auto-process Replace when background image is selected
                                 LaunchedEffect(selectedBackgroundImage) {
                                     if (selectedBackgroundOption == com.ai.vis.ui.components.BackgroundOption.REPLACE && 
                                         selectedBackgroundImage != null && 
@@ -2222,15 +2070,12 @@ fun PhotoEditorScreen(
                                     onStyleSelected = { style ->
                                         if (!isApplyingAIStyle) {
                                             if (style == com.ai.vis.domain.model.AIStyle.NONE) {
-                                                // Selecting None: clear preview and exit editing state
                                                 selectedAIStyle = style
                                                 previewBitmap = null
                                                 isEditing = false
                                             } else {
                                                 originalBitmap?.let { original ->
-                                                    // Save current state BEFORE changing the selected style
                                                     saveStateToUndo()
-                                                    // Now update selection and start applying
                                                     selectedAIStyle = style
                                                     isApplyingAIStyle = true
                                                     isEditing = true
@@ -2266,7 +2111,6 @@ fun PhotoEditorScreen(
                                     beautyIntensity = beautyIntensity,
                                     onBeautyIntensityChange = { intensity ->
                                         beautyIntensity = intensity
-                                        // Real-time update when intensity changes
                                         if (selectedPortraitOption == com.ai.vis.ui.components.PortraitOption.BEAUTY_MODE && !isProcessingPortrait) {
                                             isProcessingPortrait = true
                                             originalBitmap?.let { original ->
@@ -2296,7 +2140,6 @@ fun PhotoEditorScreen(
                                     eyeIntensity = eyeIntensity,
                                     onEyeIntensityChange = { intensity ->
                                         eyeIntensity = intensity
-                                        // Real-time update when intensity changes
                                         if (selectedPortraitOption == com.ai.vis.ui.components.PortraitOption.EYE_ENHANCEMENT && !isProcessingPortrait) {
                                             isProcessingPortrait = true
                                             originalBitmap?.let { original ->
@@ -2326,7 +2169,6 @@ fun PhotoEditorScreen(
                                     blurIntensity = blurFaceIntensity,
                                     onBlurIntensityChange = { intensity ->
                                         blurFaceIntensity = intensity
-                                        // Real-time update when intensity changes
                                         if (selectedPortraitOption == com.ai.vis.ui.components.PortraitOption.FACE_BLUR && !isProcessingPortrait) {
                                             isProcessingPortrait = true
                                             originalBitmap?.let { original ->
@@ -2384,7 +2226,6 @@ fun PhotoEditorScreen(
                                                             }
                                                             processPortraitUseCase.release()
                                                         } catch (e: Exception) {
-                                                            android.util.Log.e("PhotoEditor", "Error processing portrait: ${e.message}", e)
                                                             withContext(Dispatchers.Main) {
                                                                 isProcessingPortrait = false
                                                                 android.widget.Toast.makeText(
@@ -2397,7 +2238,6 @@ fun PhotoEditorScreen(
                                                     }
                                                 }
                                             } else {
-                                                // Clear preview when selecting NONE
                                                 previewBitmap = null
                                                 isEditing = false
                                             }
@@ -2409,12 +2249,10 @@ fun PhotoEditorScreen(
                     }
                 }
                 
-                // Bottom tool panel - приховується при редагуванні тексту
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .onGloballyPositioned { coordinates ->
-                            // Measure only the main menu height, not the tool panel
                             bottomPanelsHeight = coordinates.size.height.toFloat()
                         }
                         .background(
@@ -2423,7 +2261,6 @@ fun PhotoEditorScreen(
                 ) {
                     when (selectedTool?.nameRes) {
                         R.string.text_tool, R.string.adjust, R.string.draw_tool, R.string.filters, R.string.stickers, R.string.ai_styles, R.string.ai_background, R.string.portrait -> {
-                            // Режим редагування з прихованим меню - показуємо кнопку згортання та назву
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -2453,12 +2290,10 @@ fun PhotoEditorScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                                 
-                                // Порожній Box для симетрії
                                 Box(modifier = Modifier.size(48.dp))
                             }
                         }
                         else -> {
-                            // Звичайне головне меню з інструментами
                             LazyRow(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -2472,11 +2307,9 @@ fun PhotoEditorScreen(
                                         onClick = { 
                                             val newTool = if (selectedTool == tool) null else tool
                                             selectedTool = newTool
-                                            // Автоматично розгортаємо панель при виборі нового інструменту
                                             if (newTool != null) {
                                                 isToolPanelCollapsed = false
                                             }
-                                            // Reset text dialog when deselecting text tool
                                             if (tool.nameRes == R.string.text_tool && selectedTool != tool) {
                                                 showTextDialog = false
                                                 selectedTextId = null
@@ -2491,7 +2324,6 @@ fun PhotoEditorScreen(
             }
         }
         
-        // Exit Confirmation Dialog
         com.ai.vis.ui.components.ExitConfirmDialog(
             visible = showExitDialog,
             onDismiss = { showExitDialog = false },
@@ -2501,7 +2333,6 @@ fun PhotoEditorScreen(
             }
         )
         
-        // Save Options Dialog
         com.ai.vis.ui.components.SaveOptionsDialog(
             visible = showSaveDialog,
             onDismiss = { showSaveDialog = false },

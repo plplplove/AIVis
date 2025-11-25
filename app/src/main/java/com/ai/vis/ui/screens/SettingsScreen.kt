@@ -94,7 +94,6 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Theme Setting
             SettingsCard {
                 Row(
                     modifier = Modifier
@@ -144,7 +143,6 @@ fun SettingsScreen(
                 }
             }
 
-            // Language Setting
             SettingsCard {
                 Column(
                     modifier = Modifier
@@ -229,7 +227,6 @@ fun SettingsScreen(
                 }
             }
 
-            // Clear Cache
             SettingsCard(
                 onClick = {
                     showClearCacheDialog = true
@@ -266,7 +263,6 @@ fun SettingsScreen(
                 }
             }
 
-            // About App
             SettingsCard(
                 onClick = {
                     showAboutDialog = !showAboutDialog

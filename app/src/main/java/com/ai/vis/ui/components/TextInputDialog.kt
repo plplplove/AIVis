@@ -76,7 +76,6 @@ fun TextInputDialog(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
-                        // Заголовок
                         Text(
                             text = if (isEditMode) 
                                 stringResource(id = R.string.edit_text) 
@@ -88,7 +87,6 @@ fun TextInputDialog(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         
-                        // TextField з красивим дизайном
                         OutlinedTextField(
                             value = text,
                             onValueChange = { text = it },
@@ -116,12 +114,10 @@ fun TextInputDialog(
                             )
                         )
                         
-                        // Кнопки
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            // Cancel button
                             OutlinedButton(
                                 onClick = onDismiss,
                                 modifier = Modifier
@@ -140,7 +136,6 @@ fun TextInputDialog(
                                 )
                             }
                             
-                            // OK button
                             Button(
                                 onClick = {
                                     if (text.isNotEmpty()) {

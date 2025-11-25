@@ -38,14 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ai.vis.R
 
-/**
- * Simple UI-only Background panel. Shows three options as cards:
- * - Remove Background
- * - Blur Background
- * - Replace Background
- *
- * This component does not implement processing; it exposes selection via onOptionSelected.
- */
 enum class BackgroundOption {
     NONE,
     REMOVE,
@@ -77,7 +69,6 @@ fun BackgroundPanel(
     )
 
     Column(modifier = modifier.fillMaxWidth()) {
-        // Slider for Blur (shown when Blur is selected)
         AnimatedVisibility(
             visible = selectedOption == BackgroundOption.BLUR,
             enter = expandVertically() + fadeIn(),
@@ -124,7 +115,6 @@ fun BackgroundPanel(
             }
         }
         
-        // Image picker for Replace (shown when Replace is selected)
         AnimatedVisibility(
             visible = selectedOption == BackgroundOption.REPLACE,
             enter = expandVertically() + fadeIn(),
@@ -187,7 +177,6 @@ fun BackgroundPanel(
             }
         }
         
-        // Options Row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -218,7 +207,6 @@ fun BackgroundPanel(
                         contentAlignment = Alignment.Center
                     ) {
                         if (isProcessing && isSelected) {
-                            // Show loading indicator when processing
                             CircularProgressIndicator(
                                 modifier = Modifier.size(32.dp),
                                 color = MaterialTheme.colorScheme.primary,

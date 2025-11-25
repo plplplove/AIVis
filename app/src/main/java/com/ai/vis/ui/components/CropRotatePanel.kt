@@ -62,7 +62,6 @@ fun CropRotatePanel(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Crop Ratios
         Text(
             text = stringResource(id = R.string.crop),
             fontSize = 14.sp,
@@ -90,7 +89,6 @@ fun CropRotatePanel(
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        // Straighten slider
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -142,7 +140,6 @@ fun CropRotatePanel(
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        // Rotate & Flip & Stretch
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -179,7 +176,6 @@ fun CropRotatePanel(
                 isVertical = true,
                 modifier = Modifier.weight(1f)
             )
-            // Empty spaces for symmetry
             Spacer(modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.weight(1f))
         }

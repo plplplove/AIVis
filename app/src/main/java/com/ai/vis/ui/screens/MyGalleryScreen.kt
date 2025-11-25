@@ -84,7 +84,6 @@ fun MyGalleryScreen(
                 .weight(1f)
         ) {
             if (photos.isEmpty()) {
-                // Empty state
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -120,7 +119,6 @@ fun MyGalleryScreen(
                 }
             } else {
                 Column {
-                    // Top bar with selection controls
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -172,7 +170,6 @@ fun MyGalleryScreen(
                         }
                     }
 
-                    // Grid of images
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(3),
                         contentPadding = PaddingValues(8.dp),
@@ -193,7 +190,6 @@ fun MyGalleryScreen(
                                             selectedPhotos.add(photo.id)
                                         }
                                     } else {
-                                        // Open full image viewer
                                         onPhotoSelected(photo)
                                     }
                                 },
@@ -208,7 +204,6 @@ fun MyGalleryScreen(
         }
     }
     
-    // Delete Confirmation Dialog
     if (showDeleteDialog) {
         com.ai.vis.ui.components.ConfirmationDialog(
             title = stringResource(id = R.string.delete_photos),
@@ -249,7 +244,6 @@ private fun GalleryPhotoCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Photo image
             Image(
                 painter = rememberAsyncImagePainter(
                     model = File(photo.thumbnailPath ?: photo.filePath)
@@ -259,7 +253,6 @@ private fun GalleryPhotoCard(
                 contentScale = ContentScale.Crop
             )
             
-            // Selection overlay
             if (isSelectionMode) {
                 Box(
                     modifier = Modifier
@@ -291,7 +284,6 @@ private fun GalleryPhotoCard(
                 )
             }
             
-            // Date badge
             if (!isSelectionMode) {
                 Text(
                     text = formatDate(photo.timestamp),
